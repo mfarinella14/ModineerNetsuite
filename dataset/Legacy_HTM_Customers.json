@@ -1,0 +1,220 @@
+{
+	"name": "Legacy_HTM_Customers",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "modineerworkspace-WorkspaceDefaultStorage",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": "legacy-htm/customers",
+				"fileSystem": "unified-data-cluster"
+			}
+		},
+		"schema": {
+			"type": "object",
+			"properties": {
+				"alcoholrecipienttype": {
+					"type": "string"
+				},
+				"altname": {
+					"type": "string"
+				},
+				"balancesearch": {
+					"type": "string"
+				},
+				"category": {
+					"type": "string"
+				},
+				"companyname": {
+					"type": "string"
+				},
+				"consolbalancesearch": {
+					"type": "string"
+				},
+				"consoldaysoverduesearch": {
+					"type": "string"
+				},
+				"consoloverduebalancesearch": {
+					"type": "string"
+				},
+				"consolunbilledorderssearch": {
+					"type": "string"
+				},
+				"contactlist": {
+					"type": "string"
+				},
+				"creditholdoverride": {
+					"type": "string"
+				},
+				"currency": {
+					"type": "string"
+				},
+				"custentity1": {
+					"type": "string"
+				},
+				"custentity_2663_customer_refund": {
+					"type": "string"
+				},
+				"custentity_2663_direct_debit": {
+					"type": "string"
+				},
+				"custentityht_3rdpartybillingcountry": {
+					"type": "string"
+				},
+				"custentityht_alertforquality": {
+					"type": "string"
+				},
+				"custentityht_automotivecustomer": {
+					"type": "string"
+				},
+				"custentityht_barcode": {
+					"type": "string"
+				},
+				"custentityht_callbeforeshipping_entfld": {
+					"type": "string"
+				},
+				"custentityht_certsrequired": {
+					"type": "string"
+				},
+				"custentityht_checkbook": {
+					"type": "string"
+				},
+				"custentityht_requiresheattreatedskid": {
+					"type": "string"
+				},
+				"custentityht_shipcomplete": {
+					"type": "string"
+				},
+				"custentityht_shipper": {
+					"type": "string"
+				},
+				"custentityht_skidquantitygroup": {
+					"type": "string"
+				},
+				"custentityhtfreightchargepreferences": {
+					"type": "string"
+				},
+				"custentityhtshortcustomername": {
+					"type": "string"
+				},
+				"custentityhtspecialpackaging": {
+					"type": "string"
+				},
+				"datecreated": {
+					"type": "string"
+				},
+				"defaultbillingaddress": {
+					"type": "string"
+				},
+				"defaultshippingaddress": {
+					"type": "string"
+				},
+				"displaysymbol": {
+					"type": "string"
+				},
+				"duplicate": {
+					"type": "string"
+				},
+				"emailpreference": {
+					"type": "string"
+				},
+				"emailtransactions": {
+					"type": "string"
+				},
+				"entityid": {
+					"type": "string"
+				},
+				"entitystatus": {
+					"type": "string"
+				},
+				"entitytitle": {
+					"type": "string"
+				},
+				"faxtransactions": {
+					"type": "string"
+				},
+				"firstorderdate": {
+					"type": "string"
+				},
+				"firstsaledate": {
+					"type": "string"
+				},
+				"giveaccess": {
+					"type": "string"
+				},
+				"globalsubscriptionstatus": {
+					"type": "string"
+				},
+				"id": "{\r\n  \"type\": \"string\"\r\n}",
+				"isbudgetapproved": {
+					"type": "string"
+				},
+				"isinactive": {
+					"type": "string"
+				},
+				"isperson": {
+					"type": "string"
+				},
+				"lastmodifieddate": {
+					"type": "string"
+				},
+				"lastorderdate": {
+					"type": "string"
+				},
+				"lastsaledate": {
+					"type": "string"
+				},
+				"oncredithold": {
+					"type": "string"
+				},
+				"overduebalancesearch": {
+					"type": "string"
+				},
+				"overridecurrencyformat": {
+					"type": "string"
+				},
+				"pricelevel": {
+					"type": "string"
+				},
+				"printtransactions": {
+					"type": "string"
+				},
+				"probability": {
+					"type": "string"
+				},
+				"receivablesaccount": {
+					"type": "string"
+				},
+				"salesrep": {
+					"type": "string"
+				},
+				"searchstage": {
+					"type": "string"
+				},
+				"shipcomplete": {
+					"type": "string"
+				},
+				"shippingcarrier": {
+					"type": "string"
+				},
+				"symbolplacement": {
+					"type": "string"
+				},
+				"terms": {
+					"type": "string"
+				},
+				"unbilledorderssearch": {
+					"type": "string"
+				},
+				"weblead": {
+					"type": "string"
+				}
+			}
+		}
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}

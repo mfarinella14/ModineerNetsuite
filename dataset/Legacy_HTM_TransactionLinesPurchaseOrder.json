@@ -1,0 +1,24 @@
+{
+	"name": "Legacy_HTM_TransactionLinesPurchaseOrder",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "modineerworkspace-WorkspaceDefaultStorage",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": {
+					"value": "@concat('purchaseorderline-',guid())",
+					"type": "Expression"
+				},
+				"folderPath": "legacy-htm/transaction-lines/purchase-order",
+				"fileSystem": "unified-data-cluster"
+			}
+		},
+		"schema": {}
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}

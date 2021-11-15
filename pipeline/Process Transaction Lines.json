@@ -1,0 +1,494 @@
+{
+	"name": "Process Transaction Lines",
+	"properties": {
+		"activities": [
+			{
+				"name": "ForEach Transaction Get Lines",
+				"type": "ForEach",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@pipeline().parameters.item_array",
+						"type": "Expression"
+					},
+					"batchCount": 2,
+					"activities": [
+						{
+							"name": "Transaction Lines",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "Set variable1",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [
+								{
+									"name": "Source",
+									"value": "@{concat('?limit=1000&offset=',string(0))}"
+								},
+								{
+									"name": "Destination",
+									"value": "unified-data-cluster/legacy-htm/transaction-lines/work-order/@{concat('workorderlines-',guid())}"
+								}
+							],
+							"typeProperties": {
+								"source": {
+									"type": "RestSource",
+									"httpRequestTimeout": "00:05:40",
+									"requestInterval": "00.00:00:00.010",
+									"requestMethod": "POST",
+									"requestBody": {
+										"value": "@concat('{\"q\": \"SELECT * FROM TransactionLine WHERE transaction LIKE ',item().internalId,'\"}')",
+										"type": "Expression"
+									},
+									"additionalHeaders": {
+										"Prefer": "transient",
+										"Authorization": {
+											"value": "@variables('bearer_authentication')",
+											"type": "Expression"
+										}
+									}
+								},
+								"sink": {
+									"type": "JsonSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings",
+										"maxConcurrentConnections": 2
+									},
+									"formatSettings": {
+										"type": "JsonWriteSettings"
+									},
+									"sqlWriterUseTableLock": false
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"mappings": [
+										{
+											"source": {
+												"path": "['amountlinked']"
+											},
+											"sink": {
+												"path": "$['amountlinked']"
+											}
+										},
+										{
+											"source": {
+												"path": "['assemblycomponent']"
+											},
+											"sink": {
+												"path": "$['assemblycomponent']"
+											}
+										},
+										{
+											"source": {
+												"path": "['cleared']"
+											},
+											"sink": {
+												"path": "$['cleared']"
+											}
+										},
+										{
+											"source": {
+												"path": "['commitmentfirm']"
+											},
+											"sink": {
+												"path": "$['commitmentfirm']"
+											}
+										},
+										{
+											"source": {
+												"path": "['debitforeignamount']"
+											},
+											"sink": {
+												"path": "$['debitforeignamount']"
+											}
+										},
+										{
+											"source": {
+												"path": "['donotdisplayline']"
+											},
+											"sink": {
+												"path": "$['donotdisplayline']"
+											}
+										},
+										{
+											"source": {
+												"path": "['dropship']"
+											},
+											"sink": {
+												"path": "$['dropship']"
+											}
+										},
+										{
+											"source": {
+												"path": "['entity']"
+											},
+											"sink": {
+												"path": "$['entity']"
+											}
+										},
+										{
+											"source": {
+												"path": "['expenseaccount']"
+											},
+											"sink": {
+												"path": "$['expenseaccount']"
+											}
+										},
+										{
+											"source": {
+												"path": "['foreignamount']"
+											},
+											"sink": {
+												"path": "$['foreignamount']"
+											}
+										},
+										{
+											"source": {
+												"path": "['hasfulfillableitems']"
+											},
+											"sink": {
+												"path": "$['hasfulfillableitems']"
+											}
+										},
+										{
+											"source": {
+												"path": "['id']"
+											},
+											"sink": {
+												"path": "$['id']"
+											}
+										},
+										{
+											"source": {
+												"path": "['isbillable']"
+											},
+											"sink": {
+												"path": "$['isbillable']"
+											}
+										},
+										{
+											"source": {
+												"path": "['isclosed']"
+											},
+											"sink": {
+												"path": "$['isclosed']"
+											}
+										},
+										{
+											"source": {
+												"path": "['iscogs']"
+											},
+											"sink": {
+												"path": "$['iscogs']"
+											}
+										},
+										{
+											"source": {
+												"path": "['iscustomglline']"
+											},
+											"sink": {
+												"path": "$['iscustomglline']"
+											}
+										},
+										{
+											"source": {
+												"path": "['isfullyshipped']"
+											},
+											"sink": {
+												"path": "$['isfullyshipped']"
+											}
+										},
+										{
+											"source": {
+												"path": "['isfxvariance']"
+											},
+											"sink": {
+												"path": "$['isfxvariance']"
+											}
+										},
+										{
+											"source": {
+												"path": "['isinventoryaffecting']"
+											},
+											"sink": {
+												"path": "$['isinventoryaffecting']"
+											}
+										},
+										{
+											"source": {
+												"path": "['kitcomponent']"
+											},
+											"sink": {
+												"path": "$['kitcomponent']"
+											}
+										},
+										{
+											"source": {
+												"path": "['linelastmodifieddate']"
+											},
+											"sink": {
+												"path": "$['linelastmodifieddate']"
+											}
+										},
+										{
+											"source": {
+												"path": "['linesequencenumber']"
+											},
+											"sink": {
+												"path": "$['linesequencenumber']"
+											}
+										},
+										{
+											"source": {
+												"path": "['location']"
+											},
+											"sink": {
+												"path": "$['location']"
+											}
+										},
+										{
+											"source": {
+												"path": "['mainline']"
+											},
+											"sink": {
+												"path": "$['mainline']"
+											}
+										},
+										{
+											"source": {
+												"path": "['matchbilltoreceipt']"
+											},
+											"sink": {
+												"path": "$['matchbilltoreceipt']"
+											}
+										},
+										{
+											"source": {
+												"path": "['netamount']"
+											},
+											"sink": {
+												"path": "$['netamount']"
+											}
+										},
+										{
+											"source": {
+												"path": "['oldcommitmentfirm']"
+											},
+											"sink": {
+												"path": "$['oldcommitmentfirm']"
+											}
+										},
+										{
+											"source": {
+												"path": "['processedbyrevcommit']"
+											},
+											"sink": {
+												"path": "$['processedbyrevcommit']"
+											}
+										},
+										{
+											"source": {
+												"path": "['quantitybilled']"
+											},
+											"sink": {
+												"path": "$['quantitybilled']"
+											}
+										},
+										{
+											"source": {
+												"path": "['quantityrejected']"
+											},
+											"sink": {
+												"path": "$['quantityrejected']"
+											}
+										},
+										{
+											"source": {
+												"path": "['quantityshiprecv']"
+											},
+											"sink": {
+												"path": "$['quantityshiprecv']"
+											}
+										},
+										{
+											"source": {
+												"path": "['specialorder']"
+											},
+											"sink": {
+												"path": "$['specialorder']"
+											}
+										},
+										{
+											"source": {
+												"path": "['subsidiary']"
+											},
+											"sink": {
+												"path": "$['subsidiary']"
+											}
+										},
+										{
+											"source": {
+												"path": "['taxline']"
+											},
+											"sink": {
+												"path": "$['taxline']"
+											}
+										},
+										{
+											"source": {
+												"path": "['transaction']"
+											},
+											"sink": {
+												"path": "$['transaction']"
+											}
+										},
+										{
+											"source": {
+												"path": "['transactiondiscount']"
+											},
+											"sink": {
+												"path": "$['transactiondiscount']"
+											}
+										},
+										{
+											"source": {
+												"path": "['uniquekey']"
+											},
+											"sink": {
+												"path": "$['uniquekey']"
+											}
+										},
+										{
+											"source": {
+												"path": "['units']"
+											},
+											"sink": {
+												"path": "$['units']"
+											}
+										}
+									],
+									"collectionReference": "$['items']"
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "HTM_Netsuite_SuiteQL",
+									"type": "DatasetReference",
+									"parameters": {
+										"account_id": {
+											"value": "@pipeline().parameters.account_id",
+											"type": "Expression"
+										},
+										"offset": 0
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "Legacy_HTM_TransactionLinesPurchaseOrder",
+									"type": "DatasetReference"
+								}
+							]
+						},
+						{
+							"name": "Post Refresh Token",
+							"type": "WebActivity",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": true,
+								"secureInput": true
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"url": {
+									"value": "@concat('https://',pipeline().parameters.account_id,'.suitetalk.api.netsuite.com/services/rest/auth/oauth2/v1/token')",
+									"type": "Expression"
+								},
+								"connectVia": {
+									"referenceName": "AutoResolveIntegrationRuntime",
+									"type": "IntegrationRuntimeReference"
+								},
+								"method": "POST",
+								"headers": {
+									"Content-Type": "application/x-www-form-urlencoded",
+									"Authorization": {
+										"value": "@concat('Basic ',pipeline().parameters.auth)",
+										"type": "Expression"
+									}
+								},
+								"body": {
+									"value": "@concat('grant_type=refresh_token&refresh_token=',pipeline().parameters.refresh_token)",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Set variable1",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Post Refresh Token",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "bearer_authentication",
+								"value": {
+									"value": "@concat(activity('Post Refresh Token').output.token_type,' ',activity('Post Refresh Token').output.access_token)",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"item_array": {
+				"type": "array"
+			},
+			"account_id": {
+				"type": "string"
+			},
+			"transaction_type": {
+				"type": "string"
+			},
+			"auth": {
+				"type": "string"
+			},
+			"refresh_token": {
+				"type": "string"
+			}
+		},
+		"variables": {
+			"bearer_authentication": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "HTM/Transaction Lines/Sub Pipeline"
+		},
+		"annotations": [],
+		"lastPublishTime": "2021-10-28T12:49:20Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
+}

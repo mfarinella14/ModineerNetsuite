@@ -1,0 +1,86 @@
+{
+	"name": "Legacy_HTM_Contacts",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "modineerworkspace-WorkspaceDefaultStorage",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": {
+					"value": "@concat('contacts-',guid())",
+					"type": "Expression"
+				},
+				"folderPath": "legacy-htm/contacts",
+				"fileSystem": "unified-data-cluster"
+			}
+		},
+		"schema": {
+			"type": "object",
+			"properties": {
+				"company": {
+					"type": "string"
+				},
+				"custentityht_sendbulkemail": {
+					"type": "string"
+				},
+				"custentityht_sendpricing": {
+					"type": "string"
+				},
+				"custentityht_sendservey": {
+					"type": "string"
+				},
+				"datecreated": {
+					"type": "string"
+				},
+				"defaultbillingaddress": {
+					"type": "string"
+				},
+				"defaultshippingaddress": {
+					"type": "string"
+				},
+				"duplicate": {
+					"type": "string"
+				},
+				"email": {
+					"type": "string"
+				},
+				"entityid": {
+					"type": "string"
+				},
+				"entitytitle": {
+					"type": "string"
+				},
+				"firstname": {
+					"type": "string"
+				},
+				"globalsubscriptionstatus": {
+					"type": "string"
+				},
+				"id": "{\r\n  \"type\": \"string\"\r\n}",
+				"isinactive": {
+					"type": "string"
+				},
+				"isprivate": {
+					"type": "string"
+				},
+				"lastmodifieddate": {
+					"type": "string"
+				},
+				"lastname": {
+					"type": "string"
+				},
+				"phone": {
+					"type": "string"
+				},
+				"title": {
+					"type": "string"
+				}
+			}
+		}
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}

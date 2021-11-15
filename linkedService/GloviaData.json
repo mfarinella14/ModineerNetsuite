@@ -1,0 +1,17 @@
+{
+	"name": "GloviaData",
+	"type": "Microsoft.Synapse/workspaces/linkedservices",
+	"properties": {
+		"description": "Access to the Oracle server through a self hosted runtime.",
+		"annotations": [],
+		"type": "Oracle",
+		"typeProperties": {
+			"connectionString": "host=svm02glov001.modineer.org;port=1521;sid=prod;user id=system",
+			"encryptedCredential": "eyJDcmVkZW50aWFsSWQiOiI0Nzk1MjY1Yy1kZWFlLTRjMmMtODY5My00YjA0MjdjOTljODgiLCJWZXJzaW9uIjoiMi4wIiwiQ2xhc3NUeXBlIjoiTWljcm9zb2Z0LkRhdGFQcm94eS5Db3JlLkludGVyU2VydmljZURhdGFDb250cmFjdC5DcmVkZW50aWFsU1UwNkNZMTQifQ=="
+		},
+		"connectVia": {
+			"referenceName": "GloviaServerIntegrationRuntime",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

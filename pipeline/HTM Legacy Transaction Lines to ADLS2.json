@@ -1,0 +1,184 @@
+{
+	"name": "HTM Legacy Transaction Lines to ADLS2",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get Total Rows",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "Set Transaction Type",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlPoolSource",
+						"sqlReaderQuery": {
+							"value": "@concat('SELECT COUNT(internalId) AS totalRows\nFROM dbo.',variables('transaction_type'))",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00"
+					},
+					"dataset": {
+						"referenceName": "NetsuiteData",
+						"type": "DatasetReference",
+						"parameters": {
+							"Schema": "dbo",
+							"TableName": {
+								"value": "@variables('transaction_type')",
+								"type": "Expression"
+							}
+						}
+					},
+					"firstRowOnly": true
+				}
+			},
+			{
+				"name": "For Each Page of 5000",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Get Total Rows",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@range(0,add(div(sub(int(activity('Get Total Rows').output.firstRow.totalRows),mod(int(activity('Get Total Rows').output.firstRow.totalRows),5000)),5000),1))",
+						"type": "Expression"
+					},
+					"isSequential": false,
+					"batchCount": 1,
+					"activities": [
+						{
+							"name": "Get Sets of 5000 IDs",
+							"type": "Lookup",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "SqlPoolSource",
+									"sqlReaderQuery": {
+										"value": "@concat('SELECT TOP 5000 internalId\nFROM (SELECT ROW_NUMBER() OVER(ORDER BY dateCreated DESC) AS RowNum, *\nFROM dbo.',variables('transaction_type'),' AS wo) AS data\nWHERE ',string(mul(item(),5000)),' < RowNum\nORDER BY data.dateCreated DESC')",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00"
+								},
+								"dataset": {
+									"referenceName": "NetsuiteData",
+									"type": "DatasetReference",
+									"parameters": {
+										"Schema": "dbo",
+										"TableName": {
+											"value": "@variables('transaction_type')",
+											"type": "Expression"
+										}
+									}
+								},
+								"firstRowOnly": false
+							}
+						},
+						{
+							"name": "Process Items",
+							"type": "ExecutePipeline",
+							"dependsOn": [
+								{
+									"activity": "Get Sets of 5000 IDs",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "Process Transaction Lines",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"item_array": {
+										"value": "@activity('Get Sets of 5000 IDs').output.value",
+										"type": "Expression"
+									},
+									"account_id": {
+										"value": "@pipeline().parameters.account_id",
+										"type": "Expression"
+									},
+									"transaction_type": {
+										"value": "@variables('transaction_type')",
+										"type": "Expression"
+									},
+									"auth": {
+										"value": "@pipeline().parameters.auth",
+										"type": "Expression"
+									},
+									"refresh_token": {
+										"value": "@pipeline().parameters.refresh_token",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Set Transaction Type",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "transaction_type",
+					"value": "PurchaseOrder"
+				}
+			}
+		],
+		"parameters": {
+			"account_id": {
+				"type": "string",
+				"defaultValue": "3675944"
+			},
+			"auth": {
+				"type": "string",
+				"defaultValue": "YmE0YzUwZWRlMDk3NWI3MzA4NjMyNDA4NGRmYjA5N2ZlNjJjODg5YTAxMWNkNDAzYWEyOTM0MjQ2NmQ5NGM0MDoyNTk1NDQxODE2MjNjMmIzYzAxZDliNjMzOGE4NjI0ZGZjZjg0OTYwYTcwYzU5NTQ3ODZmZWEyNWM4MzhmMjY3"
+			},
+			"refresh_token": {
+				"type": "string",
+				"defaultValue": "eyJraWQiOiJjLjM2NzU5NDQuMjAyMS0xMC0wNF8wMC0wOC0xMiIsInR5cCI6IkpXVCIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiIzOzU3MzAiLCJhdWQiOlsiNzIyQzhBMjYtM0VCQi00N0FGLTlFQTUtOTBBMTcyNTU2OEU2OzM2NzU5NDQiLCJiYTRjNTBlZGUwOTc1YjczMDg2MzI0MDg0ZGZiMDk3ZmU2MmM4ODlhMDExY2Q0MDNhYTI5MzQyNDY2ZDk0YzQwIl0sInNjb3BlIjpbInJlc3RsZXRzIiwicmVzdF93ZWJzZXJ2aWNlcyJdLCJpc3MiOiJodHRwczpcL1wvc3lzdGVtLm5ldHN1aXRlLmNvbSIsIm9pdCI6MTYzNTQyMzYyNiwiZXhwIjoxNjM2MDI4NDI2LCJpYXQiOjE2MzU0MjM2MjYsImp0aSI6IjM2NzU5NDQuci1hLjFmNDk3MGY4LTM5MTUtNDVlMS1hNDY3LTA5ZWQzYTk3MjFhYl8xNjM1NDIzNjI2OTkxLjAifQ.gUydUvqDglVjO-FGb21u9YqAlDoF7gIvLp2cta0wvUYT4Z3PTvBV_4xQoChNDG8o5Ha0Ht7y8_iqvBLWVhs74FdOSX1qQaf-P7OSPGOYELFobZpncNBe4fmMQQEonu8w2iDmp1_GriRkqkTxT3ASnWQDo3xM-zF15HDKfkn4XDQxj1d6kdVaiVAKdoC72rEXmiKAjs9MF6KmfoC06KlaL1xMXnrzKppju5BjQbdJYEOYdTv9MMIISUCEnMPewaruLa09pfoimb28LHkYVg4Pd6IL3UFV34zAAEf7ekcsGsESb80H37H8AVAxK2dgZ_pSJW0lhWQhB7xd5H9RYiHZxKvbJ3bl1nhpMqN6_UJi6sdEF4_zHPq8Y_DIWN6wTE_mFc7hgFH1CF6hYzzyORU3t3eNVPZ0tBQq7789qmgpVI5eI78oMtCUlqHqJt2tJRaeYcpGGHqN18Q3Bo0yCYYMri2bMpKZnuo66JrJ7Qfu7csuAAYhNUnYtaiZa25areK3WyhBnlZxfijmZvMtFqWRGhaTILiw41hWVSmLByZV75yhYu9wZxycI-V3Kwv9OvraCeOtnj8SZVA7LyyQejUVj7kwKmknkQfUxKgYSboxmuwcp38X2yhIFOpaDB8WTff53ub4f2ymf7B_5ux4dkytdBPHX9_R0C1k5KAcCYWm6fU"
+			}
+		},
+		"variables": {
+			"transaction_type": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "HTM/Transaction Lines"
+		},
+		"annotations": [],
+		"lastPublishTime": "2021-11-12T20:33:19Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
+}

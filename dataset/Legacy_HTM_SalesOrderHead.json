@@ -1,0 +1,16 @@
+{
+	"name": "Legacy_HTM_SalesOrderHead",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ModineerTableStorage",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureTable",
+		"schema": [],
+		"typeProperties": {
+			"tableName": "LHTMSoHead"
+		}
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}

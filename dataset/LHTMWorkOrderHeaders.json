@@ -1,0 +1,16 @@
+{
+	"name": "LHTMWorkOrderHeaders",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ModineerTableStorage",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureTable",
+		"schema": [],
+		"typeProperties": {
+			"tableName": "LHTMWorkOrderHeaders"
+		}
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}

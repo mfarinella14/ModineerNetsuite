@@ -1,0 +1,259 @@
+{
+	"name": "htmSalesOrderHeader",
+	"properties": {
+		"annotations": [],
+		"type": "SqlPoolTable",
+		"schema": [
+			{
+				"name": "abbrevtype",
+				"type": "nvarchar"
+			},
+			{
+				"name": "actualshipdate",
+				"type": "date"
+			},
+			{
+				"name": "balsegstatus",
+				"type": "bit"
+			},
+			{
+				"name": "billingaddress",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "billingstatus",
+				"type": "bit"
+			},
+			{
+				"name": "closedate",
+				"type": "date"
+			},
+			{
+				"name": "createdby",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "createddate",
+				"type": "date"
+			},
+			{
+				"name": "currency",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "custbodyht_asaporder_bodyfield",
+				"type": "bit"
+			},
+			{
+				"name": "custbodyht_boltobeprinted_tranbdy",
+				"type": "bit"
+			},
+			{
+				"name": "custbodyht_confirmto",
+				"type": "nvarchar"
+			},
+			{
+				"name": "custbodyht_customerscustomerpo_bdfield",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "custbodyht_ishistoricaltransaction",
+				"type": "bit"
+			},
+			{
+				"name": "custbodyht_numofshiplabelstoprint",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "custbodyht_ordersfulyscheduled_tranbdy",
+				"type": "bit"
+			},
+			{
+				"name": "custbodyht_shipper",
+				"type": "nvarchar"
+			},
+			{
+				"name": "custbodyhtfreightchargepreferences",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "custbodyhthaschangeorders",
+				"type": "bit"
+			},
+			{
+				"name": "custbodyhtproductiondate",
+				"type": "date"
+			},
+			{
+				"name": "daysopen",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "email",
+				"type": "nvarchar"
+			},
+			{
+				"name": "entity",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "exchangerate",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "fax",
+				"type": "nvarchar"
+			},
+			{
+				"name": "foreigntotal",
+				"type": "decimal",
+				"precision": 25,
+				"scale": 4
+			},
+			{
+				"name": "id",
+				"type": "smallint",
+				"precision": 5
+			},
+			{
+				"name": "includeinforecast",
+				"type": "bit"
+			},
+			{
+				"name": "isfinchrg",
+				"type": "bit"
+			},
+			{
+				"name": "isreversal",
+				"type": "bit"
+			},
+			{
+				"name": "lastmodifiedby",
+				"type": "smallint",
+				"precision": 5
+			},
+			{
+				"name": "lastmodifieddate",
+				"type": "date"
+			},
+			{
+				"name": "memo",
+				"type": "nvarchar"
+			},
+			{
+				"name": "nexus",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "number",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "ordpicked",
+				"type": "bit"
+			},
+			{
+				"name": "paymenthold",
+				"type": "bit"
+			},
+			{
+				"name": "posting",
+				"type": "bit"
+			},
+			{
+				"name": "printedpickingticket",
+				"type": "bit"
+			},
+			{
+				"name": "recordtype",
+				"type": "nvarchar"
+			},
+			{
+				"name": "shipcomplete",
+				"type": "bit"
+			},
+			{
+				"name": "shipdate",
+				"type": "date"
+			},
+			{
+				"name": "shippingaddress",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "source",
+				"type": "nvarchar"
+			},
+			{
+				"name": "status",
+				"type": "char"
+			},
+			{
+				"name": "terms",
+				"type": "smallint",
+				"precision": 5
+			},
+			{
+				"name": "trandate",
+				"type": "date"
+			},
+			{
+				"name": "trandisplayname",
+				"type": "nvarchar"
+			},
+			{
+				"name": "tranid",
+				"type": "nvarchar"
+			},
+			{
+				"name": "transactionnumber",
+				"type": "nvarchar"
+			},
+			{
+				"name": "type",
+				"type": "nvarchar"
+			},
+			{
+				"name": "typebaseddocumentnumber",
+				"type": "nvarchar"
+			},
+			{
+				"name": "userevenuearrangement",
+				"type": "bit"
+			},
+			{
+				"name": "visibletocustomer",
+				"type": "bit"
+			},
+			{
+				"name": "void",
+				"type": "bit"
+			},
+			{
+				"name": "voided",
+				"type": "bit"
+			}
+		],
+		"typeProperties": {
+			"schema": "htm",
+			"table": "SalesOrderHeader"
+		},
+		"sqlPool": {
+			"referenceName": "NetsuiteData",
+			"type": "SqlPoolReference"
+		}
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}

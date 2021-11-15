@@ -1,0 +1,24 @@
+{
+	"name": "Legacy_HTM_Terms",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "modineerworkspace-WorkspaceDefaultStorage",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": {
+					"value": "@concat('terms-',guid())",
+					"type": "Expression"
+				},
+				"folderPath": "legacy-htm/terms",
+				"fileSystem": "unified-data-cluster"
+			}
+		},
+		"schema": {}
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}

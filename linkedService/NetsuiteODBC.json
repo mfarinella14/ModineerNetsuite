@@ -1,0 +1,22 @@
+{
+	"name": "NetsuiteODBC",
+	"type": "Microsoft.Synapse/workspaces/linkedservices",
+	"properties": {
+		"description": "64 bit driver installed on svm02eset001",
+		"annotations": [],
+		"type": "Odbc",
+		"typeProperties": {
+			"connectionString": {
+				"type": "SecureString",
+				"value": "**********"
+			},
+			"authenticationType": "Basic",
+			"userName": "mfarinella@modineer.com",
+			"encryptedCredential": "eyJDcmVkZW50aWFsSWQiOiI0NzBmYzgxYS0zMjdlLTRiODYtYmVlYS01NTM3ZDlkZDU0ODQiLCJWZXJzaW9uIjoiMi4wIiwiQ2xhc3NUeXBlIjoiTWljcm9zb2Z0LkRhdGFQcm94eS5Db3JlLkludGVyU2VydmljZURhdGFDb250cmFjdC5DcmVkZW50aWFsU1UwNkNZMTQifQ=="
+		},
+		"connectVia": {
+			"referenceName": "GloviaServerIntegrationRuntime",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

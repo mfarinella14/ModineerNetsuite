@@ -1,0 +1,76 @@
+{
+	"name": "SalesOrderCommonDatasetJSON",
+	"properties": {
+		"description": "Connection to your Azure Data Lake Store",
+		"linkedServiceName": {
+			"referenceName": "modineerworkspace-WorkspaceDefaultStorage",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"Container": {
+				"type": "string",
+				"defaultValue": "unified-data-cluster"
+			},
+			"Directory": {
+				"type": "string",
+				"defaultValue": "sales-order-data"
+			}
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "HTMSalesOrders.json",
+				"folderPath": {
+					"value": "@dataset().Directory",
+					"type": "Expression"
+				},
+				"fileSystem": {
+					"value": "@dataset().Container",
+					"type": "Expression"
+				}
+			},
+			"encodingName": "UTF-8"
+		},
+		"schema": {
+			"type": "object",
+			"properties": {
+				"subsidiary": {
+					"type": "string"
+				},
+				"transNumber": {
+					"type": "string"
+				},
+				"customer": {
+					"type": "string"
+				},
+				"tranDate": {
+					"type": "string"
+				},
+				"poNum": {
+					"type": "string"
+				},
+				"shipComplete": {
+					"type": "boolean"
+				},
+				"requestedShipDate": {
+					"type": "string"
+				},
+				"actualShipDate": {
+					"type": "string"
+				},
+				"item": {
+					"type": "string"
+				},
+				"amount": {
+					"type": "string"
+				},
+				"quantity": {
+					"type": "string"
+				}
+			}
+		}
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}

@@ -1,0 +1,33 @@
+{
+	"name": "HTM_Netsuite_SuiteQL",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "Netsuite SuiteQL",
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"accountid": {
+					"value": "@dataset().account_id",
+					"type": "Expression"
+				}
+			}
+		},
+		"parameters": {
+			"account_id": {
+				"type": "string"
+			},
+			"offset": {
+				"type": "int"
+			}
+		},
+		"annotations": [],
+		"type": "RestResource",
+		"typeProperties": {
+			"relativeUrl": {
+				"value": "@concat('?limit=1000&offset=',string(dataset().offset))",
+				"type": "Expression"
+			}
+		},
+		"schema": []
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}

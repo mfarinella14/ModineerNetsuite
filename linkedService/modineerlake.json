@@ -1,0 +1,11 @@
+{
+	"name": "modineerlake",
+	"type": "Microsoft.Synapse/workspaces/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "AzureBlobFS",
+		"typeProperties": {
+			"url": "https://modineerlake.dfs.core.windows.net/"
+		}
+	}
+}

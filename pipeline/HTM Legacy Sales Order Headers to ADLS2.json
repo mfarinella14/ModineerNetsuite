@@ -1,0 +1,1572 @@
+{
+	"name": "HTM Legacy Sales Order Headers to ADLS2",
+	"properties": {
+		"activities": [
+			{
+				"name": "Set Access Token",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Post Refresh Token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "access_token",
+					"value": {
+						"value": "@activity('Post Refresh Token').output.access_token",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Set Query String",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "query_string",
+					"value": "{\"q\": \"SELECT *  FROM Transaction WHERE recordtype LIKE 'salesorder' ORDER BY 'createddate'\"}"
+				}
+			},
+			{
+				"name": "Post Refresh Token",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Set Query String",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": true,
+					"secureInput": true
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"url": {
+						"value": "@concat('https://',pipeline().parameters.account_id,'.suitetalk.api.netsuite.com/services/rest/auth/oauth2/v1/token')",
+						"type": "Expression"
+					},
+					"connectVia": {
+						"referenceName": "AutoResolveIntegrationRuntime",
+						"type": "IntegrationRuntimeReference"
+					},
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/x-www-form-urlencoded",
+						"Authorization": {
+							"value": "@concat('Basic ', variables('auth'))",
+							"type": "Expression"
+						}
+					},
+					"body": {
+						"value": "@concat('grant_type=refresh_token&refresh_token=',variables('refresh_token'))",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "ForEach1",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Set Page Array",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@variables('pages')",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "JSON To Data Lake",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [
+								{
+									"name": "Source",
+									"value": "@{concat('?limit=1000&offset=',string(mul(item(),1000)))}"
+								},
+								{
+									"name": "Destination",
+									"value": "unified-data-cluster/legacy-htm/sales-order-headers/@{concat('sales-order-hed-',guid())}"
+								}
+							],
+							"typeProperties": {
+								"source": {
+									"type": "RestSource",
+									"httpRequestTimeout": "00:01:40",
+									"requestInterval": "00.00:00:00.010",
+									"requestMethod": "POST",
+									"requestBody": {
+										"value": "@{variables('query_string')}",
+										"type": "Expression"
+									},
+									"additionalHeaders": {
+										"Authorization": {
+											"value": "@concat('Bearer ',variables('access_token'))",
+											"type": "Expression"
+										},
+										"Content-Type": "application/json",
+										"Prefer": "transient"
+									}
+								},
+								"sink": {
+									"type": "JsonSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings",
+										"copyBehavior": "MergeFiles"
+									},
+									"formatSettings": {
+										"type": "JsonWriteSettings",
+										"filePattern": "setOfObjects"
+									},
+									"sqlWriterUseTableLock": false
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"mappings": [
+										{
+											"source": {
+												"path": "['accountnumber']"
+											},
+											"sink": {
+												"path": "$['accountnumber']"
+											}
+										},
+										{
+											"source": {
+												"path": "['addressbook']"
+											},
+											"sink": {
+												"path": "$['addressbook']"
+											}
+										},
+										{
+											"source": {
+												"path": "['alcoholrecipienttype']"
+											},
+											"sink": {
+												"path": "$['alcoholrecipienttype']"
+											}
+										},
+										{
+											"source": {
+												"path": "['altemail']"
+											},
+											"sink": {
+												"path": "$['altemail']"
+											}
+										},
+										{
+											"source": {
+												"path": "['altname']"
+											},
+											"sink": {
+												"path": "$['altname']"
+											}
+										},
+										{
+											"source": {
+												"path": "['altphone']"
+											},
+											"sink": {
+												"path": "$['altphone']"
+											}
+										},
+										{
+											"source": {
+												"path": "['balancesearch']"
+											},
+											"sink": {
+												"path": "$['balancesearch']"
+											}
+										},
+										{
+											"source": {
+												"path": "['billingratecard']"
+											},
+											"sink": {
+												"path": "$['billingratecard']"
+											}
+										},
+										{
+											"source": {
+												"path": "['bulkmerge']"
+											},
+											"sink": {
+												"path": "$['bulkmerge']"
+											}
+										},
+										{
+											"source": {
+												"path": "['buyingreason']"
+											},
+											"sink": {
+												"path": "$['buyingreason']"
+											}
+										},
+										{
+											"source": {
+												"path": "['buyingtimeframe']"
+											},
+											"sink": {
+												"path": "$['buyingtimeframe']"
+											}
+										},
+										{
+											"source": {
+												"path": "['category']"
+											},
+											"sink": {
+												"path": "$['category']"
+											}
+										},
+										{
+											"source": {
+												"path": "['comments']"
+											},
+											"sink": {
+												"path": "$['comments']"
+											}
+										},
+										{
+											"source": {
+												"path": "['companyname']"
+											},
+											"sink": {
+												"path": "$['companyname']"
+											}
+										},
+										{
+											"source": {
+												"path": "['contact']"
+											},
+											"sink": {
+												"path": "$['contact']"
+											}
+										},
+										{
+											"source": {
+												"path": "['contactlist']"
+											},
+											"sink": {
+												"path": "$['contactlist']"
+											}
+										},
+										{
+											"source": {
+												"path": "['contactroles']"
+											},
+											"sink": {
+												"path": "$['contactroles']"
+											}
+										},
+										{
+											"source": {
+												"path": "['creditcards']"
+											},
+											"sink": {
+												"path": "$['creditcards']"
+											}
+										},
+										{
+											"source": {
+												"path": "['creditholdoverride']"
+											},
+											"sink": {
+												"path": "$['creditholdoverride']"
+											}
+										},
+										{
+											"source": {
+												"path": "['creditlimit']"
+											},
+											"sink": {
+												"path": "$['creditlimit']"
+											}
+										},
+										{
+											"source": {
+												"path": "['currency']"
+											},
+											"sink": {
+												"path": "$['currency']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentity1']"
+											},
+											"sink": {
+												"path": "$['custentity1']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentity2']"
+											},
+											"sink": {
+												"path": "$['custentity2']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentity_2663_customer_refund']"
+											},
+											"sink": {
+												"path": "$['custentity_2663_customer_refund']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentity_2663_direct_debit']"
+											},
+											"sink": {
+												"path": "$['custentity_2663_direct_debit']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentity_2663_email_address_notif']"
+											},
+											"sink": {
+												"path": "$['custentity_2663_email_address_notif']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentity_9572_custref_file_format']"
+											},
+											"sink": {
+												"path": "$['custentity_9572_custref_file_format']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentity_9572_dd_file_format']"
+											},
+											"sink": {
+												"path": "$['custentity_9572_dd_file_format']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentity_9572_ddcust_entitybank_sub']"
+											},
+											"sink": {
+												"path": "$['custentity_9572_ddcust_entitybank_sub']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentity_9572_ddcust_entitybnkformat']"
+											},
+											"sink": {
+												"path": "$['custentity_9572_ddcust_entitybnkformat']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentity_9572_refcust_entitybnkformat']"
+											},
+											"sink": {
+												"path": "$['custentity_9572_refcust_entitybnkformat']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentity_9572_refundcust_entitybnk_sub']"
+											},
+											"sink": {
+												"path": "$['custentity_9572_refundcust_entitybnk_sub']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentity_9997_dd_file_format']"
+											},
+											"sink": {
+												"path": "$['custentity_9997_dd_file_format']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentity_atlas_cpr_cuscomrate']"
+											},
+											"sink": {
+												"path": "$['custentity_atlas_cpr_cuscomrate']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentity_date_lsa']"
+											},
+											"sink": {
+												"path": "$['custentity_date_lsa']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentity_esc_annual_revenue']"
+											},
+											"sink": {
+												"path": "$['custentity_esc_annual_revenue']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentity_esc_industry']"
+											},
+											"sink": {
+												"path": "$['custentity_esc_industry']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentity_esc_no_of_employees']"
+											},
+											"sink": {
+												"path": "$['custentity_esc_no_of_employees']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentity_link_lsa']"
+											},
+											"sink": {
+												"path": "$['custentity_link_lsa']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentity_link_name_lsa']"
+											},
+											"sink": {
+												"path": "$['custentity_link_name_lsa']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentity_marcredithold']"
+											},
+											"sink": {
+												"path": "$['custentity_marcredithold']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentity_mod_corporatecust']"
+											},
+											"sink": {
+												"path": "$['custentity_mod_corporatecust']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentity_mod_customer_class']"
+											},
+											"sink": {
+												"path": "$['custentity_mod_customer_class']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentity_modcredithold']"
+											},
+											"sink": {
+												"path": "$['custentity_modcredithold']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentity_naw_trans_need_approval']"
+											},
+											"sink": {
+												"path": "$['custentity_naw_trans_need_approval']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentity_oldhtminternalid']"
+											},
+											"sink": {
+												"path": "$['custentity_oldhtminternalid']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentity_pri_bpa_cust_sync_override']"
+											},
+											"sink": {
+												"path": "$['custentity_pri_bpa_cust_sync_override']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentity_pri_bpa_late_inv_email_sent']"
+											},
+											"sink": {
+												"path": "$['custentity_pri_bpa_late_inv_email_sent']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentity_pri_bpa_pkg_shp_carrier']"
+											},
+											"sink": {
+												"path": "$['custentity_pri_bpa_pkg_shp_carrier']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentity_pri_bpa_pkg_shp_services']"
+											},
+											"sink": {
+												"path": "$['custentity_pri_bpa_pkg_shp_services']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentity_pri_bpa_send_statement']"
+											},
+											"sink": {
+												"path": "$['custentity_pri_bpa_send_statement']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentity_sales_tax_exmpt_exp_date']"
+											},
+											"sink": {
+												"path": "$['custentity_sales_tax_exmpt_exp_date']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentity_wmsse_asn_required']"
+											},
+											"sink": {
+												"path": "$['custentity_wmsse_asn_required']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentityht_3rdpartybillingaddress1']"
+											},
+											"sink": {
+												"path": "$['custentityht_3rdpartybillingaddress1']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentityht_3rdpartybillingaddress2']"
+											},
+											"sink": {
+												"path": "$['custentityht_3rdpartybillingaddress2']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentityht_3rdpartybillingcity']"
+											},
+											"sink": {
+												"path": "$['custentityht_3rdpartybillingcity']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentityht_3rdpartybillingcountry']"
+											},
+											"sink": {
+												"path": "$['custentityht_3rdpartybillingcountry']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentityht_3rdpartybillingstate']"
+											},
+											"sink": {
+												"path": "$['custentityht_3rdpartybillingstate']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentityht_3rdpartybillingzip']"
+											},
+											"sink": {
+												"path": "$['custentityht_3rdpartybillingzip']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentityht_additionalinvoiceemails']"
+											},
+											"sink": {
+												"path": "$['custentityht_additionalinvoiceemails']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentityht_alertforquality']"
+											},
+											"sink": {
+												"path": "$['custentityht_alertforquality']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentityht_alertmsgforquality']"
+											},
+											"sink": {
+												"path": "$['custentityht_alertmsgforquality']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentityht_automotivecustomer']"
+											},
+											"sink": {
+												"path": "$['custentityht_automotivecustomer']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentityht_barcode']"
+											},
+											"sink": {
+												"path": "$['custentityht_barcode']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentityht_callbeforeshipping_entfld']"
+											},
+											"sink": {
+												"path": "$['custentityht_callbeforeshipping_entfld']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentityht_certsrequired']"
+											},
+											"sink": {
+												"path": "$['custentityht_certsrequired']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentityht_checkbook']"
+											},
+											"sink": {
+												"path": "$['custentityht_checkbook']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentityht_creditemail']"
+											},
+											"sink": {
+												"path": "$['custentityht_creditemail']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentityht_lastdatecontact']"
+											},
+											"sink": {
+												"path": "$['custentityht_lastdatecontact']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentityht_leadnotes']"
+											},
+											"sink": {
+												"path": "$['custentityht_leadnotes']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentityht_rateclass']"
+											},
+											"sink": {
+												"path": "$['custentityht_rateclass']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentityht_requiresheattreatedskid']"
+											},
+											"sink": {
+												"path": "$['custentityht_requiresheattreatedskid']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentityht_shipcomplete']"
+											},
+											"sink": {
+												"path": "$['custentityht_shipcomplete']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentityht_shipper']"
+											},
+											"sink": {
+												"path": "$['custentityht_shipper']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentityht_shipperaddresslink']"
+											},
+											"sink": {
+												"path": "$['custentityht_shipperaddresslink']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentityht_shippercomments']"
+											},
+											"sink": {
+												"path": "$['custentityht_shippercomments']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentityht_skidquantitygroup']"
+											},
+											"sink": {
+												"path": "$['custentityht_skidquantitygroup']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentityhtcustomeracceptedpricing']"
+											},
+											"sink": {
+												"path": "$['custentityhtcustomeracceptedpricing']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentityhtcustomerprioritylevel']"
+											},
+											"sink": {
+												"path": "$['custentityhtcustomerprioritylevel']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentityhtfreightchargepreferences']"
+											},
+											"sink": {
+												"path": "$['custentityhtfreightchargepreferences']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentityhtshipperemail']"
+											},
+											"sink": {
+												"path": "$['custentityhtshipperemail']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentityhtshippername']"
+											},
+											"sink": {
+												"path": "$['custentityhtshippername']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentityhtshipperphone']"
+											},
+											"sink": {
+												"path": "$['custentityhtshipperphone']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentityhtshortcustomername']"
+											},
+											"sink": {
+												"path": "$['custentityhtshortcustomername']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentityhtspecialpackaging']"
+											},
+											"sink": {
+												"path": "$['custentityhtspecialpackaging']"
+											}
+										},
+										{
+											"source": {
+												"path": "['custentityhtupsnumber']"
+											},
+											"sink": {
+												"path": "$['custentityhtupsnumber']"
+											}
+										},
+										{
+											"source": {
+												"path": "['datecreated']"
+											},
+											"sink": {
+												"path": "$['datecreated']"
+											}
+										},
+										{
+											"source": {
+												"path": "['defaultallocationstrategy']"
+											},
+											"sink": {
+												"path": "$['defaultallocationstrategy']"
+											}
+										},
+										{
+											"source": {
+												"path": "['defaultbankaccount']"
+											},
+											"sink": {
+												"path": "$['defaultbankaccount']"
+											}
+										},
+										{
+											"source": {
+												"path": "['defaultbillingaddress']"
+											},
+											"sink": {
+												"path": "$['defaultbillingaddress']"
+											}
+										},
+										{
+											"source": {
+												"path": "['defaultorderpriority']"
+											},
+											"sink": {
+												"path": "$['defaultorderpriority']"
+											}
+										},
+										{
+											"source": {
+												"path": "['defaultshippingaddress']"
+											},
+											"sink": {
+												"path": "$['defaultshippingaddress']"
+											}
+										},
+										{
+											"source": {
+												"path": "['displaysymbol']"
+											},
+											"sink": {
+												"path": "$['displaysymbol']"
+											}
+										},
+										{
+											"source": {
+												"path": "['duplicate']"
+											},
+											"sink": {
+												"path": "$['duplicate']"
+											}
+										},
+										{
+											"source": {
+												"path": "['email']"
+											},
+											"sink": {
+												"path": "$['email']"
+											}
+										},
+										{
+											"source": {
+												"path": "['emailpreference']"
+											},
+											"sink": {
+												"path": "$['emailpreference']"
+											}
+										},
+										{
+											"source": {
+												"path": "['emailtransactions']"
+											},
+											"sink": {
+												"path": "$['emailtransactions']"
+											}
+										},
+										{
+											"source": {
+												"path": "['enddate']"
+											},
+											"sink": {
+												"path": "$['enddate']"
+											}
+										},
+										{
+											"source": {
+												"path": "['entityid']"
+											},
+											"sink": {
+												"path": "$['entityid']"
+											}
+										},
+										{
+											"source": {
+												"path": "['entitynumber']"
+											},
+											"sink": {
+												"path": "$['entitynumber']"
+											}
+										},
+										{
+											"source": {
+												"path": "['entitystatus']"
+											},
+											"sink": {
+												"path": "$['entitystatus']"
+											}
+										},
+										{
+											"source": {
+												"path": "['entitytitle']"
+											},
+											"sink": {
+												"path": "$['entitytitle']"
+											}
+										},
+										{
+											"source": {
+												"path": "['estimatedbudget']"
+											},
+											"sink": {
+												"path": "$['estimatedbudget']"
+											}
+										},
+										{
+											"source": {
+												"path": "['externalid']"
+											},
+											"sink": {
+												"path": "$['externalid']"
+											}
+										},
+										{
+											"source": {
+												"path": "['fax']"
+											},
+											"sink": {
+												"path": "$['fax']"
+											}
+										},
+										{
+											"source": {
+												"path": "['faxtransactions']"
+											},
+											"sink": {
+												"path": "$['faxtransactions']"
+											}
+										},
+										{
+											"source": {
+												"path": "['firstname']"
+											},
+											"sink": {
+												"path": "$['firstname']"
+											}
+										},
+										{
+											"source": {
+												"path": "['firstorderdate']"
+											},
+											"sink": {
+												"path": "$['firstorderdate']"
+											}
+										},
+										{
+											"source": {
+												"path": "['firstsaledate']"
+											},
+											"sink": {
+												"path": "$['firstsaledate']"
+											}
+										},
+										{
+											"source": {
+												"path": "['giveaccess']"
+											},
+											"sink": {
+												"path": "$['giveaccess']"
+											}
+										},
+										{
+											"source": {
+												"path": "['grouppricing']"
+											},
+											"sink": {
+												"path": "$['grouppricing']"
+											}
+										},
+										{
+											"source": {
+												"path": "['homephone']"
+											},
+											"sink": {
+												"path": "$['homephone']"
+											}
+										},
+										{
+											"source": {
+												"path": "['id']"
+											},
+											"sink": {
+												"path": "$['id']"
+											}
+										},
+										{
+											"source": {
+												"path": "['isbudgetapproved']"
+											},
+											"sink": {
+												"path": "$['isbudgetapproved']"
+											}
+										},
+										{
+											"source": {
+												"path": "['isinactive']"
+											},
+											"sink": {
+												"path": "$['isinactive']"
+											}
+										},
+										{
+											"source": {
+												"path": "['isperson']"
+											},
+											"sink": {
+												"path": "$['isperson']"
+											}
+										},
+										{
+											"source": {
+												"path": "['itempricing']"
+											},
+											"sink": {
+												"path": "$['itempricing']"
+											}
+										},
+										{
+											"source": {
+												"path": "['lastmodifieddate']"
+											},
+											"sink": {
+												"path": "$['lastmodifieddate']"
+											}
+										},
+										{
+											"source": {
+												"path": "['lastname']"
+											},
+											"sink": {
+												"path": "$['lastname']"
+											}
+										},
+										{
+											"source": {
+												"path": "['lastorderdate']"
+											},
+											"sink": {
+												"path": "$['lastorderdate']"
+											}
+										},
+										{
+											"source": {
+												"path": "['lastsaledate']"
+											},
+											"sink": {
+												"path": "$['lastsaledate']"
+											}
+										},
+										{
+											"source": {
+												"path": "['leadsource']"
+											},
+											"sink": {
+												"path": "$['leadsource']"
+											}
+										},
+										{
+											"source": {
+												"path": "['middlename']"
+											},
+											"sink": {
+												"path": "$['middlename']"
+											}
+										},
+										{
+											"source": {
+												"path": "['mobilephone']"
+											},
+											"sink": {
+												"path": "$['mobilephone']"
+											}
+										},
+										{
+											"source": {
+												"path": "['negativenumberformat']"
+											},
+											"sink": {
+												"path": "$['negativenumberformat']"
+											}
+										},
+										{
+											"source": {
+												"path": "['numberformat']"
+											},
+											"sink": {
+												"path": "$['numberformat']"
+											}
+										},
+										{
+											"source": {
+												"path": "['oncredithold']"
+											},
+											"sink": {
+												"path": "$['oncredithold']"
+											}
+										},
+										{
+											"source": {
+												"path": "['overduebalancesearch']"
+											},
+											"sink": {
+												"path": "$['overduebalancesearch']"
+											}
+										},
+										{
+											"source": {
+												"path": "['overridecurrencyformat']"
+											},
+											"sink": {
+												"path": "$['overridecurrencyformat']"
+											}
+										},
+										{
+											"source": {
+												"path": "['parent']"
+											},
+											"sink": {
+												"path": "$['parent']"
+											}
+										},
+										{
+											"source": {
+												"path": "['partner']"
+											},
+											"sink": {
+												"path": "$['partner']"
+											}
+										},
+										{
+											"source": {
+												"path": "['paymentinstruments']"
+											},
+											"sink": {
+												"path": "$['paymentinstruments']"
+											}
+										},
+										{
+											"source": {
+												"path": "['phone']"
+											},
+											"sink": {
+												"path": "$['phone']"
+											}
+										},
+										{
+											"source": {
+												"path": "['pricelevel']"
+											},
+											"sink": {
+												"path": "$['pricelevel']"
+											}
+										},
+										{
+											"source": {
+												"path": "['printoncheckas']"
+											},
+											"sink": {
+												"path": "$['printoncheckas']"
+											}
+										},
+										{
+											"source": {
+												"path": "['printtransactions']"
+											},
+											"sink": {
+												"path": "$['printtransactions']"
+											}
+										},
+										{
+											"source": {
+												"path": "['probability']"
+											},
+											"sink": {
+												"path": "$['probability']"
+											}
+										},
+										{
+											"source": {
+												"path": "['receivablesaccount']"
+											},
+											"sink": {
+												"path": "$['receivablesaccount']"
+											}
+										},
+										{
+											"source": {
+												"path": "['reminderdays']"
+											},
+											"sink": {
+												"path": "$['reminderdays']"
+											}
+										},
+										{
+											"source": {
+												"path": "['resalenumber']"
+											},
+											"sink": {
+												"path": "$['resalenumber']"
+											}
+										},
+										{
+											"source": {
+												"path": "['salesreadiness']"
+											},
+											"sink": {
+												"path": "$['salesreadiness']"
+											}
+										},
+										{
+											"source": {
+												"path": "['salesrep']"
+											},
+											"sink": {
+												"path": "$['salesrep']"
+											}
+										},
+										{
+											"source": {
+												"path": "['salesteam']"
+											},
+											"sink": {
+												"path": "$['salesteam']"
+											}
+										},
+										{
+											"source": {
+												"path": "['salutation']"
+											},
+											"sink": {
+												"path": "$['salutation']"
+											}
+										},
+										{
+											"source": {
+												"path": "['searchstage']"
+											},
+											"sink": {
+												"path": "$['searchstage']"
+											}
+										},
+										{
+											"source": {
+												"path": "['shipcomplete']"
+											},
+											"sink": {
+												"path": "$['shipcomplete']"
+											}
+										},
+										{
+											"source": {
+												"path": "['shippingcarrier']"
+											},
+											"sink": {
+												"path": "$['shippingcarrier']"
+											}
+										},
+										{
+											"source": {
+												"path": "['shippingitem']"
+											},
+											"sink": {
+												"path": "$['shippingitem']"
+											}
+										},
+										{
+											"source": {
+												"path": "['startdate']"
+											},
+											"sink": {
+												"path": "$['startdate']"
+											}
+										},
+										{
+											"source": {
+												"path": "['symbolplacement']"
+											},
+											"sink": {
+												"path": "$['symbolplacement']"
+											}
+										},
+										{
+											"source": {
+												"path": "['terms']"
+											},
+											"sink": {
+												"path": "$['terms']"
+											}
+										},
+										{
+											"source": {
+												"path": "['territory']"
+											},
+											"sink": {
+												"path": "$['territory']"
+											}
+										},
+										{
+											"source": {
+												"path": "['thirdpartyacct']"
+											},
+											"sink": {
+												"path": "$['thirdpartyacct']"
+											}
+										},
+										{
+											"source": {
+												"path": "['thirdpartycarrier']"
+											},
+											"sink": {
+												"path": "$['thirdpartycarrier']"
+											}
+										},
+										{
+											"source": {
+												"path": "['thirdpartycountry']"
+											},
+											"sink": {
+												"path": "$['thirdpartycountry']"
+											}
+										},
+										{
+											"source": {
+												"path": "['thirdpartyzipcode']"
+											},
+											"sink": {
+												"path": "$['thirdpartyzipcode']"
+											}
+										},
+										{
+											"source": {
+												"path": "['title']"
+											},
+											"sink": {
+												"path": "$['title']"
+											}
+										},
+										{
+											"source": {
+												"path": "['unbilledorderssearch']"
+											},
+											"sink": {
+												"path": "$['unbilledorderssearch']"
+											}
+										},
+										{
+											"source": {
+												"path": "['url']"
+											},
+											"sink": {
+												"path": "$['url']"
+											}
+										}
+									],
+									"collectionReference": "$['items']"
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "HTM_Netsuite_SuiteQL",
+									"type": "DatasetReference",
+									"parameters": {
+										"account_id": {
+											"value": "@pipeline().parameters.account_id",
+											"type": "Expression"
+										},
+										"offset": {
+											"value": "@mul(item(),1000)",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "HTMSalesOrderJsonADLS2",
+									"type": "DatasetReference"
+								}
+							]
+						}
+					]
+				}
+			},
+			{
+				"name": "Get Pages",
+				"description": "Makes a dummy REST call to get the total number of pages.",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Set Access Token",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": true,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"url": {
+						"value": "@concat('https://',pipeline().parameters.account_id,'.suitetalk.api.netsuite.com/services/rest/query/v1/suiteql')",
+						"type": "Expression"
+					},
+					"connectVia": {
+						"referenceName": "AutoResolveIntegrationRuntime",
+						"type": "IntegrationRuntimeReference"
+					},
+					"method": "POST",
+					"headers": {
+						"Authorization": {
+							"value": "@concat('Bearer ',variables('access_token'))",
+							"type": "Expression"
+						},
+						"Prefer": "transient",
+						"Content-Type": "application/json"
+					},
+					"body": {
+						"q": "SELECT  id FROM transaction WHERE recordtype LIKE 'salesorder'"
+					}
+				}
+			},
+			{
+				"name": "Set Page Array",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Get Pages",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "pages",
+					"value": {
+						"value": "@range(0,add(div(sub(int(activity('Get Pages').output.totalResults),mod(int(activity('Get Pages').output.totalResults),1000)),1000),1))",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"account_id": {
+				"type": "String",
+				"defaultValue": "3675944"
+			},
+			"code": {
+				"type": "String",
+				"defaultValue": "9c40e8439004c9b291e11da13263dcc29f839a2c4684bb6820ad4443c610cb57"
+			}
+		},
+		"variables": {
+			"access_token": {
+				"type": "String"
+			},
+			"refresh_token": {
+				"type": "String",
+				"defaultValue": "eyJraWQiOiJjLjM2NzU5NDQuMjAyMS0xMC0wNF8wMC0wOC0xMiIsInR5cCI6IkpXVCIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiIzOzU3MzAiLCJhdWQiOlsiRjE2QTczNUUtNUQ1Mi00RDFCLTk1QzUtMUU5MTdENUQwQzAzOzM2NzU5NDQiLCJkMGQxOTJlMmVhNmNkNjMyZjViNTc3NWE3N2RmODM1MWUxZjlhZjQ2M2Y5YmUyYmI1YzQzMTBhOTRiNmNhNmQyIl0sInNjb3BlIjpbInJlc3RsZXRzIiwicmVzdF93ZWJzZXJ2aWNlcyJdLCJpc3MiOiJodHRwczpcL1wvc3lzdGVtLm5ldHN1aXRlLmNvbSIsIm9pdCI6MTYzMzYzNzE0MSwiZXhwIjoxNjM0MjQxOTQxLCJpYXQiOjE2MzM2MzcxNDEsImp0aSI6IjM2NzU5NDQuci1hLjc2ZjExODEyLTFkOWMtNDkzZS1hNmJkLTE1NGJmOWI0YjFmMl8xNjMzNjM3MTQxMzgwLjAifQ.ZK2_AXfNEsu0pYusg0jJAR1DYukWomqf5BmrjzcDt76-tmFKlilDTBzhpp3Lzu3zC_YODv2i_ZsCJc-SqtjAJCuMEqk4ld3UlG1j_uXqteSdYukMQMfPdTAmF3XbQoSqMq0lwfDAMOGm-9uekN1SUgVbcF0jqhsN_pS-It1fJKHFW43LeeedqgVShkqBAcnOF86d2dS2L3tB-98lFuNx_FrMDDJ3gmM34OXKS604wvmffNivX7F1eZnoARbi9vLV0cZUjiL5mLi6riXfzW09JyrwihX9obfcv8vAVsOX7oViucjzP6TPIr02u95N43iUv5T3eV6tEmtm0o9iuSoV0e5iknlKEbk5__WnE0xIaBX2Gwgljhd2a3dly_L3EGfeU0Gra67LHJnDOvpEMqHNZvGr1NUhI_Z6oq05oSbbiP8in7oF2j1iSOkbFY-qoAW9u0pZ-VWSGVM6Ffa9S-5wjQQ0jFOZrMQkXcS0LOI1WQJBQbxNlbDotyRTrONrh8tP55KjZ2LkmsaY634F_l4gTg-HQF7VBaSoFynw6WdsflzhUD8yKGkx5byzCH3KPxKYw0ULMjz6jgKwClZ_Qh_6cNzDC-QnRlQr4XE6aydn8CUpMC9xE1POVjkLIq_ELA5yO3NqWwR1HgLWTrWI0fpt4IuyQ89Hthf9EWsmzOOl-BI"
+			},
+			"token_type": {
+				"type": "String"
+			},
+			"query_string": {
+				"type": "String"
+			},
+			"line_query_string": {
+				"type": "String"
+			},
+			"client_id_base64": {
+				"type": "String",
+				"defaultValue": "ZDBkMTkyZTJlYTZjZDYzMmY1YjU3NzVhNzdkZjgzNTFlMWY5YWY0NjNmOWJlMmJiNWM0MzEwYTk0YjZjYTZkMjoxNjJiYzljMDQ4MTViNGI3NzhkMDQ4ODEwZWVmOGI3NzZkZjQzYjA0Y2ViMGY3NWMxNzcxN2RiZTY4YmU2OWMy"
+			},
+			"client_id": {
+				"type": "String",
+				"defaultValue": "d0d192e2ea6cd632f5b5775a77df8351e1f9af463f9be2bb5c4310a94b6ca6d2"
+			},
+			"client_secret": {
+				"type": "String",
+				"defaultValue": "162bc9c04815b4b778d048810eef8b776df43b04ceb0f75c17717dbe68be69c2"
+			},
+			"auth": {
+				"type": "String",
+				"defaultValue": "ZDBkMTkyZTJlYTZjZDYzMmY1YjU3NzVhNzdkZjgzNTFlMWY5YWY0NjNmOWJlMmJiNWM0MzEwYTk0YjZjYTZkMjoxNjJiYzljMDQ4MTViNGI3NzhkMDQ4ODEwZWVmOGI3NzZkZjQzYjA0Y2ViMGY3NWMxNzcxN2RiZTY4YmU2OWMy"
+			},
+			"pages": {
+				"type": "Array"
+			}
+		},
+		"folder": {
+			"name": "HTM"
+		},
+		"annotations": [],
+		"lastPublishTime": "2021-10-20T16:17:06Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
+}

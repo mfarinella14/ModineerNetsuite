@@ -1,0 +1,20 @@
+{
+	"name": "Legacy_HTM_InventoryAdjustmentHead",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "modineerworkspace-WorkspaceDefaultStorage",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": "legacy-htm/inventory-adjustment-headers",
+				"fileSystem": "unified-data-cluster"
+			}
+		},
+		"schema": {}
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}

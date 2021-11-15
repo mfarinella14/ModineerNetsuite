@@ -1,0 +1,13 @@
+{
+	"name": "NetsuiteODBCSource",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "NetsuiteODBC",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "OdbcTable",
+		"schema": []
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}

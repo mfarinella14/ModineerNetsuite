@@ -1,0 +1,12 @@
+{
+	"name": "Glovia Reports",
+	"type": "Microsoft.Synapse/workspaces/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "PowerBIWorkspace",
+		"typeProperties": {
+			"workspaceID": "07766c8f-f1c7-4227-a8e4-05b81ad1d804",
+			"tenantID": "ea956f36-77a0-4634-9b11-803ca2beeac1"
+		}
+	}
+}

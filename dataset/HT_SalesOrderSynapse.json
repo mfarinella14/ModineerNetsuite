@@ -1,0 +1,26 @@
+{
+	"name": "HT_SalesOrderSynapse",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "HTM_NetSuite",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"limit": {
+				"type": "int",
+				"defaultValue": 1000
+			},
+			"offset": {
+				"type": "int",
+				"defaultValue": 0
+			}
+		},
+		"annotations": [],
+		"type": "RestResource",
+		"typeProperties": {
+			"relativeUrl": "/app/site/hosting/restlet.nl?script=811&deploy=1"
+		},
+		"schema": []
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}

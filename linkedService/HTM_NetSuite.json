@@ -1,0 +1,20 @@
+{
+	"name": "HTM_NetSuite",
+	"type": "Microsoft.Synapse/workspaces/linkedservices",
+	"properties": {
+		"description": "Service for HTM NetSuite",
+		"annotations": [],
+		"type": "RestService",
+		"typeProperties": {
+			"url": "https://3675944.restlets.api.netsuite.com",
+			"enableServerCertificateValidation": true,
+			"authenticationType": "Basic",
+			"userName": "228ec78c8e0232dce7bb92d461600c6f78ae03778e6e1aa272d5162312799e4a",
+			"encryptedCredential": "ew0KICAiVmVyc2lvbiI6ICIyMDE3LTExLTMwIiwNCiAgIlByb3RlY3Rpb25Nb2RlIjogIktleSIsDQogICJTZWNyZXRDb250ZW50VHlwZSI6ICJQbGFpbnRleHQiLA0KICAiQ3JlZGVudGlhbElkIjogIk1PRElORUVSV09SS1NQQUNFX2NmMWE3ODU5LTM2MjctNDJiYi05ZDE1LWM1YWI2YmExY2EyYyINCn0="
+		},
+		"connectVia": {
+			"referenceName": "AutoResolveIntegrationRuntime",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

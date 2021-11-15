@@ -1,0 +1,7 @@
+{
+	"name": "GloviaServerIntegrationRuntime",
+	"properties": {
+		"type": "SelfHosted",
+		"description": "Integration runtime for the Glovia Server.\nRuntime to connect the Netsuite ODBC to to synapse."
+	}
+}
