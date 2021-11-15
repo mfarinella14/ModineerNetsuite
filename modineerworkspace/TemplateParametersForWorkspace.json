@@ -1,0 +1,57 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"workspaceName": {
+			"value": "modineerworkspace"
+		},
+		"GloviaData_connectionString": {
+			"value": ""
+		},
+		"HTM_NetSuite_password": {
+			"value": ""
+		},
+		"Legacy HTM Netsuite Refresh Token_password": {
+			"value": ""
+		},
+		"ModineerSQLPool_connectionString": {
+			"value": ""
+		},
+		"ModineerTableStorage_connectionString": {
+			"value": ""
+		},
+		"NetsuiteODBC_connectionString": {
+			"value": ""
+		},
+		"NetsuiteODBC_password": {
+			"value": ""
+		},
+		"modineerworkspace-WorkspaceDefaultSqlServer_connectionString": {
+			"value": ""
+		},
+		"HTM_NetSuite_properties_typeProperties_url": {
+			"value": "https://3675944.restlets.api.netsuite.com"
+		},
+		"HTM_NetSuite_properties_typeProperties_userName": {
+			"value": "228ec78c8e0232dce7bb92d461600c6f78ae03778e6e1aa272d5162312799e4a"
+		},
+		"Legacy HTM Netsuite Refresh Token_properties_typeProperties_url": {
+			"value": "@{concat('https://',linkedService().account_id,'.suitetalk.api.netsuite.com/services/rest/auth/oauth2/v1/token')}"
+		},
+		"Legacy HTM Netsuite Refresh Token_properties_typeProperties_userName": {
+			"value": "d0d192e2ea6cd632f5b5775a77df8351e1f9af463f9be2bb5c4310a94b6ca6d2"
+		},
+		"Netsuite SuiteQL_properties_typeProperties_url": {
+			"value": "https://3675944.suitetalk.api.netsuite.com/services/rest/query/v1/suiteql"
+		},
+		"NetsuiteODBC_properties_typeProperties_userName": {
+			"value": "mfarinella@modineer.com"
+		},
+		"modineerlake_properties_typeProperties_url": {
+			"value": "https://modineerlake.dfs.core.windows.net/"
+		},
+		"modineerworkspace-WorkspaceDefaultStorage_properties_typeProperties_url": {
+			"value": "https://modineerlake.dfs.core.windows.net"
+		}
+	}
+}
