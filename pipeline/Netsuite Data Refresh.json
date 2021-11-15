@@ -1,0 +1,114 @@
+{
+	"name": "Netsuite Data Refresh",
+	"properties": {
+		"activities": [
+			{
+				"name": "Data Import Type",
+				"type": "Switch",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"on": {
+						"value": "@pipeline().parameters.item.ConnectionType",
+						"type": "Expression"
+					},
+					"cases": [
+						{
+							"value": "ODBC",
+							"activities": [
+								{
+									"name": "Modineer Netsuite ODBC Copy",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "OdbcSource",
+											"query": {
+												"value": "@pipeline().parameters.item.DataQuery",
+												"type": "Expression"
+											},
+											"queryTimeout": "02:00:00"
+										},
+										"sink": {
+											"type": "SqlDWSink",
+											"preCopyScript": {
+												"value": "@{concat('TRUNCATE TABLE ',pipeline().parameters.item.SchemaName,'.',pipeline().parameters.item.TableName)}",
+												"type": "Expression"
+											},
+											"sqlWriterUseTableLock": false,
+											"disableMetricsCollection": false
+										},
+										"enableStaging": false,
+										"translator": {
+											"type": "TabularTranslator",
+											"typeConversion": true,
+											"typeConversionSettings": {
+												"allowDataTruncation": true,
+												"treatBooleanAsNumber": false
+											}
+										}
+									},
+									"inputs": [
+										{
+											"referenceName": "NetsuiteODBCSource",
+											"type": "DatasetReference"
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "AzureSynapseDatabase",
+											"type": "DatasetReference",
+											"parameters": {
+												"TableName": {
+													"value": "@pipeline().parameters.item.TableName",
+													"type": "Expression"
+												},
+												"DbName": {
+													"value": "@pipeline().parameters.item.DbName",
+													"type": "Expression"
+												},
+												"SchemaName": {
+													"value": "@pipeline().parameters.item.SchemaName",
+													"type": "Expression"
+												}
+											}
+										}
+									]
+								}
+							]
+						}
+					],
+					"defaultActivities": [
+						{
+							"name": "Wait1",
+							"description": "This is a placeholder",
+							"type": "Wait",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"waitTimeInSeconds": 1
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"item": {
+				"type": "object"
+			}
+		},
+		"folder": {
+			"name": "Master Data/Slave Pipeline"
+		},
+		"annotations": []
+	}
+}
