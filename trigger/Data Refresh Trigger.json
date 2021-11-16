@@ -2,13 +2,20 @@
 	"name": "Data Refresh Trigger",
 	"properties": {
 		"annotations": [],
-		"runtimeState": "Stopped",
-		"pipelines": [],
+		"runtimeState": "Started",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "Data Refresh",
+					"type": "PipelineReference"
+				}
+			}
+		],
 		"type": "ScheduleTrigger",
 		"typeProperties": {
 			"recurrence": {
 				"frequency": "Minute",
-				"interval": 10,
+				"interval": 15,
 				"startTime": "2021-10-27T11:00:00",
 				"timeZone": "Eastern Standard Time"
 			}
