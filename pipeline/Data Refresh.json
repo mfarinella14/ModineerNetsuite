@@ -125,6 +125,20 @@
 												"typeProperties": {
 													"storedProcedureName": "[Config].[SetAsUpdating]",
 													"storedProcedureParameters": {
+														"interval": {
+															"value": {
+																"value": "@item().RefreshInterval",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"intervalQty": {
+															"value": {
+																"value": "@item().RefreshNumber",
+																"type": "Expression"
+															},
+															"type": "Int32"
+														},
 														"rowId": {
 															"value": {
 																"value": "@item().Id",
@@ -134,10 +148,10 @@
 														},
 														"SCN": {
 															"value": {
-																"value": "@activity('Get SCN Number').output.firstRow.SCNValue",
+																"value": "@item().TableMaxSCN",
 																"type": "Expression"
 															},
-															"type": "Double"
+															"type": "Int64"
 														}
 													}
 												}
@@ -165,7 +179,7 @@
 													"source": {
 														"type": "OracleSource",
 														"oracleReaderQuery": {
-															"value": "@SELECT * FROM \"item().SchemaName\".\"item().TableName\" WHERE ",
+															"value": "@SELECT * FROM \"item().SchemaName\".\"item().TableName\" WHERE MAX(ORA_ROWSCN) >= item().TableMaxSCN",
 															"type": "Expression"
 														},
 														"partitionOption": "None",
@@ -296,39 +310,6 @@
 												}
 											},
 											{
-												"name": "Set as Updating",
-												"type": "SqlPoolStoredProcedure",
-												"dependsOn": [],
-												"policy": {
-													"timeout": "7.00:00:00",
-													"retry": 0,
-													"retryIntervalInSeconds": 30,
-													"secureOutput": false,
-													"secureInput": false
-												},
-												"userProperties": [],
-												"sqlPool": {
-													"referenceName": "Modineer",
-													"type": "SqlPoolReference"
-												},
-												"typeProperties": {
-													"storedProcedureName": "[Config].[SetAsUpdating]",
-													"storedProcedureParameters": {
-														"rowId": {
-															"value": {
-																"value": "@item().Id",
-																"type": "Expression"
-															},
-															"type": "Int32"
-														},
-														"SCN": {
-															"value": "0",
-															"type": "Int64"
-														}
-													}
-												}
-											},
-											{
 												"name": "Set as Updated",
 												"type": "SqlPoolStoredProcedure",
 												"dependsOn": [
@@ -360,6 +341,53 @@
 																"type": "Expression"
 															},
 															"type": "Int32"
+														}
+													}
+												}
+											},
+											{
+												"name": "Set as Updating",
+												"type": "SqlPoolStoredProcedure",
+												"dependsOn": [],
+												"policy": {
+													"timeout": "7.00:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"sqlPool": {
+													"referenceName": "Modineer",
+													"type": "SqlPoolReference"
+												},
+												"typeProperties": {
+													"storedProcedureName": "[Config].[SetAsUpdating]",
+													"storedProcedureParameters": {
+														"interval": {
+															"value": {
+																"value": "@item().RefreshInterval",
+																"type": "Expression"
+															},
+															"type": "String"
+														},
+														"intervalQty": {
+															"value": {
+																"value": "@item().RefreshNumber",
+																"type": "Expression"
+															},
+															"type": "Int32"
+														},
+														"rowId": {
+															"value": {
+																"value": "@item().Id",
+																"type": "Expression"
+															},
+															"type": "Int32"
+														},
+														"SCN": {
+															"value": "0",
+															"type": "Int64"
 														}
 													}
 												}
