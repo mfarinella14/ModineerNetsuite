@@ -164,6 +164,10 @@
 												"typeProperties": {
 													"source": {
 														"type": "OracleSource",
+														"oracleReaderQuery": {
+															"value": "@SELECT * FROM \"item().SchemaName\".\"item().TableName\" WHERE ",
+															"type": "Expression"
+														},
 														"partitionOption": "None",
 														"queryTimeout": "02:00:00"
 													},
