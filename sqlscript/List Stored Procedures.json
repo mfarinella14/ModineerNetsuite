@@ -1,0 +1,20 @@
+{
+	"name": "List Stored Procedures",
+	"properties": {
+		"folder": {
+			"name": "General"
+		},
+		"content": {
+			"query": "SELECT \n  ROUTINE_SCHEMA,\n  ROUTINE_NAME\nFROM INFORMATION_SCHEMA.ROUTINES\nWHERE ROUTINE_TYPE = 'PROCEDURE';",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "Glovia",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
