@@ -347,6 +347,20 @@
 														"typeProperties": {
 															"storedProcedureName": "[Config].[SetAsUpdating]",
 															"storedProcedureParameters": {
+																"interval": {
+																	"value": {
+																		"value": "@item().RefreshInterval",
+																		"type": "Expression"
+																	},
+																	"type": "String"
+																},
+																"intervalQty": {
+																	"value": {
+																		"value": "@item().RefreshNumber",
+																		"type": "Expression"
+																	},
+																	"type": "Int32"
+																},
 																"rowId": {
 																	"value": {
 																		"value": "@item().Id",
@@ -356,10 +370,10 @@
 																},
 																"SCN": {
 																	"value": {
-																		"value": "@activity('Get SCN Number').output.firstRow.SCNValue",
+																		"value": "@item().TableMaxSCN",
 																		"type": "Expression"
 																	},
-																	"type": "Double"
+																	"type": "Int64"
 																}
 															}
 														}
@@ -386,6 +400,10 @@
 														"typeProperties": {
 															"source": {
 																"type": "OracleSource",
+																"oracleReaderQuery": {
+																	"value": "@SELECT * FROM \"item().SchemaName\".\"item().TableName\" WHERE MAX(ORA_ROWSCN) >= item().TableMaxSCN",
+																	"type": "Expression"
+																},
 																"partitionOption": "None",
 																"queryTimeout": "02:00:00"
 															},
@@ -514,39 +532,6 @@
 														}
 													},
 													{
-														"name": "Set as Updating",
-														"type": "SqlPoolStoredProcedure",
-														"dependsOn": [],
-														"policy": {
-															"timeout": "7.00:00:00",
-															"retry": 0,
-															"retryIntervalInSeconds": 30,
-															"secureOutput": false,
-															"secureInput": false
-														},
-														"userProperties": [],
-														"sqlPool": {
-															"referenceName": "Modineer",
-															"type": "SqlPoolReference"
-														},
-														"typeProperties": {
-															"storedProcedureName": "[Config].[SetAsUpdating]",
-															"storedProcedureParameters": {
-																"rowId": {
-																	"value": {
-																		"value": "@item().Id",
-																		"type": "Expression"
-																	},
-																	"type": "Int32"
-																},
-																"SCN": {
-																	"value": "0",
-																	"type": "Int64"
-																}
-															}
-														}
-													},
-													{
 														"name": "Set as Updated",
 														"type": "SqlPoolStoredProcedure",
 														"dependsOn": [
@@ -578,6 +563,53 @@
 																		"type": "Expression"
 																	},
 																	"type": "Int32"
+																}
+															}
+														}
+													},
+													{
+														"name": "Set as Updating",
+														"type": "SqlPoolStoredProcedure",
+														"dependsOn": [],
+														"policy": {
+															"timeout": "7.00:00:00",
+															"retry": 0,
+															"retryIntervalInSeconds": 30,
+															"secureOutput": false,
+															"secureInput": false
+														},
+														"userProperties": [],
+														"sqlPool": {
+															"referenceName": "Modineer",
+															"type": "SqlPoolReference"
+														},
+														"typeProperties": {
+															"storedProcedureName": "[Config].[SetAsUpdating]",
+															"storedProcedureParameters": {
+																"interval": {
+																	"value": {
+																		"value": "@item().RefreshInterval",
+																		"type": "Expression"
+																	},
+																	"type": "String"
+																},
+																"intervalQty": {
+																	"value": {
+																		"value": "@item().RefreshNumber",
+																		"type": "Expression"
+																	},
+																	"type": "Int32"
+																},
+																"rowId": {
+																	"value": {
+																		"value": "@item().Id",
+																		"type": "Expression"
+																	},
+																	"type": "Int32"
+																},
+																"SCN": {
+																	"value": "0",
+																	"type": "Int64"
 																}
 															}
 														}
@@ -16905,6 +16937,130 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/Netsuite Data Refresh')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "Data Import Type",
+						"type": "Switch",
+						"dependsOn": [],
+						"userProperties": [],
+						"typeProperties": {
+							"on": {
+								"value": "@pipeline().parameters.item.ConnectionType",
+								"type": "Expression"
+							},
+							"cases": [
+								{
+									"value": "ODBC",
+									"activities": [
+										{
+											"name": "Modineer Netsuite ODBC Copy",
+											"type": "Copy",
+											"dependsOn": [],
+											"policy": {
+												"timeout": "7.00:00:00",
+												"retry": 0,
+												"retryIntervalInSeconds": 30,
+												"secureOutput": false,
+												"secureInput": false
+											},
+											"userProperties": [],
+											"typeProperties": {
+												"source": {
+													"type": "OdbcSource",
+													"query": {
+														"value": "@pipeline().parameters.item.DataQuery",
+														"type": "Expression"
+													},
+													"queryTimeout": "02:00:00"
+												},
+												"sink": {
+													"type": "SqlDWSink",
+													"preCopyScript": {
+														"value": "@{concat('TRUNCATE TABLE ',pipeline().parameters.item.SchemaName,'.',pipeline().parameters.item.TableName)}",
+														"type": "Expression"
+													},
+													"disableMetricsCollection": false
+												},
+												"enableStaging": false,
+												"translator": {
+													"type": "TabularTranslator",
+													"typeConversion": true,
+													"typeConversionSettings": {
+														"allowDataTruncation": true,
+														"treatBooleanAsNumber": false
+													}
+												}
+											},
+											"inputs": [
+												{
+													"referenceName": "NetsuiteODBCSource",
+													"type": "DatasetReference",
+													"parameters": {}
+												}
+											],
+											"outputs": [
+												{
+													"referenceName": "AzureSynapseDatabase",
+													"type": "DatasetReference",
+													"parameters": {
+														"TableName": {
+															"value": "@pipeline().parameters.item.TableName",
+															"type": "Expression"
+														},
+														"DbName": {
+															"value": "@pipeline().parameters.item.DbName",
+															"type": "Expression"
+														},
+														"SchemaName": {
+															"value": "@pipeline().parameters.item.SchemaName",
+															"type": "Expression"
+														}
+													}
+												}
+											]
+										}
+									]
+								}
+							],
+							"defaultActivities": [
+								{
+									"name": "Wait1",
+									"description": "This is a placeholder",
+									"type": "Wait",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"waitTimeInSeconds": 1
+									}
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"parameters": {
+					"item": {
+						"type": "object"
+					}
+				},
+				"folder": {
+					"name": "Master Data/Slave Pipeline"
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/datasets/NetsuiteODBCSource')]",
+				"[concat(variables('workspaceId'), '/datasets/AzureSynapseDatabase')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/Process Transaction Lines')]",
 			"type": "Microsoft.Synapse/workspaces/pipelines",
 			"apiVersion": "2019-06-01-preview",
@@ -20188,7 +20344,7 @@
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
 				"annotations": [],
-				"runtimeState": "Started",
+				"runtimeState": "Stopped",
 				"pipelines": [
 					{
 						"pipelineReference": {
@@ -20344,131 +20500,6 @@
 			},
 			"dependsOn": [],
 			"location": "eastus"
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/Netsuite Data Refresh')]",
-			"type": "Microsoft.Synapse/workspaces/pipelines",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"activities": [
-					{
-						"name": "Data Import Type",
-						"type": "Switch",
-						"dependsOn": [],
-						"userProperties": [],
-						"typeProperties": {
-							"on": {
-								"value": "@pipeline().parameters.item.ConnectionType",
-								"type": "Expression"
-							},
-							"cases": [
-								{
-									"value": "ODBC",
-									"activities": [
-										{
-											"name": "Modineer Netsuite ODBC Copy",
-											"type": "Copy",
-											"dependsOn": [],
-											"policy": {
-												"timeout": "7.00:00:00",
-												"retry": 0,
-												"retryIntervalInSeconds": 30,
-												"secureOutput": false,
-												"secureInput": false
-											},
-											"userProperties": [],
-											"typeProperties": {
-												"source": {
-													"type": "OdbcSource",
-													"query": {
-														"value": "@pipeline().parameters.item.DataQuery",
-														"type": "Expression"
-													},
-													"queryTimeout": "02:00:00"
-												},
-												"sink": {
-													"type": "SqlDWSink",
-													"preCopyScript": {
-														"value": "@{concat('TRUNCATE TABLE ',pipeline().parameters.item.SchemaName,'.',pipeline().parameters.item.TableName)}",
-														"type": "Expression"
-													},
-													"sqlWriterUseTableLock": false,
-													"disableMetricsCollection": false
-												},
-												"enableStaging": false,
-												"translator": {
-													"type": "TabularTranslator",
-													"typeConversion": true,
-													"typeConversionSettings": {
-														"allowDataTruncation": true,
-														"treatBooleanAsNumber": false
-													}
-												}
-											},
-											"inputs": [
-												{
-													"referenceName": "NetsuiteODBCSource",
-													"type": "DatasetReference",
-													"parameters": {}
-												}
-											],
-											"outputs": [
-												{
-													"referenceName": "AzureSynapseDatabase",
-													"type": "DatasetReference",
-													"parameters": {
-														"TableName": {
-															"value": "@pipeline().parameters.item.TableName",
-															"type": "Expression"
-														},
-														"DbName": {
-															"value": "@pipeline().parameters.item.DbName",
-															"type": "Expression"
-														},
-														"SchemaName": {
-															"value": "@pipeline().parameters.item.SchemaName",
-															"type": "Expression"
-														}
-													}
-												}
-											]
-										}
-									]
-								}
-							],
-							"defaultActivities": [
-								{
-									"name": "Wait1",
-									"description": "This is a placeholder",
-									"type": "Wait",
-									"dependsOn": [],
-									"userProperties": [],
-									"typeProperties": {
-										"waitTimeInSeconds": 1
-									}
-								}
-							]
-						}
-					}
-				],
-				"policy": {
-					"elapsedTimeMetric": {},
-					"cancelAfter": {}
-				},
-				"parameters": {
-					"item": {
-						"type": "object"
-					}
-				},
-				"folder": {
-					"name": "Master Data/Slave Pipeline"
-				},
-				"annotations": []
-			},
-			"dependsOn": [
-				"[concat(variables('workspaceId'), '/datasets/NetsuiteODBCSource')]",
-				"[concat(variables('workspaceId'), '/datasets/AzureSynapseDatabase')]"
-			]
 		}
 	]
 }
