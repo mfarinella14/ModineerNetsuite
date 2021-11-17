@@ -1,0 +1,66 @@
+{
+	"name": "DataRails",
+	"properties": {
+		"activities": [
+			{
+				"name": "Data flow1",
+				"type": "ExecuteDataFlow",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "1.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataflow": {
+						"referenceName": "Update SQL Table From Parquet",
+						"type": "DataFlowReference",
+						"parameters": {
+							"SchemaName": {
+								"value": "GLOVIA_PROD",
+								"type": "Expression"
+							},
+							"TableName": {
+								"value": "JE_DET",
+								"type": "Expression"
+							},
+							"KeyColumns": {
+								"value": "'@{['JE_CCN','JE','JE_SUB','JE_LINE']}'",
+								"type": "Expression"
+							}
+						},
+						"datasetParameters": {
+							"NewData": {
+								"file_system": "unified-data-cluster",
+								"directory": "GLOVIA_PROD/JE_DET",
+								"file_name": "JE_DET.parquet"
+							}
+						}
+					},
+					"staging": {
+						"linkedService": {
+							"referenceName": "modineerlake",
+							"type": "LinkedServiceReference"
+						},
+						"folderPath": "unified-data-cluster/GLOVIA_PROD/JE_DET/NotProcessed"
+					},
+					"compute": {
+						"coreCount": 8,
+						"computeType": "General"
+					},
+					"traceLevel": "None",
+					"cacheSinks": {
+						"firstRowOnly": true
+					}
+				}
+			}
+		],
+		"folder": {
+			"name": "Temp"
+		},
+		"annotations": []
+	}
+}

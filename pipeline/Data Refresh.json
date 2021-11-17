@@ -186,24 +186,12 @@
 														"queryTimeout": "02:00:00"
 													},
 													"sink": {
-														"type": "ParquetSink",
-														"storeSettings": {
-															"type": "AzureBlobFSWriteSettings",
-															"maxConcurrentConnections": 2
-														},
-														"formatSettings": {
-															"type": "ParquetWriteSettings"
-														}
+														"type": "SqlDWSink",
+														"allowCopyCommand": true,
+														"tableOption": "autoCreate",
+														"disableMetricsCollection": false
 													},
-													"enableStaging": false,
-													"translator": {
-														"type": "TabularTranslator",
-														"typeConversion": true,
-														"typeConversionSettings": {
-															"allowDataTruncation": true,
-															"treatBooleanAsNumber": false
-														}
-													}
+													"enableStaging": false
 												},
 												"inputs": [
 													{
@@ -223,21 +211,18 @@
 												],
 												"outputs": [
 													{
-														"referenceName": "SinkParquet",
+														"referenceName": "AzureSynapseDatabase",
 														"type": "DatasetReference",
 														"parameters": {
-															"file_system": {
-																"value": "@item().FileSystem",
-																"type": "Expression"
-															},
-															"directory": {
+															"TableName": {
 																"value": "@item().TableName",
 																"type": "Expression"
 															},
-															"file_name": {
-																"value": "@concat(item().SchemaName,'.',item().TableName)",
+															"DbName": {
+																"value": "@item().DbName",
 																"type": "Expression"
-															}
+															},
+															"SchemaName": "Raw"
 														}
 													}
 												]
