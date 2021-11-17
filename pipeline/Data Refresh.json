@@ -222,7 +222,7 @@
 																"type": "Expression"
 															},
 															"file_name": {
-																"value": "@\"item().TableName\".parquet",
+																"value": "@concat(item().TableName,'.parquet')",
 																"type": "Expression"
 															}
 														}
