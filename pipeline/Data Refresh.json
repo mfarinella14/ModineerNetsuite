@@ -178,18 +178,17 @@
 												"typeProperties": {
 													"source": {
 														"type": "OracleSource",
-														"oracleReaderQuery": {
-															"value": "@SELECT * FROM \"item().SchemaName\".\"item().TableName\" WHERE MAX(ORA_ROWSCN) >= item().TableMaxSCN",
-															"type": "Expression"
-														},
 														"partitionOption": "None",
 														"queryTimeout": "02:00:00"
 													},
 													"sink": {
-														"type": "SqlDWSink",
-														"allowCopyCommand": true,
-														"tableOption": "autoCreate",
-														"disableMetricsCollection": false
+														"type": "ParquetSink",
+														"storeSettings": {
+															"type": "AzureBlobFSWriteSettings"
+														},
+														"formatSettings": {
+															"type": "ParquetWriteSettings"
+														}
 													},
 													"enableStaging": false
 												},
@@ -211,18 +210,21 @@
 												],
 												"outputs": [
 													{
-														"referenceName": "AzureSynapseDatabase",
+														"referenceName": "SinkParquet",
 														"type": "DatasetReference",
 														"parameters": {
-															"TableName": {
-																"value": "@item().TableName",
+															"file_system": {
+																"value": "@item().FileSystem",
 																"type": "Expression"
 															},
-															"DbName": {
-																"value": "@item().DbName",
+															"directory": {
+																"value": "@concat(item().SchemaName,'/',item().TableName)",
 																"type": "Expression"
 															},
-															"SchemaName": "Raw"
+															"file_name": {
+																"value": "@\"item().TableName\".parquet",
+																"type": "Expression"
+															}
 														}
 													}
 												]
