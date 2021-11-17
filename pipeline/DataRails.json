@@ -27,16 +27,18 @@
 								"value": "JE_DET",
 								"type": "Expression"
 							},
-							"KeyColumns": {
-								"value": "'@{['JE_CCN','JE','JE_SUB','JE_LINE']}'",
-								"type": "Expression"
-							}
+							"KeyColumns": "array('JE_CCN','JE','JE_SUB','JE_LINE')"
 						},
 						"datasetParameters": {
 							"NewData": {
 								"file_system": "unified-data-cluster",
 								"directory": "GLOVIA_PROD/JE_DET",
 								"file_name": "JE_DET.parquet"
+							},
+							"SinkToAzureTable": {
+								"TableName": "JE_DET",
+								"DbName": "Modineer",
+								"SchemaName": "GLOVIA_PROD"
 							}
 						}
 					},

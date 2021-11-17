@@ -14,9 +14,9 @@
 			],
 			"sinks": [
 				{
-					"linkedService": {
-						"referenceName": "ModineerSQLPool",
-						"type": "LinkedServiceReference"
+					"dataset": {
+						"referenceName": "AzureSynapseDatabase",
+						"type": "DatasetReference"
 					},
 					"name": "SinkToAzureTable"
 				}
@@ -26,7 +26,7 @@
 					"name": "AlterRow1"
 				}
 			],
-			"script": "parameters{\n\tSchemaName as string,\n\tTableName as string,\n\tKeyColumns as string\n}\nsource(output(\n\t\tJE_CCN as string,\n\t\tJE as string,\n\t\tJE_SUB as string,\n\t\tJE_LINE as string,\n\t\tGL_ACCT as string,\n\t\tCCN as string,\n\t\tASOF_DATE as timestamp,\n\t\tPCT as decimal(38,18),\n\t\tQTY as decimal(38,18),\n\t\tREF as string,\n\t\tSU as string,\n\t\tASOF_YEAR as string,\n\t\tREVERSE_YEAR as string,\n\t\tMEMO as string,\n\t\tOVT as string,\n\t\tPA_COST_FLAG as string,\n\t\tPROJECT_ID as string,\n\t\tTASK_ID as string,\n\t\tGL_SL as string,\n\t\tGL_DL as string,\n\t\tDEBIT_AMT as decimal(38,18),\n\t\tCREDIT_AMT as decimal(38,18),\n\t\tUSER_ALPHA1 as string,\n\t\tUSER_ALPHA2 as string,\n\t\tUSER_ALPHA3 as string,\n\t\tUSER_NUM1 as decimal(38,18),\n\t\tUSER_NUM2 as decimal(38,18),\n\t\tUSER_NUM3 as decimal(38,18),\n\t\tUSER_DATE as timestamp,\n\t\tUSER_TIME as string,\n\t\tBANK as string,\n\t\tREF_SEQ as string,\n\t\tVAT as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinferDriftedColumnTypes: true,\n\tignoreNoFilesFound: true,\n\tformat: 'parquet') ~> NewData\nNewData alterRow(upsertIf(true())) ~> AlterRow1\nAlterRow1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'table',\n\tstore: 'synapseanalytics',\n\tschemaName: ($SchemaName),\n\ttableName: ($TableName),\n\tinsertable: true,\n\tupdateable: false,\n\tdeletable: false,\n\tupsertable: true,\n\tkeys:(array($KeyColumns)),\n\tskipKeyWrites:true,\n\tstaged: true,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tsaveOrder: 1,\n\terrorHandlingOption: 'stopOnFirstError') ~> SinkToAzureTable"
+			"script": "parameters{\n\tSchemaName as string,\n\tTableName as string,\n\tKeyColumns as string[]\n}\nsource(output(\n\t\tJE_CCN as string,\n\t\tJE as string,\n\t\tJE_SUB as string,\n\t\tJE_LINE as string,\n\t\tGL_ACCT as string,\n\t\tCCN as string,\n\t\tASOF_DATE as timestamp,\n\t\tPCT as decimal(38,18),\n\t\tQTY as decimal(38,18),\n\t\tREF as string,\n\t\tSU as string,\n\t\tASOF_YEAR as string,\n\t\tREVERSE_YEAR as string,\n\t\tMEMO as string,\n\t\tOVT as string,\n\t\tPA_COST_FLAG as string,\n\t\tPROJECT_ID as string,\n\t\tTASK_ID as string,\n\t\tGL_SL as string,\n\t\tGL_DL as string,\n\t\tDEBIT_AMT as decimal(38,18),\n\t\tCREDIT_AMT as decimal(38,18),\n\t\tUSER_ALPHA1 as string,\n\t\tUSER_ALPHA2 as string,\n\t\tUSER_ALPHA3 as string,\n\t\tUSER_NUM1 as decimal(38,18),\n\t\tUSER_NUM2 as decimal(38,18),\n\t\tUSER_NUM3 as decimal(38,18),\n\t\tUSER_DATE as timestamp,\n\t\tUSER_TIME as string,\n\t\tBANK as string,\n\t\tREF_SEQ as string,\n\t\tVAT as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinferDriftedColumnTypes: true,\n\tignoreNoFilesFound: true,\n\tformat: 'parquet') ~> NewData\nNewData alterRow(upsertIf(true())) ~> AlterRow1\nAlterRow1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:true,\n\tkeys:($KeyColumns),\n\tskipKeyWrites:true,\n\tformat: 'table',\n\tstaged: true,\n\tdateFormat:'MM/dd/yyyy',\n\ttimestampFormat:'MM/dd/yyyy HH:mm:ss',\n\tbooleanFormat: ['1', '0'],\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tsaveOrder: 1,\n\terrorHandlingOption: 'stopOnFirstError') ~> SinkToAzureTable"
 		}
 	}
 }
