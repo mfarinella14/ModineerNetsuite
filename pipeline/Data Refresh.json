@@ -236,7 +236,8 @@
 													{
 														"activity": "Raw Data Copy",
 														"dependencyConditions": [
-															"Succeeded"
+															"Succeeded",
+															"Failed"
 														]
 													}
 												],
@@ -303,7 +304,8 @@
 													{
 														"activity": "Execute Netsuite Data Refresh",
 														"dependencyConditions": [
-															"Succeeded"
+															"Succeeded",
+															"Failed"
 														]
 													}
 												],
