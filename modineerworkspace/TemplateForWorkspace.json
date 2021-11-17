@@ -400,32 +400,19 @@
 														"typeProperties": {
 															"source": {
 																"type": "OracleSource",
-																"oracleReaderQuery": {
-																	"value": "@SELECT * FROM \"item().SchemaName\".\"item().TableName\" WHERE MAX(ORA_ROWSCN) >= item().TableMaxSCN",
-																	"type": "Expression"
-																},
 																"partitionOption": "None",
 																"queryTimeout": "02:00:00"
 															},
 															"sink": {
 																"type": "ParquetSink",
 																"storeSettings": {
-																	"type": "AzureBlobFSWriteSettings",
-																	"maxConcurrentConnections": 2
+																	"type": "AzureBlobFSWriteSettings"
 																},
 																"formatSettings": {
 																	"type": "ParquetWriteSettings"
 																}
 															},
-															"enableStaging": false,
-															"translator": {
-																"type": "TabularTranslator",
-																"typeConversion": true,
-																"typeConversionSettings": {
-																	"allowDataTruncation": true,
-																	"treatBooleanAsNumber": false
-																}
-															}
+															"enableStaging": false
 														},
 														"inputs": [
 															{
@@ -453,11 +440,11 @@
 																		"type": "Expression"
 																	},
 																	"directory": {
-																		"value": "@item().TableName",
+																		"value": "@concat(item().SchemaName,'/',item().TableName)",
 																		"type": "Expression"
 																	},
 																	"file_name": {
-																		"value": "@concat(item().SchemaName,'.',item().TableName)",
+																		"value": "@\"item().TableName\".parquet",
 																		"type": "Expression"
 																	}
 																}
@@ -664,6 +651,84 @@
 				"[concat(variables('workspaceId'), '/sqlPools/Modineer')]",
 				"[concat(variables('workspaceId'), '/datasets/SinkParquet')]",
 				"[concat(variables('workspaceId'), '/pipelines/Netsuite Data Refresh')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/DataRails')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "Data flow1",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "1.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "Update SQL Table From Parquet",
+								"type": "DataFlowReference",
+								"parameters": {
+									"SchemaName": {
+										"value": "GLOVIA_PROD",
+										"type": "Expression"
+									},
+									"TableName": {
+										"value": "JE_DET",
+										"type": "Expression"
+									},
+									"KeyColumns": "array('JE_CCN','JE','JE_SUB','JE_LINE')"
+								},
+								"datasetParameters": {
+									"NewData": {
+										"file_system": "unified-data-cluster",
+										"directory": "GLOVIA_PROD/JE_DET",
+										"file_name": "JE_DET.parquet"
+									},
+									"SinkToAzureTable": {
+										"TableName": "JE_DET",
+										"DbName": "Modineer",
+										"SchemaName": "GLOVIA_PROD"
+									}
+								}
+							},
+							"staging": {
+								"linkedService": {
+									"referenceName": "modineerlake",
+									"type": "LinkedServiceReference"
+								},
+								"folderPath": "unified-data-cluster/GLOVIA_PROD/JE_DET/NotProcessed"
+							},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "None",
+							"cacheSinks": {
+								"firstRowOnly": true
+							}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"folder": {
+					"name": "Temp"
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/dataflows/Update SQL Table From Parquet')]",
+				"[concat(variables('workspaceId'), '/linkedServices/modineerlake')]"
 			]
 		},
 		{
@@ -19788,6 +19853,55 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/SinkCSV')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "modineerlake",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"FileSystem": {
+						"type": "string"
+					},
+					"Directory": {
+						"type": "string"
+					},
+					"FileName": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": {
+							"value": "@dataset().FileName",
+							"type": "Expression"
+						},
+						"folderPath": {
+							"value": "@dataset().Directory",
+							"type": "Expression"
+						},
+						"fileSystem": {
+							"value": "@dataset().FileSystem",
+							"type": "Expression"
+						}
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/modineerlake')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/SinkParquet')]",
 			"type": "Microsoft.Synapse/workspaces/datasets",
 			"apiVersion": "2019-06-01-preview",
@@ -20449,20 +20563,24 @@
 					],
 					"sinks": [
 						{
-							"linkedService": {
-								"referenceName": "ModineerSQLPool",
-								"type": "LinkedServiceReference"
+							"dataset": {
+								"referenceName": "AzureSynapseDatabase",
+								"type": "DatasetReference"
 							},
 							"name": "SinkToAzureTable"
 						}
 					],
-					"transformations": [],
-					"script": "parameters{\n\tSchemaName as string,\n\tTableName as string\n}\nsource(output(\n\t\tSALES_CCN as string,\n\t\tCNT_NUM as string,\n\t\tCR_CNTDT_SEQ as string,\n\t\tREQD_DATE as timestamp,\n\t\tREQD_TIME as string,\n\t\tDOCK as string,\n\t\tINBOUND_SEQ as string,\n\t\tREL_QTY_TYPE as string,\n\t\tCUM_ORDER_QTY as decimal(38,18),\n\t\tDIS_ORDER_QTY as decimal(38,18),\n\t\tQTY_QUAL as string,\n\t\tPER_QUAL as string,\n\t\tSHIP_QTY as decimal(38,18),\n\t\tCOMMIT_QTY as decimal(38,18),\n\t\tCANC_QTY as decimal(38,18),\n\t\tBO_QTY as decimal(38,18),\n\t\tUNIT_PRICE as decimal(38,18),\n\t\tLAST_PICK_SEQ as decimal(38,18),\n\t\tEST_PARTS_AMT as decimal(38,18),\n\t\tEST_TAX_AMT as decimal(38,18),\n\t\tSHIP_PARTS_AMT as decimal(38,18),\n\t\tSHIP_TAX_AMT as decimal(38,18),\n\t\tDEL_ORD_NUM as string,\n\t\tDEL_DATE as timestamp,\n\t\tDEL_TIME as string,\n\t\tSHIP_VAT_AMT as decimal(38,18),\n\t\tPRICE_OVERRIDDEN as string,\n\t\tNC_REASON as string,\n\t\tCANC_REASON as string,\n\t\tBOOK_RATE as decimal(38,18),\n\t\tBOOT_RATE_DIV as string,\n\t\tLAST_SHIP_SEQ as decimal(38,18),\n\t\tLAST_PROF_INV as string,\n\t\tLAST_PROF_ASN as string,\n\t\tEST_BACKLOG_AMT as decimal(38,18),\n\t\tSHIP_BACKLOG_AMT as decimal(38,18),\n\t\tINBOUND_CNR_ITEM as string,\n\t\tINBOUND_CNR_REV as string,\n\t\tCONSIGNED_QTY as decimal(38,18),\n\t\tCONSIGNMENT_LOC as string,\n\t\tCONSIGNMENT_BIN as string,\n\t\tUSER_ALPHA1 as string,\n\t\tUSER_ALPHA2 as string,\n\t\tUSER_ALPHA3 as string,\n\t\tUSER_NUM1 as decimal(38,18),\n\t\tUSER_NUM2 as decimal(38,18),\n\t\tUSER_NUM3 as decimal(38,18),\n\t\tUSER_DATE as timestamp,\n\t\tUSER_TIME as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tpurgeFiles: true,\n\tformat: 'parquet') ~> NewData\nNewData sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'table',\n\tstore: 'synapseanalytics',\n\tschemaName: ($SchemaName),\n\ttableName: ($TableName),\n\tinsertable: true,\n\tupdateable: false,\n\tdeletable: false,\n\tupsertable: false,\n\trecreate: true,\n\tstaged: true,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tsaveOrder: 1,\n\terrorHandlingOption: 'stopOnFirstError') ~> SinkToAzureTable"
+					"transformations": [
+						{
+							"name": "AlterRow1"
+						}
+					],
+					"script": "parameters{\n\tSchemaName as string,\n\tTableName as string,\n\tKeyColumns as string[]\n}\nsource(output(\n\t\tJE_CCN as string,\n\t\tJE as string,\n\t\tJE_SUB as string,\n\t\tJE_LINE as string,\n\t\tGL_ACCT as string,\n\t\tCCN as string,\n\t\tASOF_DATE as timestamp,\n\t\tPCT as decimal(38,18),\n\t\tQTY as decimal(38,18),\n\t\tREF as string,\n\t\tSU as string,\n\t\tASOF_YEAR as string,\n\t\tREVERSE_YEAR as string,\n\t\tMEMO as string,\n\t\tOVT as string,\n\t\tPA_COST_FLAG as string,\n\t\tPROJECT_ID as string,\n\t\tTASK_ID as string,\n\t\tGL_SL as string,\n\t\tGL_DL as string,\n\t\tDEBIT_AMT as decimal(38,18),\n\t\tCREDIT_AMT as decimal(38,18),\n\t\tUSER_ALPHA1 as string,\n\t\tUSER_ALPHA2 as string,\n\t\tUSER_ALPHA3 as string,\n\t\tUSER_NUM1 as decimal(38,18),\n\t\tUSER_NUM2 as decimal(38,18),\n\t\tUSER_NUM3 as decimal(38,18),\n\t\tUSER_DATE as timestamp,\n\t\tUSER_TIME as string,\n\t\tBANK as string,\n\t\tREF_SEQ as string,\n\t\tVAT as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinferDriftedColumnTypes: true,\n\tlimit: 100,\n\tignoreNoFilesFound: true,\n\tformat: 'parquet') ~> NewData\nNewData alterRow(upsertIf(true())) ~> AlterRow1\nAlterRow1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:true,\n\tkeys:($KeyColumns),\n\tskipKeyWrites:true,\n\tformat: 'table',\n\tstaged: true,\n\tdateFormat:'MM/dd/yyyy',\n\ttimestampFormat:'MM/dd/yyyy HH:mm:ss',\n\tbooleanFormat: ['1', '0'],\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tsaveOrder: 1,\n\terrorHandlingOption: 'stopOnFirstError') ~> SinkToAzureTable"
 				}
 			},
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/datasets/SinkParquet')]",
-				"[concat(variables('workspaceId'), '/linkedServices/ModineerSQLPool')]"
+				"[concat(variables('workspaceId'), '/datasets/AzureSynapseDatabase')]"
 			]
 		},
 		{
@@ -20472,6 +20590,69 @@
 			"properties": {
 				"type": "ManagedIdentity",
 				"typeProperties": {}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/List Stored Procedures')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "General"
+				},
+				"content": {
+					"query": "SELECT \n  ROUTINE_SCHEMA,\n  ROUTINE_NAME\nFROM INFORMATION_SCHEMA.ROUTINES\nWHERE ROUTINE_TYPE = 'PROCEDURE';",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "Glovia",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 1')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "SELECT TOP 10 *\nFROM OPENROWSET(BULK 'https://modineerlake.blob.core.windows.net/unified-data-cluster/GLOVIA_PROD/JE_DET/NotProcessed/*.parquet',\n                FORMAT = 'PARQUET') AS ROWS\nWHERE GL_ACCT = '006400'\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "master",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 2')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n\tWITH ( FORMAT_TYPE = PARQUET)\nGO\n\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'unified-data-cluster_modineerlake_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [unified-data-cluster_modineerlake_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION = 'abfss://unified-data-cluster@modineerlake.dfs.core.windows.net' \n\t)\nGO\n\nCREATE EXTERNAL TABLE GLOVIA_PROD.JE_DET (\t[JE_CCN] varchar(8000),\n\t[JE] varchar(8000),\n\t[JE_SUB] varchar(8000),\n\t[JE_LINE] varchar(8000),\n\t[GL_ACCT] varchar(8000),\n\t[CCN] varchar(8000),\n\t[ASOF_DATE] datetime2(7),\n\t[PCT] numeric(38,18),\n\t[QTY] numeric(38,18),\n\t[REF] varchar(8000),\n\t[SU] varchar(8000),\n\t[ASOF_YEAR] varchar(8000),\n\t[REVERSE_YEAR] varchar(8000),\n\t[MEMO] varchar(8000),\n\t[OVT] varchar(8000),\n\t[PA_COST_FLAG] varchar(8000),\n\t[PROJECT_ID] varchar(8000),\n\t[TASK_ID] varchar(8000),\n\t[GL_SL] varchar(8000),\n\t[GL_DL] varchar(8000),\n\t[DEBIT_AMT] numeric(38,18),\n\t[CREDIT_AMT] numeric(38,18),\n\t[USER_ALPHA1] varchar(8000),\n\t[USER_ALPHA2] varchar(8000),\n\t[USER_ALPHA3] varchar(8000),\n\t[USER_NUM1] numeric(38,18),\n\t[USER_NUM2] numeric(38,18),\n\t[USER_NUM3] numeric(38,18),\n\t[USER_DATE] datetime2(7),\n\t[USER_TIME] varchar(8000),\n\t[BANK] varchar(8000),\n\t[REF_SEQ] varchar(8000),\n\t[VAT] varchar(8000)\n\t)\n\tWITH (\n\tLOCATION = 'GLOVIA_PROD/JE_DET/JE_DET.parquet',\n\tDATA_SOURCE = [unified-data-cluster_modineerlake_dfs_core_windows_net],\n\tFILE_FORMAT = [SynapseParquetFormat]\n\t)\nGO\n\nSELECT TOP 100 * FROM GLOVIA_PROD.JE_DET\nGO\n\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "Modineer",
+						"poolName": "Modineer"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
 			},
 			"dependsOn": []
 		},
