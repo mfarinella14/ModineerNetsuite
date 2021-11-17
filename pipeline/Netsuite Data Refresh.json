@@ -43,7 +43,6 @@
 												"value": "@{concat('TRUNCATE TABLE ',pipeline().parameters.item.SchemaName,'.',pipeline().parameters.item.TableName)}",
 												"type": "Expression"
 											},
-											"sqlWriterUseTableLock": false,
 											"disableMetricsCollection": false
 										},
 										"enableStaging": false,
