@@ -662,7 +662,7 @@
 			"properties": {
 				"activities": [
 					{
-						"name": "Data flow1",
+						"name": "Dataflow1",
 						"type": "ExecuteDataFlow",
 						"dependsOn": [],
 						"policy": {
@@ -679,19 +679,22 @@
 								"type": "DataFlowReference",
 								"parameters": {
 									"SchemaName": {
-										"value": "GLOVIA_PROD",
+										"value": "'@{GLOVIA_PROD}'",
 										"type": "Expression"
 									},
 									"TableName": {
-										"value": "JE_DET",
+										"value": "'@{JE_DET.parquet}'",
 										"type": "Expression"
 									},
-									"KeyColumns": "array('JE_CCN','JE','JE_SUB','JE_LINE')"
+									"KeyColumns": {
+										"value": "'@{JE_CCN,JE,JE_SUB,JE_LINE}'",
+										"type": "Expression"
+									}
 								},
 								"datasetParameters": {
 									"NewData": {
 										"file_system": "unified-data-cluster",
-										"directory": "GLOVIA_PROD/JE_DET",
+										"directory": "GLOVIA_PROD/JE_DET/NotProcessed",
 										"file_name": "JE_DET.parquet"
 									},
 									"SinkToAzureTable": {}
@@ -702,10 +705,7 @@
 								"coreCount": 8,
 								"computeType": "General"
 							},
-							"traceLevel": "None",
-							"cacheSinks": {
-								"firstRowOnly": true
-							}
+							"traceLevel": "Fine"
 						}
 					}
 				],
@@ -719,7 +719,8 @@
 				"annotations": []
 			},
 			"dependsOn": [
-				"[concat(variables('workspaceId'), '/dataflows/Update SQL Table From Parquet')]"
+				"[concat(variables('workspaceId'), '/dataflows/Update SQL Table From Parquet')]",
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
 			]
 		},
 		{
@@ -20566,7 +20567,7 @@
 							"name": "AlterRow1"
 						}
 					],
-					"script": "parameters{\n\tSchemaName as string,\n\tTableName as string,\n\tKeyColumns as string[]\n}\nsource(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tlimit: 100,\n\tignoreNoFilesFound: true,\n\tformat: 'parquet') ~> NewData\nNewData alterRow(upsertIf(true())) ~> AlterRow1\nAlterRow1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'delta',\n\tfileSystem: 'unified-data-cluster',\n\tfolderPath: 'GLOVIA_PROD/JE_DET/Processed',\n\tmergeSchema: false,\n\tautoCompact: false,\n\toptimizedWrite: false,\n\tvacuum: 0,\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:true,\n\tkeys:($KeyColumns),\n\tumask: 0022,\n\tpreCommands: [],\n\tpostCommands: [],\n\tdateFormat:'MM/dd/yyyy',\n\ttimestampFormat:'MM/dd/yyyy HH:mm:ss',\n\tbooleanFormat: ['1', '0'],\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tsaveOrder: 1) ~> SinkToAzureTable"
+					"script": "parameters{\n\tSchemaName as string,\n\tTableName as string,\n\tKeyColumns as string\n}\nsource(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tlimit: 100,\n\tignoreNoFilesFound: true,\n\tformat: 'parquet') ~> NewData\nNewData alterRow(upsertIf(true())) ~> AlterRow1\nAlterRow1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'delta',\n\tfileSystem: 'unified-data-cluster',\n\tfolderPath: 'GLOVIA_PROD/JE_DET/Processed',\n\tmergeSchema: false,\n\tautoCompact: false,\n\toptimizedWrite: false,\n\tvacuum: 0,\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:true,\n\tkeys:(array($KeyColumns)),\n\tumask: 0022,\n\tpreCommands: [],\n\tpostCommands: [],\n\tdateFormat:'MM/dd/yyyy',\n\ttimestampFormat:'MM/dd/yyyy HH:mm:ss',\n\tbooleanFormat: ['1', '0'],\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tsaveOrder: 1) ~> SinkToAzureTable"
 				}
 			},
 			"dependsOn": [
@@ -20762,7 +20763,7 @@
 						"spark.dynamicAllocation.enabled": "true",
 						"spark.dynamicAllocation.minExecutors": "1",
 						"spark.dynamicAllocation.maxExecutors": "4",
-						"spark.autotune.trackingId": "334dca52-ee9a-453d-8e2a-0f0f027dede7"
+						"spark.autotune.trackingId": "3127fdbe-4d08-4bd4-81a4-c5a442bec890"
 					}
 				},
 				"metadata": {
