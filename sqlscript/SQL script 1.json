@@ -2,7 +2,7 @@
 	"name": "SQL script 1",
 	"properties": {
 		"content": {
-			"query": "SELECT TOP 10 *\nFROM OPENROWSET(BULK 'https://modineerlake.blob.core.windows.net/unified-data-cluster/GLOVIA_PROD/JE_DET/NotProcessed/*.parquet',\n                FORMAT = 'PARQUET') AS ROWS\nWHERE GL_ACCT = '006400'\n",
+			"query": "SELECT TOP 10 *\nFROM OPENROWSET(BULK 'https://modineerlake.blob.core.windows.net/unified-data-cluster/GLOVIA_PROD/JE_DET/Processed/part-00000-519a7cde-95b0-433f-af3b-2f0953f866a2-c000.snappy.parquet',\n                FORMAT = 'PARQUET') AS ROWS\n",
 			"metadata": {
 				"language": "sql"
 			},

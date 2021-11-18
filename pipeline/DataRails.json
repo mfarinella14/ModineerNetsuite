@@ -5,7 +5,14 @@
 			{
 				"name": "Dataflow1",
 				"type": "ExecuteDataFlow",
-				"dependsOn": [],
+				"dependsOn": [
+					{
+						"activity": "Copy data1",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
 				"policy": {
 					"timeout": "1.00:00:00",
 					"retry": 0,
@@ -46,6 +53,65 @@
 					},
 					"traceLevel": "Fine"
 				}
+			},
+			{
+				"name": "Copy data1",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "OracleSource",
+						"partitionOption": "None",
+						"queryTimeout": "02:00:00"
+					},
+					"sink": {
+						"type": "ParquetSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						},
+						"formatSettings": {
+							"type": "ParquetWriteSettings"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "GloviaProd",
+						"type": "DatasetReference",
+						"parameters": {
+							"tablename": "JE_DET",
+							"schemaname": "GLOVIA_PROD"
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "SinkParquet",
+						"type": "DatasetReference",
+						"parameters": {
+							"file_system": "unified-data-cluster",
+							"directory": "GLOVIA_PROD/JE_DET/NotProcessed",
+							"file_name": "JE_DET.parquet"
+						}
+					}
+				]
 			}
 		],
 		"folder": {
