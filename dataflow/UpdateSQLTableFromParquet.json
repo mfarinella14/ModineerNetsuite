@@ -1,5 +1,5 @@
 {
-	"name": "Update SQL Table From Parquet",
+	"name": "UpdateSQLTableFromParquet",
 	"properties": {
 		"type": "MappingDataFlow",
 		"typeProperties": {

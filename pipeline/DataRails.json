@@ -16,7 +16,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"dataflow": {
-						"referenceName": "Update SQL Table From Parquet",
+						"referenceName": "UpdateSQLTableFromParquet",
 						"type": "DataFlowReference",
 						"parameters": {
 							"SchemaName": {
