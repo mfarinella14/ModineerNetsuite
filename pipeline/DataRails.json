@@ -34,20 +34,11 @@
 								"file_system": "unified-data-cluster",
 								"directory": "GLOVIA_PROD/JE_DET",
 								"file_name": "JE_DET.parquet"
-							},
-							"SinkToAzureTable": {
-								"TableName": "JE_DET",
-								"DbName": "Modineer",
-								"SchemaName": "GLOVIA_PROD"
 							}
 						}
 					},
 					"staging": {
-						"linkedService": {
-							"referenceName": "modineerlake",
-							"type": "LinkedServiceReference"
-						},
-						"folderPath": "unified-data-cluster/GLOVIA_PROD/JE_DET/NotProcessed"
+						"folderPath": ""
 					},
 					"compute": {
 						"coreCount": 8,
