@@ -301,11 +301,11 @@
 														"type": "DataFlowReference",
 														"parameters": {
 															"SchemaName": {
-																"value": "\"@item().SchemaName\"",
+																"value": "@item().SchemaName",
 																"type": "Expression"
 															},
 															"TableName": {
-																"value": "\"@item().TableName\"",
+																"value": "@item().TableName",
 																"type": "Expression"
 															},
 															"KeyColumns": {
@@ -316,11 +316,11 @@
 														"datasetParameters": {
 															"NewData": {
 																"file_system": {
-																	"value": "\"@item().FileSystem\"",
+																	"value": "@item().FileSystem",
 																	"type": "Expression"
 																},
 																"directory": {
-																	"value": "\"@item().SchemaName\"/\"@item().TableName\"/NotProcessed",
+																	"value": "@concat(item().SchemaName,'/',item().TableName,'/NotProcessed')",
 																	"type": "Expression"
 																},
 																"file_name": "*.parquet"
