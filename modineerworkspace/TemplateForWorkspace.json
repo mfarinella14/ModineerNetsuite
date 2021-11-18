@@ -2324,7 +2324,7 @@
 																			"type": "Expression"
 																		},
 																		"directory": {
-																			"value": "@(item().SchemaName)/@(item().TableName)/NotProcessed",
+																			"value": "@concat(item().SchemaName,'/',item().TableName,'/NotProcessed')",
 																			"type": "Expression"
 																		},
 																		"file_name": "*.parquet"
