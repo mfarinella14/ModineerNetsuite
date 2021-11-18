@@ -178,6 +178,10 @@
 												"typeProperties": {
 													"source": {
 														"type": "OracleSource",
+														"oracleReaderQuery": {
+															"value": "SELECT * FROM @(item().SchemaName).@(item().TableName) WHERE ORA_ROWSCN >= @(item().TableMaxSCN)",
+															"type": "Expression"
+														},
 														"partitionOption": "None",
 														"queryTimeout": "02:00:00"
 													},
@@ -218,11 +222,11 @@
 																"type": "Expression"
 															},
 															"directory": {
-																"value": "@concat(item().SchemaName,'/',item().TableName)",
+																"value": "@(item().SchemaName)/@(item().TableName/NotProcessed",
 																"type": "Expression"
 															},
 															"file_name": {
-																"value": "@concat(item().TableName,'.parquet')",
+																"value": "@(item().TableName)-@(convertFromUtc(utcnow(), 'Eastern Standard Time')).parquet",
 																"type": "Expression"
 															}
 														}
@@ -234,9 +238,14 @@
 												"type": "SqlPoolStoredProcedure",
 												"dependsOn": [
 													{
+														"activity": "Dataflow1",
+														"dependencyConditions": [
+															"Succeeded"
+														]
+													},
+													{
 														"activity": "Raw Data Copy",
 														"dependencyConditions": [
-															"Succeeded",
 															"Failed"
 														]
 													}
@@ -263,6 +272,68 @@
 															},
 															"type": "Int32"
 														}
+													}
+												}
+											},
+											{
+												"name": "Dataflow1",
+												"type": "ExecuteDataFlow",
+												"dependsOn": [
+													{
+														"activity": "Raw Data Copy",
+														"dependencyConditions": [
+															"Succeeded"
+														]
+													}
+												],
+												"policy": {
+													"timeout": "1.00:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"dataflow": {
+														"referenceName": "UpdateSQLTableFromParquet",
+														"type": "DataFlowReference",
+														"parameters": {
+															"SchemaName": {
+																"value": "@(item().SchemaName)",
+																"type": "Expression"
+															},
+															"TableName": {
+																"value": "@(item().TableName)",
+																"type": "Expression"
+															},
+															"KeyColumns": {
+																"value": "@createArray(item().TableKeysArray)",
+																"type": "Expression"
+															}
+														},
+														"datasetParameters": {
+															"NewData": {
+																"file_system": {
+																	"value": "@(item().FileSystem)",
+																	"type": "Expression"
+																},
+																"directory": {
+																	"value": "@(item().SchemaName)/@(item().TableName)/NotProcessed",
+																	"type": "Expression"
+																},
+																"file_name": "*.parquet"
+															}
+														}
+													},
+													"compute": {
+														"coreCount": 8,
+														"computeType": "General"
+													},
+													"traceLevel": "None",
+													"runConcurrently": true,
+													"cacheSinks": {
+														"firstRowOnly": true
 													}
 												}
 											}
