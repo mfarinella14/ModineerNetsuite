@@ -45,7 +45,7 @@
 						"type": "Expression"
 					},
 					"isSequential": false,
-					"batchCount": 5,
+					"batchCount": 4,
 					"activities": [
 						{
 							"name": "Switch on RowGroup",
