@@ -20,15 +20,15 @@
 						"type": "DataFlowReference",
 						"parameters": {
 							"SchemaName": {
-								"value": "'@{GLOVIA_PROD}'",
+								"value": "'@{concat('GLOVIA_PROD')}'",
 								"type": "Expression"
 							},
 							"TableName": {
-								"value": "'@{JE_DET.parquet}'",
+								"value": "'@{concat('JE_DET.parquet')}'",
 								"type": "Expression"
 							},
 							"KeyColumns": {
-								"value": "'@{JE_CCN,JE,JE_SUB,JE_LINE}'",
+								"value": "'@{concat('JE_CCN,JE,JE_SUB,JE_LINE')}'",
 								"type": "Expression"
 							}
 						},
