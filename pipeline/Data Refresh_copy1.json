@@ -179,7 +179,7 @@
 													"source": {
 														"type": "OracleSource",
 														"oracleReaderQuery": {
-															"value": "SELECT * FROM @(item().SchemaName).@(item().TableName) WHERE ORA_ROWSCN >= @(item().TableMaxSCN)",
+															"value": "SELECT * FROM \"@item().SchemaName\".\"@item().TableName\" WHERE ORA_ROWSCN >= \"@item().TableMaxSCN\"",
 															"type": "Expression"
 														},
 														"partitionOption": "None",
@@ -222,11 +222,11 @@
 																"type": "Expression"
 															},
 															"directory": {
-																"value": "@(item().SchemaName)/@(item().TableName/NotProcessed",
+																"value": "\"@item().SchemaName\"/\"@item().TableName\"/NotProcessed",
 																"type": "Expression"
 															},
 															"file_name": {
-																"value": "@(item().TableName)-@(convertFromUtc(utcnow(), 'Eastern Standard Time')).parquet",
+																"value": "\"@item().TableName\"-\"@convertFromUtc(utcnow(), 'Eastern Standard Time')\".parquet",
 																"type": "Expression"
 															}
 														}
@@ -315,11 +315,11 @@
 														"datasetParameters": {
 															"NewData": {
 																"file_system": {
-																	"value": "@(item().FileSystem)",
+																	"value": "\"@item().FileSystem\"",
 																	"type": "Expression"
 																},
 																"directory": {
-																	"value": "@concat(item().SchemaName,'/',item().TableName,'/NotProcessed')",
+																	"value": "\"@item().SchemaName\"/\"@item().TableName\"/NotProcessed",
 																	"type": "Expression"
 																},
 																"file_name": "*.parquet"
