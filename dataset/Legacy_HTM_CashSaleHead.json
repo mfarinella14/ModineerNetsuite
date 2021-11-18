@@ -5,6 +5,9 @@
 			"referenceName": "modineerworkspace-WorkspaceDefaultStorage",
 			"type": "LinkedServiceReference"
 		},
+		"folder": {
+			"name": "HTM"
+		},
 		"annotations": [],
 		"type": "Json",
 		"typeProperties": {

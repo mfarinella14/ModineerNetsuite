@@ -5,6 +5,9 @@
 			"referenceName": "ModineerTableStorage",
 			"type": "LinkedServiceReference"
 		},
+		"folder": {
+			"name": "HTM"
+		},
 		"annotations": [],
 		"type": "AzureTable",
 		"schema": [],

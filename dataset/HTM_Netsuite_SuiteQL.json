@@ -19,6 +19,9 @@
 				"type": "int"
 			}
 		},
+		"folder": {
+			"name": "HTM"
+		},
 		"annotations": [],
 		"type": "RestResource",
 		"typeProperties": {

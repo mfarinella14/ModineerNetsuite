@@ -15,6 +15,9 @@
 				"defaultValue": 0
 			}
 		},
+		"folder": {
+			"name": "HTM"
+		},
 		"annotations": [],
 		"type": "RestResource",
 		"typeProperties": {
