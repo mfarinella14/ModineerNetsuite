@@ -679,15 +679,15 @@
 								"type": "DataFlowReference",
 								"parameters": {
 									"SchemaName": {
-										"value": "'@{GLOVIA_PROD}'",
+										"value": "'@{concat('GLOVIA_PROD')}'",
 										"type": "Expression"
 									},
 									"TableName": {
-										"value": "'@{JE_DET.parquet}'",
+										"value": "'@{concat('JE_DET.parquet')}'",
 										"type": "Expression"
 									},
 									"KeyColumns": {
-										"value": "'@{JE_CCN,JE,JE_SUB,JE_LINE}'",
+										"value": "'@{concat('JE_CCN,JE,JE_SUB,JE_LINE')}'",
 										"type": "Expression"
 									}
 								},
@@ -719,8 +719,7 @@
 				"annotations": []
 			},
 			"dependsOn": [
-				"[concat(variables('workspaceId'), '/dataflows/Update SQL Table From Parquet')]",
-				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+				"[concat(variables('workspaceId'), '/dataflows/Update SQL Table From Parquet')]"
 			]
 		},
 		{
@@ -20763,7 +20762,7 @@
 						"spark.dynamicAllocation.enabled": "true",
 						"spark.dynamicAllocation.minExecutors": "1",
 						"spark.dynamicAllocation.maxExecutors": "4",
-						"spark.autotune.trackingId": "3127fdbe-4d08-4bd4-81a4-c5a442bec890"
+						"spark.autotune.trackingId": "e1947569-7be3-426a-912e-ea507b0eada2"
 					}
 				},
 				"metadata": {
