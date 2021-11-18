@@ -515,6 +515,519 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/Data Refresh_copy1')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "Get Refresh Tables",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "SqlPoolSource",
+								"sqlReaderStoredProcedureName": "[Config].[DataRefresh]",
+								"queryTimeout": "02:00:00"
+							},
+							"dataset": {
+								"referenceName": "Modineer",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "ForEach Table",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "Get Refresh Tables",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('Get Refresh Tables').output.value",
+								"type": "Expression"
+							},
+							"isSequential": false,
+							"batchCount": 5,
+							"activities": [
+								{
+									"name": "Switch on RowGroup",
+									"type": "Switch",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"on": {
+											"value": "@item().RowGroup",
+											"type": "Expression"
+										},
+										"cases": [
+											{
+												"value": "GloviaProd",
+												"activities": [
+													{
+														"name": "Get SCN Number",
+														"type": "Lookup",
+														"dependsOn": [],
+														"policy": {
+															"timeout": "7.00:00:00",
+															"retry": 0,
+															"retryIntervalInSeconds": 30,
+															"secureOutput": false,
+															"secureInput": false
+														},
+														"userProperties": [],
+														"typeProperties": {
+															"source": {
+																"type": "OracleSource",
+																"oracleReaderQuery": {
+																	"value": "@concat('SELECT MAX(ORA_ROWSCN) AS \"SCNValue\" FROM ',item().SchemaName,'.',item().TableName)",
+																	"type": "Expression"
+																},
+																"partitionOption": "None",
+																"queryTimeout": "02:00:00"
+															},
+															"dataset": {
+																"referenceName": "GloviaProd",
+																"type": "DatasetReference",
+																"parameters": {
+																	"tablename": {
+																		"value": "@item().TableName",
+																		"type": "Expression"
+																	},
+																	"schemaname": {
+																		"value": "@item().SchemaName",
+																		"type": "Expression"
+																	}
+																}
+															}
+														}
+													},
+													{
+														"name": "Set Table as Updating",
+														"type": "SqlPoolStoredProcedure",
+														"dependsOn": [
+															{
+																"activity": "Get SCN Number",
+																"dependencyConditions": [
+																	"Succeeded"
+																]
+															}
+														],
+														"policy": {
+															"timeout": "7.00:00:00",
+															"retry": 0,
+															"retryIntervalInSeconds": 30,
+															"secureOutput": false,
+															"secureInput": false
+														},
+														"userProperties": [],
+														"sqlPool": {
+															"referenceName": "Modineer",
+															"type": "SqlPoolReference"
+														},
+														"typeProperties": {
+															"storedProcedureName": "[Config].[SetAsUpdating]",
+															"storedProcedureParameters": {
+																"interval": {
+																	"value": {
+																		"value": "@item().RefreshInterval",
+																		"type": "Expression"
+																	},
+																	"type": "String"
+																},
+																"intervalQty": {
+																	"value": {
+																		"value": "@item().RefreshNumber",
+																		"type": "Expression"
+																	},
+																	"type": "Int32"
+																},
+																"rowId": {
+																	"value": {
+																		"value": "@item().Id",
+																		"type": "Expression"
+																	},
+																	"type": "Int32"
+																},
+																"SCN": {
+																	"value": {
+																		"value": "@item().TableMaxSCN",
+																		"type": "Expression"
+																	},
+																	"type": "Int64"
+																}
+															}
+														}
+													},
+													{
+														"name": "Raw Data Copy",
+														"type": "Copy",
+														"dependsOn": [
+															{
+																"activity": "Set Table as Updating",
+																"dependencyConditions": [
+																	"Succeeded"
+																]
+															}
+														],
+														"policy": {
+															"timeout": "7.00:00:00",
+															"retry": 0,
+															"retryIntervalInSeconds": 30,
+															"secureOutput": true,
+															"secureInput": false
+														},
+														"userProperties": [],
+														"typeProperties": {
+															"source": {
+																"type": "OracleSource",
+																"oracleReaderQuery": {
+																	"value": "SELECT * FROM \"@item().SchemaName\".\"@item().TableName\" WHERE ORA_ROWSCN >= \"@item().TableMaxSCN\"",
+																	"type": "Expression"
+																},
+																"partitionOption": "None",
+																"queryTimeout": "02:00:00"
+															},
+															"sink": {
+																"type": "ParquetSink",
+																"storeSettings": {
+																	"type": "AzureBlobFSWriteSettings"
+																},
+																"formatSettings": {
+																	"type": "ParquetWriteSettings"
+																}
+															},
+															"enableStaging": false
+														},
+														"inputs": [
+															{
+																"referenceName": "GloviaProd",
+																"type": "DatasetReference",
+																"parameters": {
+																	"tablename": {
+																		"value": "@item().TableName",
+																		"type": "Expression"
+																	},
+																	"schemaname": {
+																		"value": "@item().SchemaName",
+																		"type": "Expression"
+																	}
+																}
+															}
+														],
+														"outputs": [
+															{
+																"referenceName": "SinkParquet",
+																"type": "DatasetReference",
+																"parameters": {
+																	"file_system": {
+																		"value": "@item().FileSystem",
+																		"type": "Expression"
+																	},
+																	"directory": {
+																		"value": "\"@item().SchemaName\"/\"@item().TableName\"/NotProcessed",
+																		"type": "Expression"
+																	},
+																	"file_name": {
+																		"value": "\"@item().TableName\"-\"@convertFromUtc(utcnow(), 'Eastern Standard Time')\".parquet",
+																		"type": "Expression"
+																	}
+																}
+															}
+														]
+													},
+													{
+														"name": "Set Table to Processed",
+														"type": "SqlPoolStoredProcedure",
+														"dependsOn": [
+															{
+																"activity": "Dataflow1",
+																"dependencyConditions": [
+																	"Succeeded"
+																]
+															},
+															{
+																"activity": "Raw Data Copy",
+																"dependencyConditions": [
+																	"Failed"
+																]
+															}
+														],
+														"policy": {
+															"timeout": "7.00:00:00",
+															"retry": 0,
+															"retryIntervalInSeconds": 30,
+															"secureOutput": false,
+															"secureInput": false
+														},
+														"userProperties": [],
+														"sqlPool": {
+															"referenceName": "Modineer",
+															"type": "SqlPoolReference"
+														},
+														"typeProperties": {
+															"storedProcedureName": "[Config].[SetAsUpdated]",
+															"storedProcedureParameters": {
+																"rowId": {
+																	"value": {
+																		"value": "@item().Id",
+																		"type": "Expression"
+																	},
+																	"type": "Int32"
+																}
+															}
+														}
+													},
+													{
+														"name": "Dataflow1",
+														"type": "ExecuteDataFlow",
+														"dependsOn": [
+															{
+																"activity": "Raw Data Copy",
+																"dependencyConditions": [
+																	"Succeeded"
+																]
+															}
+														],
+														"policy": {
+															"timeout": "1.00:00:00",
+															"retry": 0,
+															"retryIntervalInSeconds": 30,
+															"secureOutput": false,
+															"secureInput": false
+														},
+														"userProperties": [],
+														"typeProperties": {
+															"dataflow": {
+																"referenceName": "UpdateSQLTableFromParquet",
+																"type": "DataFlowReference",
+																"parameters": {
+																	"SchemaName": {
+																		"value": "@(item().SchemaName)",
+																		"type": "Expression"
+																	},
+																	"TableName": {
+																		"value": "@(item().TableName)",
+																		"type": "Expression"
+																	},
+																	"KeyColumns": {
+																		"value": "@createArray(item().TableKeysArray)",
+																		"type": "Expression"
+																	}
+																},
+																"datasetParameters": {
+																	"NewData": {
+																		"file_system": {
+																			"value": "\"@item().FileSystem\"",
+																			"type": "Expression"
+																		},
+																		"directory": {
+																			"value": "\"@item().SchemaName\"/\"@item().TableName\"/NotProcessed",
+																			"type": "Expression"
+																		},
+																		"file_name": "*.parquet"
+																	},
+																	"SinkToAzureTable": {}
+																}
+															},
+															"staging": {},
+															"compute": {
+																"coreCount": 8,
+																"computeType": "General"
+															},
+															"traceLevel": "None",
+															"runConcurrently": true,
+															"cacheSinks": {
+																"firstRowOnly": true
+															}
+														}
+													}
+												]
+											},
+											{
+												"value": "Netsuite",
+												"activities": [
+													{
+														"name": "Execute Netsuite Data Refresh",
+														"type": "ExecutePipeline",
+														"dependsOn": [
+															{
+																"activity": "Set as Updating",
+																"dependencyConditions": [
+																	"Succeeded"
+																]
+															}
+														],
+														"userProperties": [],
+														"typeProperties": {
+															"pipeline": {
+																"referenceName": "Netsuite Data Refresh",
+																"type": "PipelineReference"
+															},
+															"waitOnCompletion": true,
+															"parameters": {
+																"item": {
+																	"value": "@item()",
+																	"type": "Expression"
+																}
+															}
+														}
+													},
+													{
+														"name": "Set as Updated",
+														"type": "SqlPoolStoredProcedure",
+														"dependsOn": [
+															{
+																"activity": "Execute Netsuite Data Refresh",
+																"dependencyConditions": [
+																	"Succeeded",
+																	"Failed"
+																]
+															}
+														],
+														"policy": {
+															"timeout": "7.00:00:00",
+															"retry": 0,
+															"retryIntervalInSeconds": 30,
+															"secureOutput": false,
+															"secureInput": false
+														},
+														"userProperties": [],
+														"sqlPool": {
+															"referenceName": "Modineer",
+															"type": "SqlPoolReference"
+														},
+														"typeProperties": {
+															"storedProcedureName": "[Config].[SetAsUpdated]",
+															"storedProcedureParameters": {
+																"rowId": {
+																	"value": {
+																		"value": "@item().Id",
+																		"type": "Expression"
+																	},
+																	"type": "Int32"
+																}
+															}
+														}
+													},
+													{
+														"name": "Set as Updating",
+														"type": "SqlPoolStoredProcedure",
+														"dependsOn": [],
+														"policy": {
+															"timeout": "7.00:00:00",
+															"retry": 0,
+															"retryIntervalInSeconds": 30,
+															"secureOutput": false,
+															"secureInput": false
+														},
+														"userProperties": [],
+														"sqlPool": {
+															"referenceName": "Modineer",
+															"type": "SqlPoolReference"
+														},
+														"typeProperties": {
+															"storedProcedureName": "[Config].[SetAsUpdating]",
+															"storedProcedureParameters": {
+																"interval": {
+																	"value": {
+																		"value": "@item().RefreshInterval",
+																		"type": "Expression"
+																	},
+																	"type": "String"
+																},
+																"intervalQty": {
+																	"value": {
+																		"value": "@item().RefreshNumber",
+																		"type": "Expression"
+																	},
+																	"type": "Int32"
+																},
+																"rowId": {
+																	"value": {
+																		"value": "@item().Id",
+																		"type": "Expression"
+																	},
+																	"type": "Int32"
+																},
+																"SCN": {
+																	"value": "0",
+																	"type": "Int64"
+																}
+															}
+														}
+													}
+												]
+											},
+											{
+												"value": "Plex",
+												"activities": [
+													{
+														"name": "Place Holder_copy2",
+														"type": "Wait",
+														"dependsOn": [],
+														"userProperties": [],
+														"typeProperties": {
+															"waitTimeInSeconds": 1
+														}
+													}
+												]
+											}
+										],
+										"defaultActivities": [
+											{
+												"name": "Place Holder",
+												"type": "Wait",
+												"dependsOn": [],
+												"userProperties": [],
+												"typeProperties": {
+													"waitTimeInSeconds": 1
+												}
+											}
+										]
+									}
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"folder": {
+					"name": "Serverless Setup"
+				},
+				"annotations": [],
+				"lastPublishTime": "2021-11-12T20:33:37Z"
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/datasets/Modineer')]",
+				"[concat(variables('workspaceId'), '/datasets/GloviaProd')]",
+				"[concat(variables('workspaceId'), '/sqlPools/Modineer')]",
+				"[concat(variables('workspaceId'), '/datasets/SinkParquet')]",
+				"[concat(variables('workspaceId'), '/dataflows/UpdateSQLTableFromParquet')]",
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]",
+				"[concat(variables('workspaceId'), '/pipelines/Netsuite Data Refresh')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/DataRails')]",
 			"type": "Microsoft.Synapse/workspaces/pipelines",
 			"apiVersion": "2019-06-01-preview",
@@ -646,7 +1159,6 @@
 			},
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/dataflows/UpdateSQLTableFromParquet')]",
-				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]",
 				"[concat(variables('workspaceId'), '/datasets/GloviaProd')]",
 				"[concat(variables('workspaceId'), '/datasets/SinkParquet')]"
 			]
@@ -767,6 +1279,130 @@
 				},
 				"folder": {
 					"name": "Master Data/Slave Pipeline"
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/datasets/NetsuiteODBCSource')]",
+				"[concat(variables('workspaceId'), '/datasets/AzureSynapseDatabase')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Netsuite Data Refresh_copy1')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "Data Import Type",
+						"type": "Switch",
+						"dependsOn": [],
+						"userProperties": [],
+						"typeProperties": {
+							"on": {
+								"value": "@pipeline().parameters.item.ConnectionType",
+								"type": "Expression"
+							},
+							"cases": [
+								{
+									"value": "ODBC",
+									"activities": [
+										{
+											"name": "Modineer Netsuite ODBC Copy",
+											"type": "Copy",
+											"dependsOn": [],
+											"policy": {
+												"timeout": "7.00:00:00",
+												"retry": 0,
+												"retryIntervalInSeconds": 30,
+												"secureOutput": false,
+												"secureInput": false
+											},
+											"userProperties": [],
+											"typeProperties": {
+												"source": {
+													"type": "OdbcSource",
+													"query": {
+														"value": "@pipeline().parameters.item.DataQuery",
+														"type": "Expression"
+													},
+													"queryTimeout": "02:00:00"
+												},
+												"sink": {
+													"type": "SqlDWSink",
+													"preCopyScript": {
+														"value": "@{concat('TRUNCATE TABLE ',pipeline().parameters.item.SchemaName,'.',pipeline().parameters.item.TableName)}",
+														"type": "Expression"
+													},
+													"disableMetricsCollection": false
+												},
+												"enableStaging": false,
+												"translator": {
+													"type": "TabularTranslator",
+													"typeConversion": true,
+													"typeConversionSettings": {
+														"allowDataTruncation": true,
+														"treatBooleanAsNumber": false
+													}
+												}
+											},
+											"inputs": [
+												{
+													"referenceName": "NetsuiteODBCSource",
+													"type": "DatasetReference",
+													"parameters": {}
+												}
+											],
+											"outputs": [
+												{
+													"referenceName": "AzureSynapseDatabase",
+													"type": "DatasetReference",
+													"parameters": {
+														"TableName": {
+															"value": "@pipeline().parameters.item.TableName",
+															"type": "Expression"
+														},
+														"DbName": {
+															"value": "@pipeline().parameters.item.DbName",
+															"type": "Expression"
+														},
+														"SchemaName": {
+															"value": "@pipeline().parameters.item.SchemaName",
+															"type": "Expression"
+														}
+													}
+												}
+											]
+										}
+									]
+								}
+							],
+							"defaultActivities": [
+								{
+									"name": "Wait1",
+									"description": "This is a placeholder",
+									"type": "Wait",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"waitTimeInSeconds": 1
+									}
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"parameters": {
+					"item": {
+						"type": "object"
+					}
+				},
+				"folder": {
+					"name": "Serverless Setup/Slave Pipeline"
 				},
 				"annotations": []
 			},
@@ -1728,7 +2364,7 @@
 							"name": "AlterRow1"
 						}
 					],
-					"script": "parameters{\n\tSchemaName as string,\n\tTableName as string,\n\tKeyColumns as string[]\n}\nsource(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: true,\n\tformat: 'parquet') ~> NewData\nNewData alterRow(upsertIf(true())) ~> AlterRow1\nAlterRow1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'delta',\n\tfileSystem: 'unified-data-cluster',\n\tfolderPath: 'GLOVIA_PROD/JE_DET/Processed',\n\tmergeSchema: false,\n\tautoCompact: false,\n\toptimizedWrite: false,\n\tvacuum: 0,\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:true,\n\tkeys:($KeyColumns),\n\tumask: 0022,\n\tpreCommands: [],\n\tpostCommands: [],\n\tdateFormat:'MM/dd/yyyy',\n\ttimestampFormat:'MM/dd/yyyy HH:mm:ss',\n\tbooleanFormat: ['1', '0'],\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tsaveOrder: 1) ~> SinkToAzureTable"
+					"script": "parameters{\n\tSchemaName as string,\n\tTableName as string,\n\tKeyColumns as string[]\n}\nsource(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: true,\n\tformat: 'parquet') ~> NewData\nNewData alterRow(upsertIf(true())) ~> AlterRow1\nAlterRow1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'delta',\n\tfileSystem: 'unified-data-cluster',\n\tfolderPath: (concat($SchemaName,\"/\",$TableName)),\n\tmergeSchema: false,\n\tautoCompact: false,\n\toptimizedWrite: false,\n\tvacuum: 0,\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:true,\n\tkeys:($KeyColumns),\n\tumask: 0022,\n\tpreCommands: [],\n\tpostCommands: [],\n\tdateFormat:'MM/dd/yyyy',\n\ttimestampFormat:'MM/dd/yyyy HH:mm:ss',\n\tbooleanFormat: ['1', '0'],\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tsaveOrder: 1) ~> SinkToAzureTable"
 				}
 			},
 			"dependsOn": [
@@ -1999,643 +2635,6 @@
 			},
 			"dependsOn": [],
 			"location": "eastus"
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/Data Refresh_copy1')]",
-			"type": "Microsoft.Synapse/workspaces/pipelines",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"activities": [
-					{
-						"name": "Get Refresh Tables",
-						"type": "Lookup",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "SqlPoolSource",
-								"sqlReaderStoredProcedureName": "[Config].[DataRefresh]",
-								"queryTimeout": "02:00:00"
-							},
-							"dataset": {
-								"referenceName": "Modineer",
-								"type": "DatasetReference",
-								"parameters": {}
-							},
-							"firstRowOnly": false
-						}
-					},
-					{
-						"name": "ForEach Table",
-						"type": "ForEach",
-						"dependsOn": [
-							{
-								"activity": "Get Refresh Tables",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"userProperties": [],
-						"typeProperties": {
-							"items": {
-								"value": "@activity('Get Refresh Tables').output.value",
-								"type": "Expression"
-							},
-							"isSequential": false,
-							"batchCount": 5,
-							"activities": [
-								{
-									"name": "Switch on RowGroup",
-									"type": "Switch",
-									"dependsOn": [],
-									"userProperties": [],
-									"typeProperties": {
-										"on": {
-											"value": "@item().RowGroup",
-											"type": "Expression"
-										},
-										"cases": [
-											{
-												"value": "GloviaProd",
-												"activities": [
-													{
-														"name": "Get SCN Number",
-														"type": "Lookup",
-														"dependsOn": [],
-														"policy": {
-															"timeout": "7.00:00:00",
-															"retry": 0,
-															"retryIntervalInSeconds": 30,
-															"secureOutput": false,
-															"secureInput": false
-														},
-														"userProperties": [],
-														"typeProperties": {
-															"source": {
-																"type": "OracleSource",
-																"oracleReaderQuery": {
-																	"value": "@concat('SELECT MAX(ORA_ROWSCN) AS \"SCNValue\" FROM ',item().SchemaName,'.',item().TableName)",
-																	"type": "Expression"
-																},
-																"partitionOption": "None",
-																"queryTimeout": "02:00:00"
-															},
-															"dataset": {
-																"referenceName": "GloviaProd",
-																"type": "DatasetReference",
-																"parameters": {
-																	"tablename": {
-																		"value": "@item().TableName",
-																		"type": "Expression"
-																	},
-																	"schemaname": {
-																		"value": "@item().SchemaName",
-																		"type": "Expression"
-																	}
-																}
-															}
-														}
-													},
-													{
-														"name": "Set Table as Updating",
-														"type": "SqlPoolStoredProcedure",
-														"dependsOn": [
-															{
-																"activity": "Get SCN Number",
-																"dependencyConditions": [
-																	"Succeeded"
-																]
-															}
-														],
-														"policy": {
-															"timeout": "7.00:00:00",
-															"retry": 0,
-															"retryIntervalInSeconds": 30,
-															"secureOutput": false,
-															"secureInput": false
-														},
-														"userProperties": [],
-														"sqlPool": {
-															"referenceName": "Modineer",
-															"type": "SqlPoolReference"
-														},
-														"typeProperties": {
-															"storedProcedureName": "[Config].[SetAsUpdating]",
-															"storedProcedureParameters": {
-																"interval": {
-																	"value": {
-																		"value": "@item().RefreshInterval",
-																		"type": "Expression"
-																	},
-																	"type": "String"
-																},
-																"intervalQty": {
-																	"value": {
-																		"value": "@item().RefreshNumber",
-																		"type": "Expression"
-																	},
-																	"type": "Int32"
-																},
-																"rowId": {
-																	"value": {
-																		"value": "@item().Id",
-																		"type": "Expression"
-																	},
-																	"type": "Int32"
-																},
-																"SCN": {
-																	"value": {
-																		"value": "@item().TableMaxSCN",
-																		"type": "Expression"
-																	},
-																	"type": "Int64"
-																}
-															}
-														}
-													},
-													{
-														"name": "Raw Data Copy",
-														"type": "Copy",
-														"dependsOn": [
-															{
-																"activity": "Set Table as Updating",
-																"dependencyConditions": [
-																	"Succeeded"
-																]
-															}
-														],
-														"policy": {
-															"timeout": "7.00:00:00",
-															"retry": 0,
-															"retryIntervalInSeconds": 30,
-															"secureOutput": true,
-															"secureInput": false
-														},
-														"userProperties": [],
-														"typeProperties": {
-															"source": {
-																"type": "OracleSource",
-																"oracleReaderQuery": {
-																	"value": "SELECT * FROM @(item().SchemaName).@(item().TableName) WHERE ORA_ROWSCN >= @(item().TableMaxSCN)",
-																	"type": "Expression"
-																},
-																"partitionOption": "None",
-																"queryTimeout": "02:00:00"
-															},
-															"sink": {
-																"type": "ParquetSink",
-																"storeSettings": {
-																	"type": "AzureBlobFSWriteSettings"
-																},
-																"formatSettings": {
-																	"type": "ParquetWriteSettings"
-																}
-															},
-															"enableStaging": false
-														},
-														"inputs": [
-															{
-																"referenceName": "GloviaProd",
-																"type": "DatasetReference",
-																"parameters": {
-																	"tablename": {
-																		"value": "@item().TableName",
-																		"type": "Expression"
-																	},
-																	"schemaname": {
-																		"value": "@item().SchemaName",
-																		"type": "Expression"
-																	}
-																}
-															}
-														],
-														"outputs": [
-															{
-																"referenceName": "SinkParquet",
-																"type": "DatasetReference",
-																"parameters": {
-																	"file_system": {
-																		"value": "@item().FileSystem",
-																		"type": "Expression"
-																	},
-																	"directory": {
-																		"value": "@(item().SchemaName)/@(item().TableName/NotProcessed",
-																		"type": "Expression"
-																	},
-																	"file_name": {
-																		"value": "@(item().TableName)-@(convertFromUtc(utcnow(), 'Eastern Standard Time')).parquet",
-																		"type": "Expression"
-																	}
-																}
-															}
-														]
-													},
-													{
-														"name": "Set Table to Processed",
-														"type": "SqlPoolStoredProcedure",
-														"dependsOn": [
-															{
-																"activity": "Dataflow1",
-																"dependencyConditions": [
-																	"Succeeded"
-																]
-															},
-															{
-																"activity": "Raw Data Copy",
-																"dependencyConditions": [
-																	"Failed"
-																]
-															}
-														],
-														"policy": {
-															"timeout": "7.00:00:00",
-															"retry": 0,
-															"retryIntervalInSeconds": 30,
-															"secureOutput": false,
-															"secureInput": false
-														},
-														"userProperties": [],
-														"sqlPool": {
-															"referenceName": "Modineer",
-															"type": "SqlPoolReference"
-														},
-														"typeProperties": {
-															"storedProcedureName": "[Config].[SetAsUpdated]",
-															"storedProcedureParameters": {
-																"rowId": {
-																	"value": {
-																		"value": "@item().Id",
-																		"type": "Expression"
-																	},
-																	"type": "Int32"
-																}
-															}
-														}
-													},
-													{
-														"name": "Dataflow1",
-														"type": "ExecuteDataFlow",
-														"dependsOn": [
-															{
-																"activity": "Raw Data Copy",
-																"dependencyConditions": [
-																	"Succeeded"
-																]
-															}
-														],
-														"policy": {
-															"timeout": "1.00:00:00",
-															"retry": 0,
-															"retryIntervalInSeconds": 30,
-															"secureOutput": false,
-															"secureInput": false
-														},
-														"userProperties": [],
-														"typeProperties": {
-															"dataflow": {
-																"referenceName": "UpdateSQLTableFromParquet",
-																"type": "DataFlowReference",
-																"parameters": {
-																	"SchemaName": {
-																		"value": "@(item().SchemaName)",
-																		"type": "Expression"
-																	},
-																	"TableName": {
-																		"value": "@(item().TableName)",
-																		"type": "Expression"
-																	},
-																	"KeyColumns": {
-																		"value": "@createArray(item().TableKeysArray)",
-																		"type": "Expression"
-																	}
-																},
-																"datasetParameters": {
-																	"NewData": {
-																		"file_system": {
-																			"value": "@(item().FileSystem)",
-																			"type": "Expression"
-																		},
-																		"directory": {
-																			"value": "@concat(item().SchemaName,'/',item().TableName,'/NotProcessed')",
-																			"type": "Expression"
-																		},
-																		"file_name": "*.parquet"
-																	},
-																	"SinkToAzureTable": {}
-																}
-															},
-															"staging": {},
-															"compute": {
-																"coreCount": 8,
-																"computeType": "General"
-															},
-															"traceLevel": "None",
-															"runConcurrently": true,
-															"cacheSinks": {
-																"firstRowOnly": true
-															}
-														}
-													}
-												]
-											},
-											{
-												"value": "Netsuite",
-												"activities": [
-													{
-														"name": "Execute Netsuite Data Refresh",
-														"type": "ExecutePipeline",
-														"dependsOn": [
-															{
-																"activity": "Set as Updating",
-																"dependencyConditions": [
-																	"Succeeded"
-																]
-															}
-														],
-														"userProperties": [],
-														"typeProperties": {
-															"pipeline": {
-																"referenceName": "Netsuite Data Refresh",
-																"type": "PipelineReference"
-															},
-															"waitOnCompletion": true,
-															"parameters": {
-																"item": {
-																	"value": "@item()",
-																	"type": "Expression"
-																}
-															}
-														}
-													},
-													{
-														"name": "Set as Updated",
-														"type": "SqlPoolStoredProcedure",
-														"dependsOn": [
-															{
-																"activity": "Execute Netsuite Data Refresh",
-																"dependencyConditions": [
-																	"Succeeded",
-																	"Failed"
-																]
-															}
-														],
-														"policy": {
-															"timeout": "7.00:00:00",
-															"retry": 0,
-															"retryIntervalInSeconds": 30,
-															"secureOutput": false,
-															"secureInput": false
-														},
-														"userProperties": [],
-														"sqlPool": {
-															"referenceName": "Modineer",
-															"type": "SqlPoolReference"
-														},
-														"typeProperties": {
-															"storedProcedureName": "[Config].[SetAsUpdated]",
-															"storedProcedureParameters": {
-																"rowId": {
-																	"value": {
-																		"value": "@item().Id",
-																		"type": "Expression"
-																	},
-																	"type": "Int32"
-																}
-															}
-														}
-													},
-													{
-														"name": "Set as Updating",
-														"type": "SqlPoolStoredProcedure",
-														"dependsOn": [],
-														"policy": {
-															"timeout": "7.00:00:00",
-															"retry": 0,
-															"retryIntervalInSeconds": 30,
-															"secureOutput": false,
-															"secureInput": false
-														},
-														"userProperties": [],
-														"sqlPool": {
-															"referenceName": "Modineer",
-															"type": "SqlPoolReference"
-														},
-														"typeProperties": {
-															"storedProcedureName": "[Config].[SetAsUpdating]",
-															"storedProcedureParameters": {
-																"interval": {
-																	"value": {
-																		"value": "@item().RefreshInterval",
-																		"type": "Expression"
-																	},
-																	"type": "String"
-																},
-																"intervalQty": {
-																	"value": {
-																		"value": "@item().RefreshNumber",
-																		"type": "Expression"
-																	},
-																	"type": "Int32"
-																},
-																"rowId": {
-																	"value": {
-																		"value": "@item().Id",
-																		"type": "Expression"
-																	},
-																	"type": "Int32"
-																},
-																"SCN": {
-																	"value": "0",
-																	"type": "Int64"
-																}
-															}
-														}
-													}
-												]
-											},
-											{
-												"value": "Plex",
-												"activities": [
-													{
-														"name": "Place Holder_copy2",
-														"type": "Wait",
-														"dependsOn": [],
-														"userProperties": [],
-														"typeProperties": {
-															"waitTimeInSeconds": 1
-														}
-													}
-												]
-											}
-										],
-										"defaultActivities": [
-											{
-												"name": "Place Holder",
-												"type": "Wait",
-												"dependsOn": [],
-												"userProperties": [],
-												"typeProperties": {
-													"waitTimeInSeconds": 1
-												}
-											}
-										]
-									}
-								}
-							]
-						}
-					}
-				],
-				"policy": {
-					"elapsedTimeMetric": {},
-					"cancelAfter": {}
-				},
-				"folder": {
-					"name": "Serverless Setup"
-				},
-				"annotations": [],
-				"lastPublishTime": "2021-11-12T20:33:37Z"
-			},
-			"dependsOn": [
-				"[concat(variables('workspaceId'), '/datasets/Modineer')]",
-				"[concat(variables('workspaceId'), '/datasets/GloviaProd')]",
-				"[concat(variables('workspaceId'), '/sqlPools/Modineer')]",
-				"[concat(variables('workspaceId'), '/datasets/SinkParquet')]",
-				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]",
-				"[concat(variables('workspaceId'), '/dataflows/UpdateSQLTableFromParquet')]",
-				"[concat(variables('workspaceId'), '/pipelines/Netsuite Data Refresh')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/Netsuite Data Refresh_copy1')]",
-			"type": "Microsoft.Synapse/workspaces/pipelines",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"activities": [
-					{
-						"name": "Data Import Type",
-						"type": "Switch",
-						"dependsOn": [],
-						"userProperties": [],
-						"typeProperties": {
-							"on": {
-								"value": "@pipeline().parameters.item.ConnectionType",
-								"type": "Expression"
-							},
-							"cases": [
-								{
-									"value": "ODBC",
-									"activities": [
-										{
-											"name": "Modineer Netsuite ODBC Copy",
-											"type": "Copy",
-											"dependsOn": [],
-											"policy": {
-												"timeout": "7.00:00:00",
-												"retry": 0,
-												"retryIntervalInSeconds": 30,
-												"secureOutput": false,
-												"secureInput": false
-											},
-											"userProperties": [],
-											"typeProperties": {
-												"source": {
-													"type": "OdbcSource",
-													"query": {
-														"value": "@pipeline().parameters.item.DataQuery",
-														"type": "Expression"
-													},
-													"queryTimeout": "02:00:00"
-												},
-												"sink": {
-													"type": "SqlDWSink",
-													"preCopyScript": {
-														"value": "@{concat('TRUNCATE TABLE ',pipeline().parameters.item.SchemaName,'.',pipeline().parameters.item.TableName)}",
-														"type": "Expression"
-													},
-													"disableMetricsCollection": false
-												},
-												"enableStaging": false,
-												"translator": {
-													"type": "TabularTranslator",
-													"typeConversion": true,
-													"typeConversionSettings": {
-														"allowDataTruncation": true,
-														"treatBooleanAsNumber": false
-													}
-												}
-											},
-											"inputs": [
-												{
-													"referenceName": "NetsuiteODBCSource",
-													"type": "DatasetReference",
-													"parameters": {}
-												}
-											],
-											"outputs": [
-												{
-													"referenceName": "AzureSynapseDatabase",
-													"type": "DatasetReference",
-													"parameters": {
-														"TableName": {
-															"value": "@pipeline().parameters.item.TableName",
-															"type": "Expression"
-														},
-														"DbName": {
-															"value": "@pipeline().parameters.item.DbName",
-															"type": "Expression"
-														},
-														"SchemaName": {
-															"value": "@pipeline().parameters.item.SchemaName",
-															"type": "Expression"
-														}
-													}
-												}
-											]
-										}
-									]
-								}
-							],
-							"defaultActivities": [
-								{
-									"name": "Wait1",
-									"description": "This is a placeholder",
-									"type": "Wait",
-									"dependsOn": [],
-									"userProperties": [],
-									"typeProperties": {
-										"waitTimeInSeconds": 1
-									}
-								}
-							]
-						}
-					}
-				],
-				"policy": {
-					"elapsedTimeMetric": {},
-					"cancelAfter": {}
-				},
-				"parameters": {
-					"item": {
-						"type": "object"
-					}
-				},
-				"folder": {
-					"name": "Serverless Setup/Slave Pipeline"
-				},
-				"annotations": []
-			},
-			"dependsOn": [
-				"[concat(variables('workspaceId'), '/datasets/NetsuiteODBCSource')]",
-				"[concat(variables('workspaceId'), '/datasets/AzureSynapseDatabase')]"
-			]
 		}
 	]
 }
