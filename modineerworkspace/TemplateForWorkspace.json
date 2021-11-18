@@ -730,7 +730,7 @@
 						"typeProperties": {
 							"source": {
 								"type": "OracleSource",
-								"oracleReaderQuery": "SELECT * FROM GLOVIA_PROD.JE_DET WHERE ORA_ROWSCN >= 2874617532",
+								"oracleReaderQuery": "SELECT * FROM GLOVIA_PROD.JE_DET WHERE ORA_ROWSCN >= 2864616532",
 								"partitionOption": "None",
 								"queryTimeout": "02:00:00"
 							},
@@ -20682,7 +20682,7 @@
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
 				"content": {
-					"query": "SELECT TOP 10 *\nFROM OPENROWSET(BULK 'https://modineerlake.blob.core.windows.net/unified-data-cluster/GLOVIA_PROD/JE_DET/Processed/part-00000-519a7cde-95b0-433f-af3b-2f0953f866a2-c000.snappy.parquet',\n                FORMAT = 'PARQUET') AS ROWS\n",
+					"query": "SELECT COUNT(*)\nFROM OPENROWSET(BULK 'https://modineerlake.blob.core.windows.net/unified-data-cluster/GLOVIA_PROD/JE_DET/NotProcessed/*.parquet',\n                FORMAT = 'PARQUET') AS ROWS\n",
 					"metadata": {
 						"language": "sql"
 					},
