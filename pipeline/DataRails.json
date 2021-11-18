@@ -69,7 +69,7 @@
 				"typeProperties": {
 					"source": {
 						"type": "OracleSource",
-						"oracleReaderQuery": "SELECT * FROM GLOVIA_PROD.JE_DET WHERE ORA_ROWSCN >= 2874617532",
+						"oracleReaderQuery": "SELECT * FROM GLOVIA_PROD.JE_DET WHERE ORA_ROWSCN >= 2864616532",
 						"partitionOption": "None",
 						"queryTimeout": "02:00:00"
 					},
