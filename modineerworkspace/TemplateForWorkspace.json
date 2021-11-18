@@ -675,7 +675,7 @@
 						"userProperties": [],
 						"typeProperties": {
 							"dataflow": {
-								"referenceName": "Update SQL Table From Parquet",
+								"referenceName": "UpdateSQLTableFromParquet",
 								"type": "DataFlowReference",
 								"parameters": {
 									"SchemaName": {
@@ -719,7 +719,7 @@
 				"annotations": []
 			},
 			"dependsOn": [
-				"[concat(variables('workspaceId'), '/dataflows/Update SQL Table From Parquet')]"
+				"[concat(variables('workspaceId'), '/dataflows/UpdateSQLTableFromParquet')]"
 			]
 		},
 		{
@@ -20537,7 +20537,7 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/Update SQL Table From Parquet')]",
+			"name": "[concat(parameters('workspaceName'), '/UpdateSQLTableFromParquet')]",
 			"type": "Microsoft.Synapse/workspaces/dataflows",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
@@ -20762,7 +20762,7 @@
 						"spark.dynamicAllocation.enabled": "true",
 						"spark.dynamicAllocation.minExecutors": "1",
 						"spark.dynamicAllocation.maxExecutors": "4",
-						"spark.autotune.trackingId": "e1947569-7be3-426a-912e-ea507b0eada2"
+						"spark.autotune.trackingId": "42b82b99-5fcb-442f-8aa5-0d2204d6481d"
 					}
 				},
 				"metadata": {
