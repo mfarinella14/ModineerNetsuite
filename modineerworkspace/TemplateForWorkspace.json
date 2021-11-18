@@ -664,7 +664,14 @@
 					{
 						"name": "Dataflow1",
 						"type": "ExecuteDataFlow",
-						"dependsOn": [],
+						"dependsOn": [
+							{
+								"activity": "Copy data1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
 						"policy": {
 							"timeout": "1.00:00:00",
 							"retry": 0,
@@ -707,6 +714,65 @@
 							},
 							"traceLevel": "Fine"
 						}
+					},
+					{
+						"name": "Copy data1",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "OracleSource",
+								"partitionOption": "None",
+								"queryTimeout": "02:00:00"
+							},
+							"sink": {
+								"type": "ParquetSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "ParquetWriteSettings"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "GloviaProd",
+								"type": "DatasetReference",
+								"parameters": {
+									"tablename": "JE_DET",
+									"schemaname": "GLOVIA_PROD"
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "SinkParquet",
+								"type": "DatasetReference",
+								"parameters": {
+									"file_system": "unified-data-cluster",
+									"directory": "GLOVIA_PROD/JE_DET/NotProcessed",
+									"file_name": "JE_DET.parquet"
+								}
+							}
+						]
 					}
 				],
 				"policy": {
@@ -719,7 +785,9 @@
 				"annotations": []
 			},
 			"dependsOn": [
-				"[concat(variables('workspaceId'), '/dataflows/UpdateSQLTableFromParquet')]"
+				"[concat(variables('workspaceId'), '/dataflows/UpdateSQLTableFromParquet')]",
+				"[concat(variables('workspaceId'), '/datasets/GloviaProd')]",
+				"[concat(variables('workspaceId'), '/datasets/SinkParquet')]"
 			]
 		},
 		{
@@ -20613,7 +20681,7 @@
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
 				"content": {
-					"query": "SELECT TOP 10 *\nFROM OPENROWSET(BULK 'https://modineerlake.blob.core.windows.net/unified-data-cluster/GLOVIA_PROD/JE_DET/NotProcessed/*.parquet',\n                FORMAT = 'PARQUET') AS ROWS\nWHERE GL_ACCT = '006400'\n",
+					"query": "SELECT TOP 10 *\nFROM OPENROWSET(BULK 'https://modineerlake.blob.core.windows.net/unified-data-cluster/GLOVIA_PROD/JE_DET/Processed/part-00000-519a7cde-95b0-433f-af3b-2f0953f866a2-c000.snappy.parquet',\n                FORMAT = 'PARQUET') AS ROWS\n",
 					"metadata": {
 						"language": "sql"
 					},
@@ -20654,17 +20722,21 @@
 			"properties": {
 				"nbformat": 4,
 				"nbformat_minor": 2,
+				"bigDataPool": {
+					"referenceName": "ModSparkPool",
+					"type": "BigDataPoolReference"
+				},
 				"sessionProperties": {
 					"driverMemory": "28g",
 					"driverCores": 4,
 					"executorMemory": "28g",
 					"executorCores": 4,
-					"numExecutors": 2,
+					"numExecutors": 1,
 					"conf": {
-						"spark.dynamicAllocation.enabled": "false",
-						"spark.dynamicAllocation.minExecutors": "2",
-						"spark.dynamicAllocation.maxExecutors": "2",
-						"spark.autotune.trackingId": "4d097ff3-364c-4c14-b0ad-1761430a3edb"
+						"spark.dynamicAllocation.enabled": "true",
+						"spark.dynamicAllocation.minExecutors": "1",
+						"spark.dynamicAllocation.maxExecutors": "5",
+						"spark.autotune.trackingId": "61377e38-7384-4788-a044-ac1bc13a2370"
 					}
 				},
 				"metadata": {
@@ -20676,6 +20748,20 @@
 					},
 					"language_info": {
 						"name": "python"
+					},
+					"a365ComputeOptions": {
+						"id": "/subscriptions/94182533-145d-4aab-ac52-b1f4c605b8b0/resourceGroups/Modineer/providers/Microsoft.Synapse/workspaces/modineerworkspace/bigDataPools/ModSparkPool",
+						"name": "ModSparkPool",
+						"type": "Spark",
+						"endpoint": "https://modineerworkspace.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/ModSparkPool",
+						"auth": {
+							"type": "AAD",
+							"authResource": "https://dev.azuresynapse.net"
+						},
+						"sparkVersion": "3.1",
+						"nodeCount": 10,
+						"cores": 4,
+						"memory": 28
 					}
 				},
 				"cells": [
@@ -20687,52 +20773,7 @@
 							]
 						},
 						"source": [
-							"\r\n",
 							""
-						],
-						"outputs": [],
-						"execution_count": null
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							},
-							"microsoft": {
-								"language": "sparksql"
-							}
-						},
-						"source": [
-							"%%sql  \r\n",
-							"SELECT *\r\n",
-							"FROM skndfalsnkfa"
-						],
-						"outputs": [],
-						"execution_count": null
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"\r\n",
-							"MERGT STATEMENT"
 						],
 						"outputs": [],
 						"execution_count": null
@@ -20762,7 +20803,7 @@
 						"spark.dynamicAllocation.enabled": "true",
 						"spark.dynamicAllocation.minExecutors": "1",
 						"spark.dynamicAllocation.maxExecutors": "4",
-						"spark.autotune.trackingId": "42b82b99-5fcb-442f-8aa5-0d2204d6481d"
+						"spark.autotune.trackingId": "cc1015e8-79e9-4b62-b99d-de377f935128"
 					}
 				},
 				"metadata": {
@@ -20787,10 +20828,8 @@
 						"sparkVersion": "3.1",
 						"nodeCount": 10,
 						"cores": 4,
-						"memory": 28,
-						"automaticScaleJobs": true
-					},
-					"sessionKeepAliveTimeout": 30
+						"memory": 28
+					}
 				},
 				"cells": [
 					{
