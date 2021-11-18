@@ -3,7 +3,7 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "Data flow1",
+				"name": "Dataflow1",
 				"type": "ExecuteDataFlow",
 				"dependsOn": [],
 				"policy": {
@@ -19,35 +19,22 @@
 						"referenceName": "Update SQL Table From Parquet",
 						"type": "DataFlowReference",
 						"parameters": {
-							"SchemaName": {
-								"value": "GLOVIA_PROD",
-								"type": "Expression"
-							},
-							"TableName": {
-								"value": "JE_DET",
-								"type": "Expression"
-							},
-							"KeyColumns": "array('JE_CCN','JE','JE_SUB','JE_LINE')"
+							"SchemaName": "GLOVIA_PROD",
+							"TableName": "JE_DET.parquet"
 						},
 						"datasetParameters": {
 							"NewData": {
 								"file_system": "unified-data-cluster",
-								"directory": "GLOVIA_PROD/JE_DET",
+								"directory": "GLOVIA_PROD/JE_DET/NotProcessed",
 								"file_name": "JE_DET.parquet"
 							}
 						}
-					},
-					"staging": {
-						"folderPath": ""
 					},
 					"compute": {
 						"coreCount": 8,
 						"computeType": "General"
 					},
-					"traceLevel": "None",
-					"cacheSinks": {
-						"firstRowOnly": true
-					}
+					"traceLevel": "Fine"
 				}
 			}
 		],
