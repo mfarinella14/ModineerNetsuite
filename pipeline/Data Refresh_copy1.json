@@ -179,7 +179,7 @@
 													"source": {
 														"type": "OracleSource",
 														"oracleReaderQuery": {
-															"value": "@concat('SELECT * FROM ',item().SchemaName,'.',item().TableName,'WHERE ORA_MAXSCN >= ',item().TableMaxSCN)",
+															"value": "@concat('SELECT * FROM ',item().SchemaName,'.',item().TableName,' WHERE ORA_MAXSCN >= ',item().TableMaxSCN)",
 															"type": "Expression"
 														},
 														"partitionOption": "None",
