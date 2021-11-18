@@ -2,7 +2,7 @@
 	"name": "SQL script 1",
 	"properties": {
 		"content": {
-			"query": "SELECT COUNT(*)\nFROM OPENROWSET(BULK 'https://modineerlake.blob.core.windows.net/unified-data-cluster/GLOVIA_PROD/JE_DET/NotProcessed/*.parquet',\n                FORMAT = 'PARQUET') AS ROWS\n",
+			"query": "SELECT COUNT(*)\nFROM OPENROWSET(BULK 'https://modineerlake.blob.core.windows.net/unified-data-cluster/GLOVIA_PROD/JE_DET/NotProcessed/*.parquet',\n                FORMAT = 'PARQUET') AS ROWS\n\nSELECT *\nFROM OPENROWSET(\n    BULK 'https://modineerlake.blob.core.windows.net/unified-data-cluster/GLOVIA_PROD/JE_DET/Processed/',\n    FORMAT = 'delta') as rows;",
 			"metadata": {
 				"language": "sql"
 			},
