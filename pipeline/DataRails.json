@@ -19,8 +19,18 @@
 						"referenceName": "Update SQL Table From Parquet",
 						"type": "DataFlowReference",
 						"parameters": {
-							"SchemaName": "GLOVIA_PROD",
-							"TableName": "JE_DET.parquet"
+							"SchemaName": {
+								"value": "'@{GLOVIA_PROD}'",
+								"type": "Expression"
+							},
+							"TableName": {
+								"value": "'@{JE_DET.parquet}'",
+								"type": "Expression"
+							},
+							"KeyColumns": {
+								"value": "'@{JE_CCN,JE,JE_SUB,JE_LINE}'",
+								"type": "Expression"
+							}
 						},
 						"datasetParameters": {
 							"NewData": {
