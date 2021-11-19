@@ -742,11 +742,11 @@
 																		"type": "Expression"
 																	},
 																	"directory": {
-																		"value": "\"@item().SchemaName\"/\"@item().TableName\"/NotProcessed",
+																		"value": "@concat(item().SchemaName,'/',item().TableName,'/NotProcessed')",
 																		"type": "Expression"
 																	},
 																	"file_name": {
-																		"value": "\"@item().TableName\"-\"@convertFromUtc(utcnow(), 'Eastern Standard Time')\".parquet",
+																		"value": "@concat(item().TableName,'-',convertFromUtc(utcnow(), 'Eastern Standard Time'),'.parquet')",
 																		"type": "Expression"
 																	}
 																}
@@ -842,7 +842,10 @@
 																			"value": "@concat(item().SchemaName,'/',item().TableName,'/NotProcessed')",
 																			"type": "Expression"
 																		},
-																		"file_name": "*.parquet"
+																		"file_name": {
+																			"value": "''",
+																			"type": "Expression"
+																		}
 																	},
 																	"SinkToAzureTable": {}
 																}
@@ -2446,7 +2449,7 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/Notebook 1')]",
+			"name": "[concat(parameters('workspaceName'), '/DeltaMerge')]",
 			"type": "Microsoft.Synapse/workspaces/notebooks",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
@@ -2466,7 +2469,7 @@
 						"spark.dynamicAllocation.enabled": "true",
 						"spark.dynamicAllocation.minExecutors": "1",
 						"spark.dynamicAllocation.maxExecutors": "5",
-						"spark.autotune.trackingId": "61377e38-7384-4788-a044-ac1bc13a2370"
+						"spark.autotune.trackingId": "965c1f1e-2c43-435d-844c-cb8eb2676263"
 					}
 				},
 				"metadata": {
@@ -2503,7 +2506,9 @@
 							]
 						},
 						"source": [
-							""
+							"sch = ''\r\n",
+							"tbl = ''\r\n",
+							"conditions = ''"
 						],
 						"outputs": [],
 						"execution_count": null
