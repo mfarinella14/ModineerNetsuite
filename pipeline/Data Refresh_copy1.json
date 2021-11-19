@@ -223,11 +223,11 @@
 																"type": "Expression"
 															},
 															"directory": {
-																"value": "\"@item().SchemaName\"/\"@item().TableName\"/NotProcessed",
+																"value": "@concat(item().SchemaName,'/',item().TableName,'/NotProcessed')",
 																"type": "Expression"
 															},
 															"file_name": {
-																"value": "\"@item().TableName\"-\"@convertFromUtc(utcnow(), 'Eastern Standard Time')\".parquet",
+																"value": "@concat(item().TableName,'-',convertFromUtc(utcnow(), 'Eastern Standard Time'),'.parquet')",
 																"type": "Expression"
 															}
 														}
@@ -323,7 +323,10 @@
 																	"value": "@concat(item().SchemaName,'/',item().TableName,'/NotProcessed')",
 																	"type": "Expression"
 																},
-																"file_name": "*.parquet"
+																"file_name": {
+																	"value": "''",
+																	"type": "Expression"
+																}
 															}
 														}
 													},
