@@ -41,9 +41,8 @@
 						},
 						"datasetParameters": {
 							"NewData": {
-								"file_system": "unified-data-cluster",
-								"directory": "GLOVIA_PROD/JE_DET/NotProcessed",
-								"file_name": "JE_DET.parquet"
+								"FileSystem": "a",
+								"FilePath": "b"
 							}
 						}
 					},
@@ -96,8 +95,13 @@
 				},
 				"inputs": [
 					{
-						"referenceName": "ReadParquet",
-						"type": "DatasetReference"
+						"referenceName": "SinkParquet",
+						"type": "DatasetReference",
+						"parameters": {
+							"file_system": "a",
+							"directory": "b",
+							"file_name": "c"
+						}
 					}
 				],
 				"outputs": [
