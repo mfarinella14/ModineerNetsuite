@@ -309,7 +309,7 @@
 																"type": "Expression"
 															},
 															"KeyColumns": {
-																"value": "@createArray(item().TableKeysArray)",
+																"value": "@split(item().TableKeysArray,',')",
 																"type": "Expression"
 															}
 														},
