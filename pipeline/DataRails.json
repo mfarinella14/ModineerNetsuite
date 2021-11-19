@@ -68,10 +68,12 @@
 				"userProperties": [],
 				"typeProperties": {
 					"source": {
-						"type": "OracleSource",
-						"oracleReaderQuery": "SELECT * FROM GLOVIA_PROD.JE_DET WHERE ORA_ROWSCN >= 2864616532",
-						"partitionOption": "None",
-						"queryTimeout": "02:00:00"
+						"type": "ParquetSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						}
 					},
 					"sink": {
 						"type": "ParquetSink",
@@ -94,12 +96,8 @@
 				},
 				"inputs": [
 					{
-						"referenceName": "GloviaProd",
-						"type": "DatasetReference",
-						"parameters": {
-							"tablename": "JE_DET",
-							"schemaname": "GLOVIA_PROD"
-						}
+						"referenceName": "ReadParquet",
+						"type": "DatasetReference"
 					}
 				],
 				"outputs": [
@@ -108,8 +106,8 @@
 						"type": "DatasetReference",
 						"parameters": {
 							"file_system": "unified-data-cluster",
-							"directory": "GLOVIA_PROD/JE_DET/NotProcessed",
-							"file_name": "JE_DET.parquet"
+							"directory": "GLOVIA_PROD/WO/Test",
+							"file_name": "WO[n].parquet"
 						}
 					}
 				]

@@ -315,16 +315,12 @@
 														},
 														"datasetParameters": {
 															"NewData": {
-																"file_system": {
+																"FileSystem": {
 																	"value": "@item().FileSystem",
 																	"type": "Expression"
 																},
-																"directory": {
+																"FilePath": {
 																	"value": "@concat(item().SchemaName,'/',item().TableName,'/NotProcessed')",
-																	"type": "Expression"
-																},
-																"file_name": {
-																	"value": "*.parquet",
 																	"type": "Expression"
 																}
 															}
