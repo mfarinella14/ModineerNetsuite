@@ -28,7 +28,7 @@
 								"type": "Expression"
 							},
 							"KeyColumns": {
-								"value": "@split(string('JE_CCN,JE,JE_SUB,JE_LINE'),',')",
+								"value": "@string('JE_CCN,JE,JE_SUB,JE_LINE')",
 								"type": "Expression"
 							}
 						},
