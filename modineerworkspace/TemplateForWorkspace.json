@@ -828,7 +828,7 @@
 																		"type": "Expression"
 																	},
 																	"KeyColumns": {
-																		"value": "@createArray(item().TableKeysArray)",
+																		"value": "@split(item().TableKeysArray,',')",
 																		"type": "Expression"
 																	}
 																},
@@ -2469,7 +2469,7 @@
 						"spark.dynamicAllocation.enabled": "true",
 						"spark.dynamicAllocation.minExecutors": "1",
 						"spark.dynamicAllocation.maxExecutors": "5",
-						"spark.autotune.trackingId": "8492bbf0-dc99-4616-8663-be24b38fef56"
+						"spark.autotune.trackingId": "fbae3bc9-62e3-46be-b127-3a21310bcc2f"
 					}
 				},
 				"metadata": {
@@ -2527,7 +2527,7 @@
 							}
 						},
 						"source": [
-							""
+							"dataOriginal = "
 						],
 						"outputs": [],
 						"execution_count": null
