@@ -1412,6 +1412,73 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/Pipeline 1')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "Data flow1",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "1.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "UpdateSQLTableFromParquet",
+								"type": "DataFlowReference",
+								"parameters": {
+									"SchemaName": {
+										"value": "@string('GLOVIA_PROD')",
+										"type": "Expression"
+									},
+									"TableName": {
+										"value": "@string('JE_DET')",
+										"type": "Expression"
+									},
+									"KeyColumns": {
+										"value": "@string('JE_CCN,JE,JE_SUB,JE_LINE')",
+										"type": "Expression"
+									}
+								},
+								"datasetParameters": {
+									"NewData": {
+										"FileSystem": "unified-data-cluster",
+										"FilePath": "GLOVIA_PROD/JE_DET/NotProcessed"
+									},
+									"SinkToAzureTable": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"folder": {
+					"name": "Temp"
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/dataflows/UpdateSQLTableFromParquet')]",
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/AzureSynapseDatabase')]",
 			"type": "Microsoft.Synapse/workspaces/datasets",
 			"apiVersion": "2019-06-01-preview",
@@ -2403,7 +2470,7 @@
 							"name": "AlterRow1"
 						}
 					],
-					"script": "parameters{\n\tSchemaName as string,\n\tTableName as string,\n\tKeyColumns as string\n}\nsource(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: true,\n\tformat: 'parquet') ~> NewData\nNewData alterRow(upsertIf(true())) ~> AlterRow1\nAlterRow1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'delta',\n\tfileSystem: 'unified-data-cluster',\n\tfolderPath: (concatWS('/',$SchemaName,$TableName)),\n\tmergeSchema: true,\n\tautoCompact: false,\n\toptimizedWrite: false,\n\tvacuum: 0,\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:true,\n\tkeys:(split($KeyColumns,',')),\n\tumask: 0022,\n\tpreCommands: [],\n\tpostCommands: [],\n\tdateFormat:'MM/dd/yyyy',\n\ttimestampFormat:'MM/dd/yyyy HH:mm:ss',\n\tbooleanFormat: ['1', '0'],\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tsaveOrder: 1) ~> SinkToAzureTable"
+					"script": "parameters{\n\tSchemaName as string,\n\tTableName as string,\n\tKeyColumns as string[]\n}\nsource(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: true,\n\tformat: 'parquet') ~> NewData\nNewData alterRow(upsertIf(true())) ~> AlterRow1\nAlterRow1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'delta',\n\tfileSystem: 'unified-data-cluster',\n\tfolderPath: (concatWS('/',$SchemaName,$TableName,'Processed')),\n\tmergeSchema: true,\n\tautoCompact: false,\n\toptimizedWrite: false,\n\tvacuum: 0,\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:true,\n\tkeys:($KeyColumns),\n\tumask: 0022,\n\tpreCommands: [],\n\tpostCommands: [],\n\tdateFormat:'MM/dd/yyyy',\n\ttimestampFormat:'MM/dd/yyyy HH:mm:ss',\n\tbooleanFormat: ['1', '0'],\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tsaveOrder: 1) ~> SinkToAzureTable"
 				}
 			},
 			"dependsOn": [
@@ -2418,6 +2485,26 @@
 			"properties": {
 				"type": "ManagedIdentity",
 				"typeProperties": {}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/DynamicSQLMerge')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "ModineerServerless",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
 			},
 			"dependsOn": []
 		},
@@ -2505,6 +2592,26 @@
 			"dependsOn": []
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 4')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n\tWITH ( FORMAT_TYPE = PARQUET)\nGO\n\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'unified-data-cluster_modineerlake_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [unified-data-cluster_modineerlake_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION = 'abfss://unified-data-cluster@modineerlake.dfs.core.windows.net' \n\t)\nGO\nCREATE EXTERNAL TABLE GloviaProd.CR_CNTDT (\n\t[SALES_CCN] nvarchar(1000),\n\t[CNT_NUM] nvarchar(1000),\n\t[CR_CNTDT_SEQ] nvarchar(1000),\n\t[REQD_DATE] datetime2(7),\n\t[REQD_TIME] nvarchar(1000),\n\t[DOCK] nvarchar(1000),\n\t[INBOUND_SEQ] nvarchar(1000),\n\t[REL_QTY_TYPE] nvarchar(1000),\n\t[CUM_ORDER_QTY] numeric(38,18),\n\t[DIS_ORDER_QTY] numeric(38,18),\n\t[QTY_QUAL] nvarchar(1000),\n\t[PER_QUAL] nvarchar(1000),\n\t[SHIP_QTY] numeric(38,18),\n\t[COMMIT_QTY] numeric(38,18),\n\t[CANC_QTY] numeric(38,18),\n\t[BO_QTY] numeric(38,18),\n\t[UNIT_PRICE] numeric(38,18),\n\t[LAST_PICK_SEQ] numeric(38,18),\n\t[EST_PARTS_AMT] numeric(38,18),\n\t[EST_TAX_AMT] numeric(38,18),\n\t[SHIP_PARTS_AMT] numeric(38,18),\n\t[SHIP_TAX_AMT] numeric(38,18),\n\t[DEL_ORD_NUM] nvarchar(1000),\n\t[DEL_DATE] datetime2(7),\n\t[DEL_TIME] nvarchar(1000),\n\t[SHIP_VAT_AMT] numeric(38,18),\n\t[PRICE_OVERRIDDEN] nvarchar(1000),\n\t[NC_REASON] nvarchar(1000),\n\t[CANC_REASON] nvarchar(1000),\n\t[BOOK_RATE] numeric(38,18),\n\t[BOOT_RATE_DIV] nvarchar(1000),\n\t[LAST_SHIP_SEQ] numeric(38,18),\n\t[LAST_PROF_INV] nvarchar(1000),\n\t[LAST_PROF_ASN] nvarchar(1000),\n\t[EST_BACKLOG_AMT] numeric(38,18),\n\t[SHIP_BACKLOG_AMT] numeric(38,18),\n\t[INBOUND_CNR_ITEM] nvarchar(1000),\n\t[INBOUND_CNR_REV] nvarchar(1000),\n\t[CONSIGNED_QTY] numeric(38,18),\n\t[CONSIGNMENT_LOC] nvarchar(1000),\n\t[CONSIGNMENT_BIN] nvarchar(1000),\n\t[USER_ALPHA1] nvarchar(1000),\n\t[USER_ALPHA2] nvarchar(1000),\n\t[USER_ALPHA3] nvarchar(1000),\n\t[USER_NUM1] numeric(38,18),\n\t[USER_NUM2] numeric(38,18),\n\t[USER_NUM3] numeric(38,18),\n\t[USER_DATE] datetime2(7),\n\t[USER_TIME] nvarchar(1000)\n\t)\n\tWITH (\n\tLOCATION = 'GLOVIA_PROD/CR_CNTDT/**',\n\tDATA_SOURCE = [unified-data-cluster_modineerlake_dfs_core_windows_net],\n\tFILE_FORMAT = [SynapseParquetFormat]\n\t)\nGO\n\n\nSELECT TOP 100 * FROM GloviaProd.CR_CNTDT\nGO",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "ModineerServerless",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/DeltaMerge')]",
 			"type": "Microsoft.Synapse/workspaces/notebooks",
 			"apiVersion": "2019-06-01-preview",
@@ -2525,7 +2632,7 @@
 						"spark.dynamicAllocation.enabled": "true",
 						"spark.dynamicAllocation.minExecutors": "1",
 						"spark.dynamicAllocation.maxExecutors": "5",
-						"spark.autotune.trackingId": "fbae3bc9-62e3-46be-b127-3a21310bcc2f"
+						"spark.autotune.trackingId": "28e93519-099a-4a5e-bcf6-87e173b03fe0"
 					}
 				},
 				"metadata": {
@@ -2533,7 +2640,7 @@
 					"enableDebugMode": false,
 					"kernelspec": {
 						"name": "synapse_pyspark",
-						"display_name": "python"
+						"display_name": "Synapse PySpark"
 					},
 					"language_info": {
 						"name": "python"
@@ -2562,12 +2669,12 @@
 							]
 						},
 						"source": [
-							"sch = ''\r\n",
-							"tbl = ''\r\n",
+							"sch = 'GLOVIA_PROD'\r\n",
+							"tbl = 'JE_DET'\r\n",
 							"conditions = ''"
 						],
 						"outputs": [],
-						"execution_count": null
+						"execution_count": 1
 					},
 					{
 						"cell_type": "code",
@@ -2583,10 +2690,36 @@
 							}
 						},
 						"source": [
-							"dataOriginal = "
+							"dfDataOrigionalPath = f\"/GLOVIA_PROD/{sch}/{tbl}/Processed\"\r\n",
+							"dfDataOriginal = spark.createDataFrame()"
 						],
 						"outputs": [],
-						"execution_count": null
+						"execution_count": 2
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "sparksql"
+							},
+							"collapsed": false
+						},
+						"source": [
+							"%%sql\r\n",
+							"CREATE TABLE IF NOT EXISTS delta.JE_DET USING DELTA\r\n",
+							"LOCATION 'GLOVIA_PROD/JE_DET/Processed/'"
+						],
+						"outputs": [],
+						"execution_count": 17
 					}
 				]
 			},
