@@ -324,7 +324,7 @@
 																	"type": "Expression"
 																},
 																"file_name": {
-																	"value": "''",
+																	"value": "*.parquet",
 																	"type": "Expression"
 																}
 															}
