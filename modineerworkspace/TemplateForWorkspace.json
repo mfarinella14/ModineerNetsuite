@@ -1207,7 +1207,7 @@
 												"sink": {
 													"type": "SqlDWSink",
 													"preCopyScript": {
-														"value": "@{concat('TRUNCATE TABLE ',pipeline().parameters.item.SchemaName,'.',pipeline().parameters.item.TableName)}",
+														"value": "@{pipeline().parameters.item.PreCopySql}",
 														"type": "Expression"
 													},
 													"disableMetricsCollection": false
@@ -2471,6 +2471,26 @@
 			"properties": {
 				"content": {
 					"query": "IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n\tWITH ( FORMAT_TYPE = PARQUET)\nGO\n\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'unified-data-cluster_modineerlake_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [unified-data-cluster_modineerlake_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION = 'abfss://unified-data-cluster@modineerlake.dfs.core.windows.net' \n\t)\nGO\n\nCREATE EXTERNAL TABLE GLOVIA_PROD.JE_DET (\t[JE_CCN] varchar(8000),\n\t[JE] varchar(8000),\n\t[JE_SUB] varchar(8000),\n\t[JE_LINE] varchar(8000),\n\t[GL_ACCT] varchar(8000),\n\t[CCN] varchar(8000),\n\t[ASOF_DATE] datetime2(7),\n\t[PCT] numeric(38,18),\n\t[QTY] numeric(38,18),\n\t[REF] varchar(8000),\n\t[SU] varchar(8000),\n\t[ASOF_YEAR] varchar(8000),\n\t[REVERSE_YEAR] varchar(8000),\n\t[MEMO] varchar(8000),\n\t[OVT] varchar(8000),\n\t[PA_COST_FLAG] varchar(8000),\n\t[PROJECT_ID] varchar(8000),\n\t[TASK_ID] varchar(8000),\n\t[GL_SL] varchar(8000),\n\t[GL_DL] varchar(8000),\n\t[DEBIT_AMT] numeric(38,18),\n\t[CREDIT_AMT] numeric(38,18),\n\t[USER_ALPHA1] varchar(8000),\n\t[USER_ALPHA2] varchar(8000),\n\t[USER_ALPHA3] varchar(8000),\n\t[USER_NUM1] numeric(38,18),\n\t[USER_NUM2] numeric(38,18),\n\t[USER_NUM3] numeric(38,18),\n\t[USER_DATE] datetime2(7),\n\t[USER_TIME] varchar(8000),\n\t[BANK] varchar(8000),\n\t[REF_SEQ] varchar(8000),\n\t[VAT] varchar(8000)\n\t)\n\tWITH (\n\tLOCATION = 'GLOVIA_PROD/JE_DET/JE_DET.parquet',\n\tDATA_SOURCE = [unified-data-cluster_modineerlake_dfs_core_windows_net],\n\tFILE_FORMAT = [SynapseParquetFormat]\n\t)\nGO\n\nSELECT TOP 100 * FROM GLOVIA_PROD.JE_DET\nGO\n\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "Modineer",
+						"poolName": "Modineer"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 3')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "-- Create a new stored procedure called 'AddTableToRefresh' in schema 'Config'\n-- Drop the stored procedure if it already exists\nIF EXISTS (\nSELECT *\n    FROM INFORMATION_SCHEMA.ROUTINES\nWHERE SPECIFIC_SCHEMA = N'Config'\n    AND SPECIFIC_NAME = N'AddTableToRefresh'\n    AND ROUTINE_TYPE = N'PROCEDURE'\n)\nDROP PROCEDURE Config.AddTableToRefresh\nGO\n-- Create the stored procedure in the specified schema\nCREATE PROCEDURE Config.AddTableToRefresh\n    @RowGroup NVARCHAR(50),\n    @DbName NVARCHAR(50),\n    @SchemaName NVARCHAR(50),\n    @TableName NVARCHAR(50),\n    @FileSystem NVARCHAR(50),\n    @TableKeysArray NVARCHAR(500),\n    @ConnectionType NVARCHAR(50),\n    @DataQuery NVARCHAR(4000),\n    @CurrentProcess BIT,\n    @TableMaxSCN NVARCHAR(20),\n    @RefreshInterval NVARCHAR(15),\n    @RefreshNumber INT,\n    @Columns NVARCHAR(2000)\n-- add more stored procedure parameters here\nAS\nBEGIN\n    -- body of the stored procedure\n    INSERT INTO Config.DataRefreshSchedule (RowGroup, DbName, SchemaName, TableName, FileSystem, TableKeysArray, ConnectionType, DataQuery)\n    VALUES(@RowGroup, @DbName, @SchemaName, @TableName, @FileSystem, @TableKeysArray, @ConnectionType, @DataQuery)\n\n    DECLARE @ScheduleId INT = (SELECT TOP 1  Id \n                                FROM Config.DataRefreshSchedule \n                                WHERE RowGroup = @RowGroup\n                                AND DbName = @DbName\n                                AND SchemaName = @SchemaName\n                                AND TableName = @TableName\n                                AND FileSystem = @FileSystem)\n    INSERT INTO Config.DataRefreshScheduleDetail (ScheduleId, CurrentProcess, TableMaxSCN, RefreshInterval, RefreshNumber)\n    VALUES(@ScheduleId, @CurrentProcess, @TableMaxSCN, @RefreshInterval, @RefreshNumber)\n\n    DECLARE @SchemaId INT = (SELECT schema_id FROM sys.schemas WHERE name = @SchemaName)\n\n    DECLARE @sql NVARCHAR(4000) = 'IF ((SELECT COUNT(*) FROM sys.tables WHERE name = @TableName AND schema_id = @SchemaId) > 0)\n    DROP TABLE [@SchemaName].[@TableName]\n\n    CREATE TABLE [@SchemaName].[@TableName]' + @Columns\n    SET @sql = REPLACE(@sql,'@SchemaName',@SchemaName)\n    SET @sql = REPLACE(@sql, '@TableName', @TableName)\n\n    EXEC sp_executesql @sql\nEND\nGO",
 					"metadata": {
 						"language": "sql"
 					},
