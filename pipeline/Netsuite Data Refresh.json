@@ -40,7 +40,7 @@
 										"sink": {
 											"type": "SqlDWSink",
 											"preCopyScript": {
-												"value": "@{concat('TRUNCATE TABLE ',pipeline().parameters.item.SchemaName,'.',pipeline().parameters.item.TableName)}",
+												"value": "@{pipeline().parameters.item.PreCopySql}",
 												"type": "Expression"
 											},
 											"disableMetricsCollection": false
