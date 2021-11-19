@@ -834,16 +834,12 @@
 																},
 																"datasetParameters": {
 																	"NewData": {
-																		"file_system": {
+																		"FileSystem": {
 																			"value": "@item().FileSystem",
 																			"type": "Expression"
 																		},
-																		"directory": {
+																		"FilePath": {
 																			"value": "@concat(item().SchemaName,'/',item().TableName,'/NotProcessed')",
-																			"type": "Expression"
-																		},
-																		"file_name": {
-																			"value": "*.parquet",
 																			"type": "Expression"
 																		}
 																	},
@@ -1075,9 +1071,8 @@
 								},
 								"datasetParameters": {
 									"NewData": {
-										"file_system": "unified-data-cluster",
-										"directory": "GLOVIA_PROD/JE_DET/NotProcessed",
-										"file_name": "JE_DET.parquet"
+										"FileSystem": "a",
+										"FilePath": "b"
 									},
 									"SinkToAzureTable": {}
 								}
@@ -1104,10 +1099,12 @@
 						"userProperties": [],
 						"typeProperties": {
 							"source": {
-								"type": "OracleSource",
-								"oracleReaderQuery": "SELECT * FROM GLOVIA_PROD.JE_DET WHERE ORA_ROWSCN >= 2864616532",
-								"partitionOption": "None",
-								"queryTimeout": "02:00:00"
+								"type": "ParquetSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								}
 							},
 							"sink": {
 								"type": "ParquetSink",
@@ -1130,11 +1127,12 @@
 						},
 						"inputs": [
 							{
-								"referenceName": "GloviaProd",
+								"referenceName": "SinkParquet",
 								"type": "DatasetReference",
 								"parameters": {
-									"tablename": "JE_DET",
-									"schemaname": "GLOVIA_PROD"
+									"file_system": "a",
+									"directory": "b",
+									"file_name": "c"
 								}
 							}
 						],
@@ -1144,8 +1142,8 @@
 								"type": "DatasetReference",
 								"parameters": {
 									"file_system": "unified-data-cluster",
-									"directory": "GLOVIA_PROD/JE_DET/NotProcessed",
-									"file_name": "JE_DET.parquet"
+									"directory": "GLOVIA_PROD/WO/Test",
+									"file_name": "WO[n].parquet"
 								}
 							}
 						]
@@ -1162,7 +1160,6 @@
 			},
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/dataflows/UpdateSQLTableFromParquet')]",
-				"[concat(variables('workspaceId'), '/datasets/GloviaProd')]",
 				"[concat(variables('workspaceId'), '/datasets/SinkParquet')]"
 			]
 		},
@@ -1562,6 +1559,45 @@
 			},
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/linkedServices/NetsuiteODBC')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/ReadParquet')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "modineerlake",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"FileSystem": {
+						"type": "string"
+					},
+					"FilePath": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": {
+							"value": "@dataset().FilePath",
+							"type": "Expression"
+						},
+						"fileSystem": {
+							"value": "@dataset().FileSystem",
+							"type": "Expression"
+						}
+					},
+					"compressionCodec": "snappy"
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/modineerlake')]"
 			]
 		},
 		{
@@ -2347,7 +2383,7 @@
 					"sources": [
 						{
 							"dataset": {
-								"referenceName": "SinkParquet",
+								"referenceName": "ReadParquet",
 								"type": "DatasetReference"
 							},
 							"name": "NewData"
@@ -2371,7 +2407,7 @@
 				}
 			},
 			"dependsOn": [
-				"[concat(variables('workspaceId'), '/datasets/SinkParquet')]",
+				"[concat(variables('workspaceId'), '/datasets/ReadParquet')]",
 				"[concat(variables('workspaceId'), '/linkedServices/modineerlake')]"
 			]
 		},
