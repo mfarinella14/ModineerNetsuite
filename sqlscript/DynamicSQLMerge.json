@@ -1,0 +1,17 @@
+{
+	"name": "DynamicSQLMerge",
+	"properties": {
+		"content": {
+			"query": "",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "ModineerServerless",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

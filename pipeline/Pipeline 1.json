@@ -1,0 +1,55 @@
+{
+	"name": "Pipeline 1",
+	"properties": {
+		"activities": [
+			{
+				"name": "Data flow1",
+				"type": "ExecuteDataFlow",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "1.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataflow": {
+						"referenceName": "UpdateSQLTableFromParquet",
+						"type": "DataFlowReference",
+						"parameters": {
+							"SchemaName": {
+								"value": "@string('GLOVIA_PROD')",
+								"type": "Expression"
+							},
+							"TableName": {
+								"value": "@string('JE_DET')",
+								"type": "Expression"
+							},
+							"KeyColumns": {
+								"value": "@string('JE_CCN,JE,JE_SUB,JE_LINE')",
+								"type": "Expression"
+							}
+						},
+						"datasetParameters": {
+							"NewData": {
+								"FileSystem": "unified-data-cluster",
+								"FilePath": "GLOVIA_PROD/JE_DET/NotProcessed"
+							}
+						}
+					},
+					"compute": {
+						"coreCount": 8,
+						"computeType": "General"
+					},
+					"traceLevel": "Fine"
+				}
+			}
+		],
+		"folder": {
+			"name": "Temp"
+		},
+		"annotations": []
+	}
+}
