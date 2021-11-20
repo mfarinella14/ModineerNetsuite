@@ -1,0 +1,17 @@
+{
+	"name": "SQL script 5",
+	"properties": {
+		"content": {
+			"query": "SELECT [Id]\n,[ItemName]\n,[HTItemType]\n,[Location]\n,[QtyOnHand]\n,[OnHandValue]\n,[DateMeasured]\n FROM [ModNS].[HTMItemQty]",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "Modineer",
+				"poolName": "Modineer"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
