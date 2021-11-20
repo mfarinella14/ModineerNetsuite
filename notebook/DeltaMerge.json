@@ -17,7 +17,7 @@
 				"spark.dynamicAllocation.enabled": "true",
 				"spark.dynamicAllocation.minExecutors": "1",
 				"spark.dynamicAllocation.maxExecutors": "5",
-				"spark.autotune.trackingId": "28e93519-099a-4a5e-bcf6-87e173b03fe0"
+				"spark.autotune.trackingId": "3f41ea66-b1e8-44bb-b97c-d3baafd54f13"
 			}
 		},
 		"metadata": {
@@ -60,7 +60,7 @@
 					"tbl = 'JE_DET'\r\n",
 					"conditions = ''"
 				],
-				"execution_count": 1
+				"execution_count": 18
 			},
 			{
 				"cell_type": "code",
@@ -77,9 +77,95 @@
 				},
 				"source": [
 					"dfDataOrigionalPath = f\"/GLOVIA_PROD/{sch}/{tbl}/Processed\"\r\n",
-					"dfDataOriginal = spark.createDataFrame()"
+					"dfDataChangedPath = f\"abfss://unified-data-cluster@modineerlake.dfs.core.windows.net/GLOVIA_PROD/JE_DET/NotProcessed/\""
 				],
-				"execution_count": 2
+				"execution_count": 37
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"collapsed": false
+				},
+				"source": [
+					"dfDataOriginal = spark.read.load('abfss://unified-data-cluster@modineerlake.dfs.core.windows.net/GLOVIA_PROD/JE_DET/Processed/', format='delta')\r\n",
+					"df.write.mode(\"overwrite\").saveAsTable(\"delta.JE_DET\")\r\n",
+					""
+				],
+				"execution_count": 52
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"deltaOrig = spark.table('delta.je_det').show()"
+				],
+				"execution_count": 40
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"deltaChanges = spark.read.format(\"parquet\").load(dfDataChangedPath)\r\n",
+					"deltaChanges.registerTempTable(\"changed\")"
+				],
+				"execution_count": 39
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"import delta\r\n",
+					"orDT = delta.DeltaTable.forPath(spark, 'abfss://unified-data-cluster@modineerlake.dfs.core.windows.net/GLOVIA_PROD/JE_DET/Processed/')\r\n",
+					"(\r\n",
+					"    orDT\r\n",
+					"        .alias(\"original\")\r\n",
+					"        .merge(deltaChanges.alias(\"changed\"),\r\n",
+					"            \"original.JE_CCN == changed.JE_CCN AND original.JE == changed.JE AND original.JE_SUB == changed.JE_SUB AND original.JE_LINE == changed.JE_LINE\")\r\n",
+					"        .whenMatchedUpdate(set ={})\r\n",
+					"        .whenNotMatchedInsert(values ={})\r\n",
+					"        .execute()\r\n",
+					")"
+				],
+				"execution_count": 54
 			},
 			{
 				"cell_type": "code",
@@ -100,10 +186,9 @@
 				},
 				"source": [
 					"%%sql\r\n",
-					"CREATE TABLE IF NOT EXISTS delta.JE_DET USING DELTA\r\n",
-					"LOCATION 'GLOVIA_PROD/JE_DET/Processed/'"
+					"DESCRIBE HISTORY 'abfss://unified-data-cluster@modineerlake.dfs.core.windows.net/GLOVIA_PROD/JE_DET/Processed/'"
 				],
-				"execution_count": 17
+				"execution_count": 59
 			}
 		]
 	}
