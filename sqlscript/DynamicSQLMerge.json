@@ -2,7 +2,7 @@
 	"name": "DynamicSQLMerge",
 	"properties": {
 		"content": {
-			"query": "",
+			"query": "CREATE PROCEDURE dbo.usp_DynamicMerge\n    @SchemaName nvarchar(25),\n    @TableName NVARCHAR(50),\n    @JoinStatement NVARCHAR(4000)\n\nAS  \nMERGE [@SchemaName].[@TableName] AS tgt  \nUSING (SELECT ProductID, SUM(OrderQty) FROM Sales.SalesOrderDetail AS sod  \n    JOIN Sales.SalesOrderHeader AS soh  \n    ON sod.SalesOrderID = soh.SalesOrderID  \n    AND soh.OrderDate = @OrderDate  \n    GROUP BY ProductID) as src (ProductID, OrderQty)  \nON (tgt.ProductID = src.ProductID)  \nWHEN MATCHED AND tgt.Quantity - src.OrderQty <= 0  \n    THEN DELETE  \nWHEN MATCHED\n    THEN UPDATE SET tgt.Quantity = tgt.Quantity - src.OrderQty,\n                    tgt.ModifiedDate = GETDATE()  \nOUTPUT $action, Inserted.ProductID, Inserted.Quantity,\n    Inserted.ModifiedDate, Deleted.ProductID,  \n    Deleted.Quantity, Deleted.ModifiedDate;  \nGO  \n\nEXECUTE sp_executesql   \n          N'SELECT * FROM AdventureWorksPDW2012.dbo.DimEmployee   \n          WHERE EmployeeKey = @level',  \n          N'@level TINYINT',  \n          @level = 109; ",
 			"metadata": {
 				"language": "sql"
 			},
