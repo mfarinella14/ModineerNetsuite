@@ -17,7 +17,7 @@
 				"spark.dynamicAllocation.enabled": "true",
 				"spark.dynamicAllocation.minExecutors": "1",
 				"spark.dynamicAllocation.maxExecutors": "5",
-				"spark.autotune.trackingId": "1f78d933-27f6-443b-aa48-ce8b379a4a26"
+				"spark.autotune.trackingId": "7cc9e93e-2350-4e0b-98ee-3720351ed151"
 			}
 		},
 		"metadata": {
@@ -58,12 +58,36 @@
 				"source": [
 					"Schema = 'GLOVIA_PROD'\r\n",
 					"Table = 'JE_DET'\r\n",
-					"FilePath = ''\r\n",
-					"conditions = ''\r\n",
+					"FilePath = 'unified-data-cluster'\r\n",
+					"keyColumns = 'JE_CCN,JE,JE_DET,JE_LINE'\r\n",
 					"updateString=''\r\n",
-					"insertString''"
+					"insertString=''"
 				],
-				"execution_count": 18
+				"execution_count": 2
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"splitCols = keyColumns.split(',')\r\n",
+					"matchString = ''\r\n",
+					"for string in splitCols:\r\n",
+					"    if string == splitcols[splitCols.length](\r\n",
+					"    matchString += 'src.' + string + ' = tgt.' + string + ', ')\r\n",
+					"    matchString += 'src.' + string + ' = tgt.' + string\r\n",
+					""
+				],
+				"execution_count": 8
 			},
 			{
 				"cell_type": "code",
@@ -83,15 +107,15 @@
 					"dfDataChangedPath = f\"abfss://{FilePath}@modineerlake.dfs.core.windows.net/{Schema}/{Table}/NotProcessed/\"\r\n",
 					"dfDataOriginal = spark.read.load(dfDataOrigionalPath, format='delta')\r\n",
 					"df.write.mode(\"overwrite\").saveAsTable(f\"delta.{Table}\")\r\n",
-					"deltaOrig = spark.table('delta.je_det')\r\n",
-					"deltaChanges = spark.read.format(\"parquet\").load(dfDataChangedPath)\r\n",
-					"deltaChanges.registerTempTable(\"changed\")\r\n",
+					"tgt = spark.table('delta.{Table}')\r\n",
+					"src = spark.read.format(\"parquet\").load(dfDataChangedPath)\r\n",
+					"src.registerTempTable(\"changed\")\r\n",
 					"import delta\r\n",
 					"orDT = delta.DeltaTable.forPath(spark, dfDataOrigionalPath)\r\n",
 					"(\r\n",
 					"    orDT\r\n",
 					"        .alias(\"original\")\r\n",
-					"        .merge(deltaChanges.alias(\"changed\"),\r\n",
+					"        .merge(src.alias(\"changed\"),\r\n",
 					"            conditions)\r\n",
 					"        .whenMatchedUpdate(set ={updateString})\r\n",
 					"        .whenNotMatchedInsert(values ={insertString})\r\n",
