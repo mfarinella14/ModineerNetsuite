@@ -148,7 +148,7 @@
 														},
 														"SCN": {
 															"value": {
-																"value": "@item().TableMaxSCN",
+																"value": "@activity('Get SCN Number').output.firstRow.SCNValue",
 																"type": "Expression"
 															},
 															"type": "Int64"
