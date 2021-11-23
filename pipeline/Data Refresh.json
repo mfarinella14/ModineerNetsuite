@@ -267,6 +267,18 @@
 														"dependencyConditions": [
 															"Failed"
 														]
+													},
+													{
+														"activity": "Update SCN",
+														"dependencyConditions": [
+															"Failed"
+														]
+													},
+													{
+														"activity": "Get SCN Number",
+														"dependencyConditions": [
+															"Failed"
+														]
 													}
 												],
 												"policy": {
