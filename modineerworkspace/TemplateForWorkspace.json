@@ -504,7 +504,7 @@
 														}
 													},
 													{
-														"name": "SQL pool stored procedure1",
+														"name": "Failed",
 														"type": "SqlPoolStoredProcedure",
 														"dependsOn": [
 															{
@@ -522,7 +522,26 @@
 															"secureInput": false
 														},
 														"userProperties": [],
-														"typeProperties": {}
+														"sqlPool": {
+															"referenceName": "Modineer",
+															"type": "SqlPoolReference"
+														},
+														"typeProperties": {
+															"storedProcedureName": "[Config].[FailedToUpdate]",
+															"storedProcedureParameters": {
+																"RowId": {
+																	"value": {
+																		"value": "@item().Id",
+																		"type": "Expression"
+																	},
+																	"type": "Int32"
+																},
+																"RowSCN": {
+																	"value": "0",
+																	"type": "Int32"
+																}
+															}
+														}
 													}
 												]
 											},
