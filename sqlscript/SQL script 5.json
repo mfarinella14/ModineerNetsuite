@@ -2,7 +2,7 @@
 	"name": "SQL script 5",
 	"properties": {
 		"content": {
-			"query": "DECLARE @cols nvarchar(2000) = 'Id,RowGroup,DbName,TableName'\nDECLARE @sql NVARCHAR(4000) = 'SELECT TOP 10 '+ @cols + ' FROM Config.DataRefreshSchedule'\nEXEC sp_executesql @sql\n\n\n\nDECLARE @keys NVARCHAR(1000) = 'Id,RowGroup,DbName'\nDECLARE @sql NVARCHAR(4000) = '\nSELECT STRING_AGG(name,'','')\nFROM Sys.columns\nWHERE object_id = ''1762105318''\nAND name NOT IN ('+ @keys +')'\nEXEC sp_executesql @sql\n\nSELECT *\nFROM sys.columns\nGO\n\n\n",
+			"query": "MERGE ",
 			"metadata": {
 				"language": "sql"
 			},
