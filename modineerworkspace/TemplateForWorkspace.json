@@ -126,7 +126,7 @@
 								"type": "Expression"
 							},
 							"isSequential": false,
-							"batchCount": 5,
+							"batchCount": 10,
 							"activities": [
 								{
 									"name": "Switch on RowGroup",
@@ -2591,7 +2591,7 @@
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
 				"content": {
-					"query": "CREATE PROCEDURE dbo.usp_DynamicMerge\n    @SchemaName nvarchar(25),\n    @TableName NVARCHAR(50),\n    @JoinStatement NVARCHAR(4000),\n    @keyColumns NVARCHAR(4000)\n\nAS  \nMERGE [@SchemaName].[@TableName] AS tgt  \nUSING [delta].[@TableName] as src\n    ON @keyColumns\nWHEN NOT MATCHED BY SOURCE\n    THEN DELETE\nWHEN MATCHED\n    THEN UPDATE SET tgt.Quantity = tgt.Quantity - src.OrderQty,\n                    tgt.ModifiedDate = GETDATE()  \nOUTPUT deleted.*, $action, inserted.* into \nGO  \n\nEXECUTE sp_executesql   \n          N'SELECT * FROM AdventureWorksPDW2012.dbo.DimEmployee   \n          WHERE EmployeeKey = @level',  \n          N'@level TINYINT',  \n          @level = 109; \nGO\n\nDECLARE @Cols NVARCHAR(4000) = 'SALES_CCN,CNT_NUM,CR_CNTDT'\nDECLARE @ColList NCARCHAR(4000) = STRING_SPLIT(@Cols, ',')\nDECLARE @SchemaName NVARCHAR(25) = 'GloviaProd'\nDECLARE @TableName NVARCHAR(50) = 'CR_CNTDT'\nDECLARE @sql NVARCHAR(4000) = 'SELECT STRING_AGG(ISNULL(t1.COLUMN_NAME, ' '),',') AS cols FROM (SELECT COLUMN_NAME\nFROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @SchemaName AND TABLE_NAME = @TableName + '' AND COLUMN_NAME NOT IN (STRING_SPLIT(@Cols,',')))t1'\n\nDECLARE @Cols NVARCHAR(4000) = 'SALES_CCN,CNT_NUM,CR_CNTDT'\nDECLARE @SchemaName NVARCHAR(25) = 'GloviaProd'\nDECLARE @TableName NVARCHAR(50) = 'CR_CNTDT'\nDECLARE @sql NVARCHAR(4000)  = N'SELECT STRING_AGG(ISNULL(COLUMN_NAME, '' ''),'','') FROM INFORMATION_SCHEMA.COLUMNS \n    WHERE TABLE_SCHEMA = ''' + @SchemaName + ''' \n    AND TABLE_NAME =  ''' + @TableName + ''' \n    AND COLUMN_NAME NOT IN ('+ @Cols +')'\nEXEC sp_executesql @sql\n\n\n",
+					"query": "CREATE PROCEDURE dbo.usp_DynamicMerge\n    @SchemaName NVARCHAR(25),\n    @TableName NVARCHAR(50),\n    @JoinStatement NVARCHAR(4000),\n    @keyColumns NVARCHAR(4000)\n\nAS  \nSELECT *\nFROM sys.tables\n\nDECLARE @sql NVARCHAR(4000) = 'MERGE '+ @SchemaName +'.'+ @TableName + 'AS tgt  \nUSING delta.' +@TableName + ' as src\n    ON ' + @keyColumns + ' WHEN NOT MATCHED BY SOURCE \n    THEN DELETE\nWHEN MATCHED\n    THEN UPDATE SET tgt.Quantity = tgt.Quantity - src.OrderQty,\n                    tgt.ModifiedDate = GETDATE()  \nOUTPUT deleted.*, $action, inserted.* into'\nGO  \n\nEXECUTE sp_executesql   \n          N'SELECT * FROM AdventureWorksPDW2012.dbo.DimEmployee   \n          WHERE EmployeeKey = @level',  \n          N'@level TINYINT',  \n          @level = 109; \nGO\n\n\n\n",
 					"metadata": {
 						"language": "sql"
 					},
@@ -2714,7 +2714,7 @@
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
 				"content": {
-					"query": "SELECT [Id]\n,[ItemName]\n,[HTItemType]\n,[Location]\n,[QtyOnHand]\n,[OnHandValue]\n,[DateMeasured]\n FROM [ModNS].[HTMItemQty]",
+					"query": "DECLARE @cols nvarchar(2000) = 'Id,RowGroup,DbName,TableName'\nDECLARE @sql NVARCHAR(4000) = 'SELECT TOP 10 '+ @cols + ' FROM Config.DataRefreshSchedule'\nEXEC sp_executesql @sql\n\n\n\nDECLARE @keys NVARCHAR(1000) = 'Id,RowGroup,DbName'\nDECLARE @sql NVARCHAR(4000) = '\nSELECT STRING_AGG(name,'','')\nFROM Sys.columns\nWHERE object_id = ''1762105318''\nAND name NOT IN ('+ @keys +')'\nEXEC sp_executesql @sql\n\nSELECT *\nFROM sys.columns\nGO\n\n\n",
 					"metadata": {
 						"language": "sql"
 					},
