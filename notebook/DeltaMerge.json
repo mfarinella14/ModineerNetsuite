@@ -17,7 +17,7 @@
 				"spark.dynamicAllocation.enabled": "true",
 				"spark.dynamicAllocation.minExecutors": "1",
 				"spark.dynamicAllocation.maxExecutors": "5",
-				"spark.autotune.trackingId": "7cc9e93e-2350-4e0b-98ee-3720351ed151"
+				"spark.autotune.trackingId": "75a8e2f8-5711-4cb8-a6a3-4e2391f12e3e"
 			}
 		},
 		"metadata": {
@@ -80,14 +80,12 @@
 				},
 				"source": [
 					"splitCols = keyColumns.split(',')\r\n",
-					"matchString = ''\r\n",
+					"matchedString = ''\r\n",
 					"for string in splitCols:\r\n",
-					"    if string == splitcols[splitCols.length](\r\n",
-					"    matchString += 'src.' + string + ' = tgt.' + string + ', ')\r\n",
-					"    matchString += 'src.' + string + ' = tgt.' + string\r\n",
-					""
+					"    matchString += 'src.' + string + ' = tgt.' + string + ', '\r\n",
+					"matchedString = matchString.rstrip(', ')"
 				],
-				"execution_count": 8
+				"execution_count": 10
 			},
 			{
 				"cell_type": "code",
@@ -107,22 +105,13 @@
 					"dfDataChangedPath = f\"abfss://{FilePath}@modineerlake.dfs.core.windows.net/{Schema}/{Table}/NotProcessed/\"\r\n",
 					"dfDataOriginal = spark.read.load(dfDataOrigionalPath, format='delta')\r\n",
 					"df.write.mode(\"overwrite\").saveAsTable(f\"delta.{Table}\")\r\n",
-					"tgt = spark.table('delta.{Table}')\r\n",
+					"tgt = spark.table(f'delta.{Table}')\r\n",
 					"src = spark.read.format(\"parquet\").load(dfDataChangedPath)\r\n",
 					"src.registerTempTable(\"changed\")\r\n",
 					"import delta\r\n",
-					"orDT = delta.DeltaTable.forPath(spark, dfDataOrigionalPath)\r\n",
-					"(\r\n",
-					"    orDT\r\n",
-					"        .alias(\"original\")\r\n",
-					"        .merge(src.alias(\"changed\"),\r\n",
-					"            conditions)\r\n",
-					"        .whenMatchedUpdate(set ={updateString})\r\n",
-					"        .whenNotMatchedInsert(values ={insertString})\r\n",
-					"        .execute()\r\n",
-					")"
+					""
 				],
-				"execution_count": 37
+				"execution_count": 13
 			},
 			{
 				"cell_type": "code",
@@ -136,16 +125,39 @@
 							"deleting": false
 						}
 					},
-					"microsoft": {
-						"language": "sparksql"
-					},
 					"collapsed": false
 				},
 				"source": [
-					"%%sql\r\n",
-					"DESCRIBE HISTORY 'abfss://unified-data-cluster@modineerlake.dfs.core.windows.net/GLOVIA_PROD/JE_DET/Processed/'"
+					"display(spark.sql(\"DESCRIBE HISTORY '\" + dfDataOrigionalPath +\"'\"))"
 				],
-				"execution_count": 59
+				"execution_count": 20
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"orDT = delta.DeltaTable.forPath(spark, dfDataOrigionalPath)\r\n",
+					"(\r\n",
+					"    orDT\r\n",
+					"        .alias(\"original\")\r\n",
+					"        .merge(src.alias(\"changed\"),\r\n",
+					"            matchedString)\r\n",
+					"        .whenMatchedUpdate(set ={updateString})\r\n",
+					"        .whenNotMatchedInsert(values ={insertString})\r\n",
+					"        .execute()\r\n",
+					")"
+				],
+				"execution_count": null
 			}
 		]
 	}
