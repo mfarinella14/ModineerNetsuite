@@ -131,7 +131,14 @@
 								{
 									"name": "Switch on RowGroup",
 									"type": "Switch",
-									"dependsOn": [],
+									"dependsOn": [
+										{
+											"activity": "Set Table as Updating_copy1",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
 									"userProperties": [],
 									"typeProperties": {
 										"on": {
@@ -181,7 +188,7 @@
 														}
 													},
 													{
-														"name": "Set Table as Updating",
+														"name": "Update SCN",
 														"type": "SqlPoolStoredProcedure",
 														"dependsOn": [
 															{
@@ -204,30 +211,9 @@
 															"type": "SqlPoolReference"
 														},
 														"typeProperties": {
-															"storedProcedureName": "[Config].[SetAsUpdating]",
+															"storedProcedureName": "[Config].[UpdateSCN]",
 															"storedProcedureParameters": {
-																"interval": {
-																	"value": {
-																		"value": "@item().RefreshInterval",
-																		"type": "Expression"
-																	},
-																	"type": "String"
-																},
-																"intervalQty": {
-																	"value": {
-																		"value": "@item().RefreshNumber",
-																		"type": "Expression"
-																	},
-																	"type": "Int32"
-																},
-																"nextRefresh": {
-																	"value": {
-																		"value": "@item().NextRefresh",
-																		"type": "Expression"
-																	},
-																	"type": "DateTime"
-																},
-																"rowId": {
+																"Id": {
 																	"value": {
 																		"value": "@item().Id",
 																		"type": "Expression"
@@ -239,7 +225,7 @@
 																		"value": "@activity('Get SCN Number').output.firstRow.SCNValue",
 																		"type": "Expression"
 																	},
-																	"type": "Int64"
+																	"type": "Int32"
 																}
 															}
 														}
@@ -249,7 +235,7 @@
 														"type": "Copy",
 														"dependsOn": [
 															{
-																"activity": "Set Table as Updating",
+																"activity": "Update SCN",
 																"dependencyConditions": [
 																	"Succeeded"
 																]
@@ -404,14 +390,7 @@
 													{
 														"name": "Execute Netsuite Data Refresh",
 														"type": "ExecutePipeline",
-														"dependsOn": [
-															{
-																"activity": "Set as Updating",
-																"dependencyConditions": [
-																	"Succeeded"
-																]
-															}
-														],
+														"dependsOn": [],
 														"userProperties": [],
 														"typeProperties": {
 															"pipeline": {
@@ -459,63 +438,6 @@
 																		"type": "Expression"
 																	},
 																	"type": "Int32"
-																}
-															}
-														}
-													},
-													{
-														"name": "Set as Updating",
-														"type": "SqlPoolStoredProcedure",
-														"dependsOn": [],
-														"policy": {
-															"timeout": "7.00:00:00",
-															"retry": 0,
-															"retryIntervalInSeconds": 30,
-															"secureOutput": false,
-															"secureInput": false
-														},
-														"userProperties": [],
-														"sqlPool": {
-															"referenceName": "Modineer",
-															"type": "SqlPoolReference"
-														},
-														"typeProperties": {
-															"storedProcedureName": "[Config].[SetAsUpdating]",
-															"storedProcedureParameters": {
-																"interval": {
-																	"value": {
-																		"value": "@item().RefreshInterval",
-																		"type": "Expression"
-																	},
-																	"type": "String"
-																},
-																"intervalQty": {
-																	"value": {
-																		"value": "@item().RefreshNumber",
-																		"type": "Expression"
-																	},
-																	"type": "Int32"
-																},
-																"nextRefresh": {
-																	"value": {
-																		"value": "@item().NextRefresh",
-																		"type": "Expression"
-																	},
-																	"type": "DateTime"
-																},
-																"rowId": {
-																	"value": {
-																		"value": "@item().Id",
-																		"type": "Expression"
-																	},
-																	"type": "Int32"
-																},
-																"SCN": {
-																	"value": {
-																		"value": "0",
-																		"type": "Expression"
-																	},
-																	"type": "Int64"
 																}
 															}
 														}
@@ -589,6 +511,56 @@
 											}
 										]
 									}
+								},
+								{
+									"name": "Set Table as Updating_copy1",
+									"type": "SqlPoolStoredProcedure",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"sqlPool": {
+										"referenceName": "Modineer",
+										"type": "SqlPoolReference"
+									},
+									"typeProperties": {
+										"storedProcedureName": "[Config].[SetAsUpdating]",
+										"storedProcedureParameters": {
+											"interval": {
+												"value": {
+													"value": "@item().RefreshInterval",
+													"type": "Expression"
+												},
+												"type": "String"
+											},
+											"intervalQty": {
+												"value": {
+													"value": "@item().RefreshNumber",
+													"type": "Expression"
+												},
+												"type": "Int32"
+											},
+											"nextRefresh": {
+												"value": {
+													"value": "@item().NextRefresh",
+													"type": "Expression"
+												},
+												"type": "DateTime"
+											},
+											"rowId": {
+												"value": {
+													"value": "@item().Id",
+													"type": "Expression"
+												},
+												"type": "Int32"
+											}
+										}
+									}
 								}
 							]
 						}
@@ -606,8 +578,8 @@
 			},
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/datasets/Modineer')]",
-				"[concat(variables('workspaceId'), '/datasets/GloviaProd')]",
 				"[concat(variables('workspaceId'), '/sqlPools/Modineer')]",
+				"[concat(variables('workspaceId'), '/datasets/GloviaProd')]",
 				"[concat(variables('workspaceId'), '/datasets/SinkParquet')]",
 				"[concat(variables('workspaceId'), '/pipelines/Netsuite Data Refresh')]"
 			]
@@ -2591,7 +2563,7 @@
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
 				"content": {
-					"query": "CREATE PROCEDURE dbo.usp_DynamicMerge\n    @SchemaName NVARCHAR(25),\n    @TableName NVARCHAR(50),\n    @JoinStatement NVARCHAR(4000),\n    @keyColumns NVARCHAR(4000)\n\nAS  \nSELECT *\nFROM sys.tables\n\nDECLARE @sql NVARCHAR(4000) = 'MERGE '+ @SchemaName +'.'+ @TableName + 'AS tgt  \nUSING delta.' +@TableName + ' as src\n    ON ' + @keyColumns + ' WHEN NOT MATCHED BY SOURCE \n    THEN DELETE\nWHEN MATCHED\n    THEN UPDATE SET tgt.Quantity = tgt.Quantity - src.OrderQty,\n                    tgt.ModifiedDate = GETDATE()  \nOUTPUT deleted.*, $action, inserted.* into'\nGO  \n\nEXECUTE sp_executesql   \n          N'SELECT * FROM AdventureWorksPDW2012.dbo.DimEmployee   \n          WHERE EmployeeKey = @level',  \n          N'@level TINYINT',  \n          @level = 109; \nGO\n\n\n\n",
+					"query": "CREATE PROCEDURE dbo.usp_DynamicMerge\n    @SchemaName NVARCHAR(25),\n    @TableName NVARCHAR(50),\n    @JoinStatement NVARCHAR(4000),\n    @keyColumns NVARCHAR(4000),\n    @keyColumnsSplit = NVARCHAR(4000)\n\nAS  \nSELECT *\nFROM sys.tables\n\nDECLARE @sql NVARCHAR(4000) = 'MERGE '+ @SchemaName +'.'+ @TableName + 'AS tgt  \nUSING delta.' +@TableName + ' as src\n    ON ' + @keyColumns + ' WHEN NOT MATCHED BY SOURCE \n    THEN DELETE\nWHEN MATCHED\n    THEN UPDATE SET tgt.Quantity = tgt.Quantity - src.OrderQty,\n                    tgt.ModifiedDate = GETDATE()  \nOUTPUT deleted.*, $action, inserted.* into'\nGO  \n\nEXECUTE sp_executesql   \n          N'SELECT * FROM AdventureWorksPDW2012.dbo.DimEmployee   \n          WHERE EmployeeKey = @level',  \n          N'@level TINYINT',  \n          @level = 109; \nGO\n\n\n\n",
 					"metadata": {
 						"language": "sql"
 					},
