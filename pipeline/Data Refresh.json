@@ -139,6 +139,13 @@
 															},
 															"type": "Int32"
 														},
+														"nextRefresh": {
+															"value": {
+																"value": "@item().NextRefresh",
+																"type": "Expression"
+															},
+															"type": "DateTime"
+														},
 														"rowId": {
 															"value": {
 																"value": "@item().Id",
@@ -148,7 +155,7 @@
 														},
 														"SCN": {
 															"value": {
-																"value": "@activity('Get SCN Number').output.firstRow.SCNValue",
+																"value": "@item().TableMaxSCN",
 																"type": "Expression"
 															},
 															"type": "Int64"
