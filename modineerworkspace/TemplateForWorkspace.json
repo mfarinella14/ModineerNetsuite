@@ -348,6 +348,18 @@
 																"dependencyConditions": [
 																	"Failed"
 																]
+															},
+															{
+																"activity": "Update SCN",
+																"dependencyConditions": [
+																	"Failed"
+																]
+															},
+															{
+																"activity": "Get SCN Number",
+																"dependencyConditions": [
+																	"Failed"
+																]
 															}
 														],
 														"policy": {
@@ -2686,13 +2698,53 @@
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
 				"content": {
-					"query": "DECLARE @cols nvarchar(2000) = 'Id,RowGroup,DbName,TableName'\nDECLARE @sql NVARCHAR(4000) = 'SELECT TOP 10 '+ @cols + ' FROM Config.DataRefreshSchedule'\nEXEC sp_executesql @sql\n\n\n\nDECLARE @keys NVARCHAR(1000) = 'Id,RowGroup,DbName'\nDECLARE @sql NVARCHAR(4000) = '\nSELECT STRING_AGG(name,'','')\nFROM Sys.columns\nWHERE object_id = ''1762105318''\nAND name NOT IN ('+ @keys +')'\nEXEC sp_executesql @sql\n\nSELECT *\nFROM sys.columns\nGO\n\n\n",
+					"query": "MERGE ",
 					"metadata": {
 						"language": "sql"
 					},
 					"currentConnection": {
 						"databaseName": "Modineer",
 						"poolName": "Modineer"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 6')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n\tWITH ( FORMAT_TYPE = PARQUET)\nGO\n\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'unified-data-cluster_modineerlake_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [unified-data-cluster_modineerlake_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION = 'abfss://unified-data-cluster@modineerlake.dfs.core.windows.net' \n\t)\nGO\n\nCREATE EXTERNAL TABLE delta.JE_DET (\n\t[JE_CCN] nvarchar(4000),\n\t[JE] nvarchar(4000),\n\t[JE_SUB] nvarchar(4000),\n\t[JE_LINE] nvarchar(4000),\n\t[GL_ACCT] nvarchar(4000),\n\t[CCN] nvarchar(4000),\n\t[ASOF_DATE] datetime2(7),\n\t[PCT] numeric(38,18),\n\t[QTY] numeric(38,18),\n\t[REF] nvarchar(4000),\n\t[SU] nvarchar(4000),\n\t[ASOF_YEAR] nvarchar(4000),\n\t[REVERSE_YEAR] nvarchar(4000),\n\t[MEMO] nvarchar(4000),\n\t[OVT] nvarchar(4000),\n\t[PA_COST_FLAG] nvarchar(4000),\n\t[PROJECT_ID] nvarchar(4000),\n\t[TASK_ID] nvarchar(4000),\n\t[GL_SL] nvarchar(4000),\n\t[GL_DL] nvarchar(4000),\n\t[DEBIT_AMT] numeric(38,18),\n\t[CREDIT_AMT] numeric(38,18),\n\t[USER_ALPHA1] nvarchar(4000),\n\t[USER_ALPHA2] nvarchar(4000),\n\t[USER_ALPHA3] nvarchar(4000),\n\t[USER_NUM1] numeric(38,18),\n\t[USER_NUM2] numeric(38,18),\n\t[USER_NUM3] numeric(38,18),\n\t[USER_DATE] datetime2(7),\n\t[USER_TIME] nvarchar(4000),\n\t[BANK] nvarchar(4000),\n\t[REF_SEQ] nvarchar(4000),\n\t[VAT] nvarchar(4000)\n\t)\n\tWITH (\n\tLOCATION = 'GLOVIA_PROD/JE_DET/NotProcessed/*.parquet',\n\tDATA_SOURCE = [unified-data-cluster_modineerlake_dfs_core_windows_net],\n\tFILE_FORMAT = [SynapseParquetFormat]\n\t)\nGO\n\nSELECT COUNT(*)\nFROM delta.JE_DET",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "ModineerServerless",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 7')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "-- This is auto-generated code\nSELECT\n    COUNT(*)\nFROM\n    OPENROWSET(\n        BULK 'https://modineerlake.dfs.core.windows.net/unified-data-cluster/GLOVIA_PROD/JE_DET/*.parquet',\n        FORMAT = 'PARQUET'\n    ) AS [result]\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "master",
+						"poolName": "Built-in"
 					},
 					"resultLimit": 5000
 				},
