@@ -415,6 +415,13 @@
 															},
 															"type": "Int32"
 														},
+														"nextRefresh": {
+															"value": {
+																"value": "@item().NextRefresh",
+																"type": "Expression"
+															},
+															"type": "DateTime"
+														},
 														"rowId": {
 															"value": {
 																"value": "@item().Id",
@@ -423,7 +430,10 @@
 															"type": "Int32"
 														},
 														"SCN": {
-															"value": "0",
+															"value": {
+																"value": "0",
+																"type": "Expression"
+															},
 															"type": "Int64"
 														}
 													}
