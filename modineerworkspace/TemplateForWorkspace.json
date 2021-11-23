@@ -229,7 +229,7 @@
 																},
 																"SCN": {
 																	"value": {
-																		"value": "@item().TableMaxSCN",
+																		"value": "@activity('Get SCN Number').output.firstRow.SCNValue",
 																		"type": "Expression"
 																	},
 																	"type": "Int64"
@@ -317,8 +317,7 @@
 															{
 																"activity": "Raw Data Copy",
 																"dependencyConditions": [
-																	"Succeeded",
-																	"Failed"
+																	"Succeeded"
 																]
 															}
 														],
@@ -340,6 +339,49 @@
 																"rowId": {
 																	"value": {
 																		"value": "@item().Id",
+																		"type": "Expression"
+																	},
+																	"type": "Int32"
+																}
+															}
+														}
+													},
+													{
+														"name": "Failed To Update",
+														"type": "SqlPoolStoredProcedure",
+														"dependsOn": [
+															{
+																"activity": "Raw Data Copy",
+																"dependencyConditions": [
+																	"Failed"
+																]
+															}
+														],
+														"policy": {
+															"timeout": "7.00:00:00",
+															"retry": 0,
+															"retryIntervalInSeconds": 30,
+															"secureOutput": false,
+															"secureInput": false
+														},
+														"userProperties": [],
+														"sqlPool": {
+															"referenceName": "Modineer",
+															"type": "SqlPoolReference"
+														},
+														"typeProperties": {
+															"storedProcedureName": "[Config].[FailedToUpdate]",
+															"storedProcedureParameters": {
+																"RowId": {
+																	"value": {
+																		"value": "@item().Id",
+																		"type": "Expression"
+																	},
+																	"type": "Int32"
+																},
+																"RowSCN": {
+																	"value": {
+																		"value": "@item().TableMaxSCN",
 																		"type": "Expression"
 																	},
 																	"type": "Int32"
@@ -385,8 +427,7 @@
 															{
 																"activity": "Execute Netsuite Data Refresh",
 																"dependencyConditions": [
-																	"Succeeded",
-																	"Failed"
+																	"Succeeded"
 																]
 															}
 														],
@@ -461,6 +502,27 @@
 																}
 															}
 														}
+													},
+													{
+														"name": "SQL pool stored procedure1",
+														"type": "SqlPoolStoredProcedure",
+														"dependsOn": [
+															{
+																"activity": "Execute Netsuite Data Refresh",
+																"dependencyConditions": [
+																	"Failed"
+																]
+															}
+														],
+														"policy": {
+															"timeout": "7.00:00:00",
+															"retry": 0,
+															"retryIntervalInSeconds": 30,
+															"secureOutput": false,
+															"secureInput": false
+														},
+														"userProperties": [],
+														"typeProperties": {}
 													}
 												]
 											},
@@ -2493,7 +2555,7 @@
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
 				"content": {
-					"query": "",
+					"query": "CREATE PROCEDURE dbo.usp_DynamicMerge\n    @SchemaName nvarchar(25),\n    @TableName NVARCHAR(50),\n    @JoinStatement NVARCHAR(4000),\n    @keyColumns NVARCHAR(4000)\n\nAS  \nMERGE [@SchemaName].[@TableName] AS tgt  \nUSING [delta].[@TableName] as src\n    ON @keyColumns\nWHEN NOT MATCHED BY SOURCE\n    THEN DELETE\nWHEN MATCHED\n    THEN UPDATE SET tgt.Quantity = tgt.Quantity - src.OrderQty,\n                    tgt.ModifiedDate = GETDATE()  \nOUTPUT deleted.*, $action, inserted.* into \nGO  \n\nEXECUTE sp_executesql   \n          N'SELECT * FROM AdventureWorksPDW2012.dbo.DimEmployee   \n          WHERE EmployeeKey = @level',  \n          N'@level TINYINT',  \n          @level = 109; \nGO\n\nDECLARE @Cols NVARCHAR(4000) = 'SALES_CCN,CNT_NUM,CR_CNTDT'\nDECLARE @ColList NCARCHAR(4000) = STRING_SPLIT(@Cols, ',')\nDECLARE @SchemaName NVARCHAR(25) = 'GloviaProd'\nDECLARE @TableName NVARCHAR(50) = 'CR_CNTDT'\nDECLARE @sql NVARCHAR(4000) = 'SELECT STRING_AGG(ISNULL(t1.COLUMN_NAME, ' '),',') AS cols FROM (SELECT COLUMN_NAME\nFROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @SchemaName AND TABLE_NAME = @TableName + '' AND COLUMN_NAME NOT IN (STRING_SPLIT(@Cols,',')))t1'\n\nDECLARE @Cols NVARCHAR(4000) = 'SALES_CCN,CNT_NUM,CR_CNTDT'\nDECLARE @SchemaName NVARCHAR(25) = 'GloviaProd'\nDECLARE @TableName NVARCHAR(50) = 'CR_CNTDT'\nDECLARE @sql NVARCHAR(4000)  = N'SELECT STRING_AGG(ISNULL(COLUMN_NAME, '' ''),'','') FROM INFORMATION_SCHEMA.COLUMNS \n    WHERE TABLE_SCHEMA = ''' + @SchemaName + ''' \n    AND TABLE_NAME =  ''' + @TableName + ''' \n    AND COLUMN_NAME NOT IN ('+ @Cols +')'\nEXEC sp_executesql @sql\n\n\n",
 					"metadata": {
 						"language": "sql"
 					},
@@ -2651,7 +2713,7 @@
 						"spark.dynamicAllocation.enabled": "true",
 						"spark.dynamicAllocation.minExecutors": "1",
 						"spark.dynamicAllocation.maxExecutors": "5",
-						"spark.autotune.trackingId": "3f41ea66-b1e8-44bb-b97c-d3baafd54f13"
+						"spark.autotune.trackingId": "75a8e2f8-5711-4cb8-a6a3-4e2391f12e3e"
 					}
 				},
 				"metadata": {
@@ -2688,12 +2750,15 @@
 							]
 						},
 						"source": [
-							"sch = 'GLOVIA_PROD'\r\n",
-							"tbl = 'JE_DET'\r\n",
-							"conditions = ''"
+							"Schema = 'GLOVIA_PROD'\r\n",
+							"Table = 'JE_DET'\r\n",
+							"FilePath = 'unified-data-cluster'\r\n",
+							"keyColumns = 'JE_CCN,JE,JE_DET,JE_LINE'\r\n",
+							"updateString=''\r\n",
+							"insertString=''"
 						],
 						"outputs": [],
-						"execution_count": 18
+						"execution_count": 2
 					},
 					{
 						"cell_type": "code",
@@ -2709,11 +2774,41 @@
 							}
 						},
 						"source": [
-							"dfDataOrigionalPath = f\"/GLOVIA_PROD/{sch}/{tbl}/Processed\"\r\n",
-							"dfDataChangedPath = f\"abfss://unified-data-cluster@modineerlake.dfs.core.windows.net/GLOVIA_PROD/JE_DET/NotProcessed/\""
+							"splitCols = keyColumns.split(',')\r\n",
+							"matchedString = ''\r\n",
+							"for string in splitCols:\r\n",
+							"    matchString += 'src.' + string + ' = tgt.' + string + ', '\r\n",
+							"matchedString = matchString.rstrip(', ')"
 						],
 						"outputs": [],
-						"execution_count": 37
+						"execution_count": 10
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"dfDataOrigionalPath = f\"abfss://{FilePath}@modineerlake.dfs.core.windows.net/{Schema}/{Table}/Processed/\"\r\n",
+							"dfDataChangedPath = f\"abfss://{FilePath}@modineerlake.dfs.core.windows.net/{Schema}/{Table}/NotProcessed/\"\r\n",
+							"dfDataOriginal = spark.read.load(dfDataOrigionalPath, format='delta')\r\n",
+							"df.write.mode(\"overwrite\").saveAsTable(f\"delta.{Table}\")\r\n",
+							"tgt = spark.table(f'delta.{Table}')\r\n",
+							"src = spark.read.format(\"parquet\").load(dfDataChangedPath)\r\n",
+							"src.registerTempTable(\"changed\")\r\n",
+							"import delta\r\n",
+							""
+						],
+						"outputs": [],
+						"execution_count": 13
 					},
 					{
 						"cell_type": "code",
@@ -2730,12 +2825,10 @@
 							"collapsed": false
 						},
 						"source": [
-							"dfDataOriginal = spark.read.load('abfss://unified-data-cluster@modineerlake.dfs.core.windows.net/GLOVIA_PROD/JE_DET/Processed/', format='delta')\r\n",
-							"df.write.mode(\"overwrite\").saveAsTable(\"delta.JE_DET\")\r\n",
-							""
+							"display(spark.sql(\"DESCRIBE HISTORY '\" + dfDataOrigionalPath +\"'\"))"
 						],
 						"outputs": [],
-						"execution_count": 52
+						"execution_count": 20
 					},
 					{
 						"cell_type": "code",
@@ -2751,83 +2844,19 @@
 							}
 						},
 						"source": [
-							"deltaOrig = spark.table('delta.je_det').show()"
-						],
-						"outputs": [],
-						"execution_count": 40
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"deltaChanges = spark.read.format(\"parquet\").load(dfDataChangedPath)\r\n",
-							"deltaChanges.registerTempTable(\"changed\")"
-						],
-						"outputs": [],
-						"execution_count": 39
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"import delta\r\n",
-							"orDT = delta.DeltaTable.forPath(spark, 'abfss://unified-data-cluster@modineerlake.dfs.core.windows.net/GLOVIA_PROD/JE_DET/Processed/')\r\n",
+							"orDT = delta.DeltaTable.forPath(spark, dfDataOrigionalPath)\r\n",
 							"(\r\n",
 							"    orDT\r\n",
 							"        .alias(\"original\")\r\n",
-							"        .merge(deltaChanges.alias(\"changed\"),\r\n",
-							"            \"original.JE_CCN == changed.JE_CCN AND original.JE == changed.JE AND original.JE_SUB == changed.JE_SUB AND original.JE_LINE == changed.JE_LINE\")\r\n",
-							"        .whenMatchedUpdate(set ={})\r\n",
-							"        .whenNotMatchedInsert(values ={})\r\n",
+							"        .merge(src.alias(\"changed\"),\r\n",
+							"            matchedString)\r\n",
+							"        .whenMatchedUpdate(set ={updateString})\r\n",
+							"        .whenNotMatchedInsert(values ={insertString})\r\n",
 							"        .execute()\r\n",
 							")"
 						],
 						"outputs": [],
-						"execution_count": 54
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							},
-							"microsoft": {
-								"language": "sparksql"
-							},
-							"collapsed": false
-						},
-						"source": [
-							"%%sql\r\n",
-							"DESCRIBE HISTORY 'abfss://unified-data-cluster@modineerlake.dfs.core.windows.net/GLOVIA_PROD/JE_DET/Processed/'"
-						],
-						"outputs": [],
-						"execution_count": 59
+						"execution_count": null
 					}
 				]
 			},
