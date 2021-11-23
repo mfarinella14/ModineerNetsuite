@@ -236,8 +236,7 @@
 													{
 														"activity": "Raw Data Copy",
 														"dependencyConditions": [
-															"Succeeded",
-															"Failed"
+															"Succeeded"
 														]
 													}
 												],
@@ -259,6 +258,49 @@
 														"rowId": {
 															"value": {
 																"value": "@item().Id",
+																"type": "Expression"
+															},
+															"type": "Int32"
+														}
+													}
+												}
+											},
+											{
+												"name": "Failed To Update",
+												"type": "SqlPoolStoredProcedure",
+												"dependsOn": [
+													{
+														"activity": "Raw Data Copy",
+														"dependencyConditions": [
+															"Failed"
+														]
+													}
+												],
+												"policy": {
+													"timeout": "7.00:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"sqlPool": {
+													"referenceName": "Modineer",
+													"type": "SqlPoolReference"
+												},
+												"typeProperties": {
+													"storedProcedureName": "[Config].[FailedToUpdate]",
+													"storedProcedureParameters": {
+														"RowId": {
+															"value": {
+																"value": "@item().Id",
+																"type": "Expression"
+															},
+															"type": "Int32"
+														},
+														"RowSCN": {
+															"value": {
+																"value": "@item().TableMaxSCN",
 																"type": "Expression"
 															},
 															"type": "Int32"
