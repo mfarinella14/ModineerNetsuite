@@ -665,11 +665,11 @@
 																		"type": "Expression"
 																	},
 																	"directory": {
-																		"value": "\"@{item().SchemaName}/@{item().TableName}/@{activity('Get EST Date').output.firstRow.Year}/@{activity('Get EST Date').output.firstRow.Month}/@{activity('Get EST Date').output.firstRow.Day}\"",
+																		"value": "@{item().SchemaName}/@{item().TableName}/@{activity('Get EST Date').output.firstRow.Year}/@{activity('Get EST Date').output.firstRow.Month}/@{activity('Get EST Date').output.firstRow.Day}",
 																		"type": "Expression"
 																	},
 																	"file_name": {
-																		"value": "\"@{item().TableName}-@{activity('Get EST Date').output.firstRow.EST}\"",
+																		"value": "@{item().TableName}-@{activity('Get EST Date').output.firstRow.EST}",
 																		"type": "Expression"
 																	}
 																}
@@ -717,7 +717,7 @@
 															"sink": {
 																"type": "SqlDWSink",
 																"preCopyScript": {
-																	"value": "\"TRUNCATE TABLE Delta.@{item().TableName}\"",
+																	"value": "TRUNCATE TABLE Delta.@{item().TableName}",
 																	"type": "Expression"
 																},
 																"tableOption": "autoCreate",
