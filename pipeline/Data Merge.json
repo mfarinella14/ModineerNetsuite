@@ -1,0 +1,172 @@
+{
+	"name": "Data Merge",
+	"properties": {
+		"activities": [
+			{
+				"name": "If Condition1",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Check If Table Exists",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(activity('Check If Table Exists').output.firstRow.name,pipeline().parameters.item.TableName)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Copy Delta To Source",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "SqlDWSource",
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"sink": {
+									"type": "SqlDWSink",
+									"allowCopyCommand": true,
+									"tableOption": "autoCreate",
+									"disableMetricsCollection": false
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "AzureSynapseDatabase",
+									"type": "DatasetReference",
+									"parameters": {
+										"TableName": {
+											"value": "@pipeline().parameters.item.TableName",
+											"type": "Expression"
+										},
+										"DbName": {
+											"value": "@pipeline().parameters.item.DbName",
+											"type": "Expression"
+										},
+										"SchemaName": {
+											"value": "Delta",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "AzureSynapseDatabase",
+									"type": "DatasetReference",
+									"parameters": {
+										"TableName": {
+											"value": "@pipeline().parameters.item.TableName",
+											"type": "Expression"
+										},
+										"DbName": {
+											"value": "@pipeline().parameters.item.DbName",
+											"type": "Expression"
+										},
+										"SchemaName": {
+											"value": "@pipeline().parameters.item.SchemaName",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "Merge SP",
+							"type": "SqlPoolStoredProcedure",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"sqlPool": {
+								"referenceName": "Modineer",
+								"type": "SqlPoolReference"
+							},
+							"typeProperties": {
+								"storedProcedureName": "[Config].[usp_MergeData]",
+								"storedProcedureParameters": {
+									"KeyColumns": {
+										"value": "",
+										"type": "String"
+									},
+									"SchemaName": {
+										"value": "",
+										"type": "String"
+									},
+									"TableName": {
+										"value": "",
+										"type": "String"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Check If Table Exists",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlPoolSource",
+						"sqlReaderStoredProcedureName": "[Config].[usp_CreateTableIfNotExistant]",
+						"storedProcedureParameters": {
+							"SchemaName": {
+								"type": "String"
+							},
+							"TableName": {
+								"type": "String"
+							}
+						},
+						"queryTimeout": "02:00:00"
+					},
+					"dataset": {
+						"referenceName": "Modineer",
+						"type": "DatasetReference"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"item": {
+				"type": "object"
+			}
+		},
+		"folder": {
+			"name": "Master Data/Slave Pipeline"
+		},
+		"annotations": []
+	}
+}
