@@ -181,7 +181,7 @@
 													},
 													{
 														"name": "Destination",
-														"value": "@{item().FileSystem}/@{concat('\"', item().SchemaName, '/', item().TableName, '/', activity('Get EST Date').output.firstRow.Year, '/', activity('Get EST Date').output.firstRow.Month, '/', activity('Get EST Date').output.firstRow.Day, '\"')}/@{concat('\"', item().TableName, '-', activity('Get EST Date').output.firstRow.EST, '\"')}"
+														"value": "@{item().FileSystem}/@{concat(item().SchemaName, '/', item().TableName, '/', activity('Get EST Date').output.firstRow.Year, '/', activity('Get EST Date').output.firstRow.Month, '/', activity('Get EST Date').output.firstRow.Day)}/@{concat(item().TableName, '-', activity('Get EST Date').output.firstRow.EST)}"
 													}
 												],
 												"typeProperties": {
