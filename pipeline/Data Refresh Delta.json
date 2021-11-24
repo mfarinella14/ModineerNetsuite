@@ -285,7 +285,7 @@
 													"source": {
 														"type": "OracleSource",
 														"oracleReaderQuery": {
-															"value": "SELECT * FROM @{item().SchemaName}.@{item().TableName} VERSIONS BETWEEN TIMESTAMP TO_TIMESTAMP(REPLACE(REPLACE('@{addminutes(convertFromUtc(item().LastRefreshStart,'Eastern Standard Time'),-15)}','T',' '),'Z',''), 'YYYY-MM-DD HH24:MI:SS.FF') AND CURRENT_TIMESTAMP WHERE versions_operation IN ('D','U','I')",
+															"value": "SELECT * FROM @{item().SchemaName}.@{item().TableName} VERSIONS BETWEEN TIMESTAMP TO_TIMESTAMP(REPLACE(REPLACE('@{addminutes(item().LastRefreshStart,-15)}','T',' '),'Z',''), 'YYYY-MM-DD HH24:MI:SS.FF') AND CURRENT_TIMESTAMP WHERE versions_operation IN ('D','U','I')",
 															"type": "Expression"
 														},
 														"partitionOption": "None",
@@ -371,7 +371,7 @@
 													"source": {
 														"type": "OracleSource",
 														"oracleReaderQuery": {
-															"value": "SELECT * FROM @{item().SchemaName}.@{item().TableName} VERSIONS BETWEEN TIMESTAMP TO_TIMESTAMP(REPLACE(REPLACE('@{addminutes(convertFromUtc(item().LastRefreshStart,'Eastern Standard Time'),-15)}','T',' '),'Z',''), 'YYYY-MM-DD HH24:MI:SS.FF') AND CURRENT_TIMESTAMP WHERE versions_operation IN ('D','U','I')",
+															"value": "SELECT * FROM @{item().SchemaName}.@{item().TableName} VERSIONS BETWEEN TIMESTAMP TO_TIMESTAMP(REPLACE(REPLACE('@{addminutes(item().LastRefreshStart,-15)}','T',' '),'Z',''), 'YYYY-MM-DD HH24:MI:SS.FF') AND CURRENT_TIMESTAMP WHERE versions_operation IN ('D','U','I')",
 															"type": "Expression"
 														},
 														"partitionOption": "None",
