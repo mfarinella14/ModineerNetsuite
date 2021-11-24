@@ -96,7 +96,7 @@
 						"userProperties": [],
 						"typeProperties": {
 							"expression": {
-								"value": "@equals(activity('Check If Table Exists').output.firstRow.name,pipeline().parameters.item.TableName)",
+								"value": "@greater(activity('Check If Table Exists').output.firstRow.name,0)",
 								"type": "Expression"
 							},
 							"ifFalseActivities": [
@@ -184,7 +184,7 @@
 									"type": "SqlPoolStoredProcedure",
 									"dependsOn": [
 										{
-											"activity": "Copy Entire Table To SQL Pool",
+											"activity": "Raw Data Copy - SQL Pool",
 											"dependencyConditions": [
 												"Succeeded"
 											]
@@ -228,6 +228,89 @@
 											}
 										}
 									}
+								},
+								{
+									"name": "Raw Data Copy - SQL Pool",
+									"type": "Copy",
+									"dependsOn": [
+										{
+											"activity": "Copy Entire Table To SQL Pool",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": true,
+										"secureInput": false
+									},
+									"userProperties": [
+										{
+											"name": "Source",
+											"value": "@{item().SchemaName}.@{item().TableName}"
+										},
+										{
+											"name": "Destination",
+											"value": "@{'Delta'}.@{item().TableName}"
+										}
+									],
+									"typeProperties": {
+										"source": {
+											"type": "ParquetSource",
+											"storeSettings": {
+												"type": "AzureBlobFSReadSettings",
+												"recursive": true,
+												"wildcardFolderPath": {
+													"value": "@{pipeline().parameters.item.SchemaName}/@{pipeline().parameters.item.TableName}/@{pipeline().parameters.DateData.Year}/@{pipeline().parameters.DateData.Month}/@{pipeline().parameters.DateData.Day}",
+													"type": "Expression"
+												},
+												"wildcardFileName": "*",
+												"enablePartitionDiscovery": false
+											}
+										},
+										"sink": {
+											"type": "SqlDWSink",
+											"tableOption": "autoCreate",
+											"disableMetricsCollection": false
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "ReadParquet",
+											"type": "DatasetReference",
+											"parameters": {
+												"FileSystem": {
+													"value": "@pipeline().parameters.item.FileSystem",
+													"type": "Expression"
+												},
+												"FilePath": {
+													"value": "@{pipeline().parameters.item.SchemaName}/@{pipeline().parameters.item.TableName}/@{pipeline().parameters.DateData.Year}/@{pipeline().parameters.DateData.Month}/@{pipeline().parameters.DateData.Day}/*",
+													"type": "Expression"
+												}
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "AzureSynapseDatabase",
+											"type": "DatasetReference",
+											"parameters": {
+												"TableName": {
+													"value": "@pipeline().parameters.item.TableName",
+													"type": "Expression"
+												},
+												"DbName": {
+													"value": "@pipeline().parameters.item.DbName",
+													"type": "Expression"
+												},
+												"SchemaName": "Delta"
+											}
+										}
+									]
 								}
 							],
 							"ifTrueActivities": [
@@ -326,6 +409,9 @@
 				"parameters": {
 					"item": {
 						"type": "object"
+					},
+					"DateData": {
+						"type": "object"
 					}
 				},
 				"folder": {
@@ -337,7 +423,8 @@
 				"[concat(variables('workspaceId'), '/datasets/Modineer')]",
 				"[concat(variables('workspaceId'), '/datasets/GloviaProd')]",
 				"[concat(variables('workspaceId'), '/datasets/AzureSynapseDatabase')]",
-				"[concat(variables('workspaceId'), '/sqlPools/Modineer')]"
+				"[concat(variables('workspaceId'), '/sqlPools/Modineer')]",
+				"[concat(variables('workspaceId'), '/datasets/ReadParquet')]"
 			]
 		},
 		{
@@ -789,6 +876,10 @@
 															"parameters": {
 																"item": {
 																	"value": "@item()",
+																	"type": "Expression"
+																},
+																"DateData": {
+																	"value": "@activity('Get EST Date').output",
 																	"type": "Expression"
 																}
 															}
