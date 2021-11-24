@@ -2581,7 +2581,14 @@
 								{
 									"name": "Switch on RowGroup",
 									"type": "Switch",
-									"dependsOn": [],
+									"dependsOn": [
+										{
+											"activity": "Set Table as Updating_copy1",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
 									"userProperties": [],
 									"typeProperties": {
 										"on": {
