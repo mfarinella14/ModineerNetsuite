@@ -34,7 +34,7 @@
 							"userProperties": [
 								{
 									"name": "Source",
-									"value": "@{'Delta'}.@{pipeline().parameters.item.TableName}"
+									"value": "@{pipeline().parameters.item.SchemaName}.@{pipeline().parameters.item.TableName}"
 								},
 								{
 									"name": "Destination",
@@ -222,11 +222,11 @@
 							"userProperties": [
 								{
 									"name": "Source",
-									"value": "@{item().SchemaName}.@{item().TableName}"
+									"value": "@{pipeline().parameters.item.FileSystem}/@{concat(pipeline().parameters.item.SchemaName, '/', pipeline().parameters.item.TableName, '/', pipeline().parameters.DateData.Year, '/', pipeline().parameters.DateData.Month, '/', pipeline().parameters.DateData.Day)}/"
 								},
 								{
 									"name": "Destination",
-									"value": "@{'Delta'}.@{item().TableName}"
+									"value": "@{'Delta'}.@{pipeline().parameters.item.TableName}"
 								}
 							],
 							"typeProperties": {
