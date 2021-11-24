@@ -50,14 +50,7 @@
 						{
 							"name": "Switch on RowGroup",
 							"type": "Switch",
-							"dependsOn": [
-								{
-									"activity": "Set Table as Updating_copy1",
-									"dependencyConditions": [
-										"Succeeded"
-									]
-								}
-							],
+							"dependsOn": [],
 							"userProperties": [],
 							"typeProperties": {
 								"on": {
@@ -144,7 +137,7 @@
 																"value": "@activity('Get SCN Number').output.firstRow.SCNValue",
 																"type": "Expression"
 															},
-															"type": "Int32"
+															"type": "Int64"
 														}
 													}
 												}
