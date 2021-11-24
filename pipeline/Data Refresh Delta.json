@@ -285,7 +285,7 @@
 													"source": {
 														"type": "OracleSource",
 														"oracleReaderQuery": {
-															"value": "SELECT *\nFROM @{item().SchemaName}.@{item().TableName}\nVERSIONS BETWEEN TIMESTAMP\nTO_TIMESTAMP(REPLACE(REPLACE('@{item().LastRefreshStart}','T',' '),'Z',''), 'YYYY-MM-DD HH24:MI:SS.FF')\nAND CURRENT_TIMESTAMP\nWHERE versions_operation IN ('D','U','I')",
+															"value": "SELECT * FROM @{item().SchemaName}.@{item().TableName} VERSIONS BETWEEN TIMESTAMP TO_TIMESTAMP(REPLACE(REPLACE('@{addminutes(convertFromUtc(item().LastRefreshStart,'Eastern Standard Time'),-15)}','T',' '),'Z',''), 'YYYY-MM-DD HH24:MI:SS.FF') AND CURRENT_TIMESTAMP WHERE versions_operation IN ('D','U','I')",
 															"type": "Expression"
 														},
 														"partitionOption": "None",
@@ -371,7 +371,7 @@
 													"source": {
 														"type": "OracleSource",
 														"oracleReaderQuery": {
-															"value": "SELECT *\nFROM @{item().SchemaName}.@{item().TableName}\nVERSIONS BETWEEN TIMESTAMP\nTO_TIMESTAMP(REPLACE(REPLACE('@{item().LastRefreshStart}','T',' '),'Z',''), 'YYYY-MM-DD HH24:MI:SS.FF')\nAND CURRENT_TIMESTAMP\nWHERE versions_operation IN ('D','U','I')",
+															"value": "SELECT * FROM @{item().SchemaName}.@{item().TableName} VERSIONS BETWEEN TIMESTAMP TO_TIMESTAMP(REPLACE(REPLACE('@{addminutes(convertFromUtc(item().LastRefreshStart,'Eastern Standard Time'),-15)}','T',' '),'Z',''), 'YYYY-MM-DD HH24:MI:SS.FF') AND CURRENT_TIMESTAMP WHERE versions_operation IN ('D','U','I')",
 															"type": "Expression"
 														},
 														"partitionOption": "None",
@@ -383,7 +383,6 @@
 															"value": "\"TRUNCATE TABLE Delta.@{item().TableName}\"",
 															"type": "Expression"
 														},
-														"sqlWriterUseTableLock": false,
 														"tableOption": "autoCreate",
 														"disableMetricsCollection": false
 													},
