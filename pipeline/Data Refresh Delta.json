@@ -157,103 +157,6 @@
 												}
 											},
 											{
-												"name": "Set Table to Processed",
-												"type": "SqlPoolStoredProcedure",
-												"dependsOn": [
-													{
-														"activity": "Create Table Or Merge Data",
-														"dependencyConditions": [
-															"Succeeded"
-														]
-													}
-												],
-												"policy": {
-													"timeout": "7.00:00:00",
-													"retry": 0,
-													"retryIntervalInSeconds": 30,
-													"secureOutput": false,
-													"secureInput": false
-												},
-												"userProperties": [],
-												"sqlPool": {
-													"referenceName": "Modineer",
-													"type": "SqlPoolReference"
-												},
-												"typeProperties": {
-													"storedProcedureName": "[Config].[SetAsUpdated]",
-													"storedProcedureParameters": {
-														"rowId": {
-															"value": {
-																"value": "@item().Id",
-																"type": "Expression"
-															},
-															"type": "Int32"
-														}
-													}
-												}
-											},
-											{
-												"name": "Failed To Update",
-												"type": "SqlPoolStoredProcedure",
-												"dependsOn": [
-													{
-														"activity": "Update SCN",
-														"dependencyConditions": [
-															"Failed"
-														]
-													},
-													{
-														"activity": "Get SCN Number",
-														"dependencyConditions": [
-															"Failed"
-														]
-													},
-													{
-														"activity": "Create Table Or Merge Data",
-														"dependencyConditions": [
-															"Failed"
-														]
-													},
-													{
-														"activity": "Raw Data Copy - SQL Pool",
-														"dependencyConditions": [
-															"Failed"
-														]
-													}
-												],
-												"policy": {
-													"timeout": "7.00:00:00",
-													"retry": 0,
-													"retryIntervalInSeconds": 30,
-													"secureOutput": false,
-													"secureInput": false
-												},
-												"userProperties": [],
-												"sqlPool": {
-													"referenceName": "Modineer",
-													"type": "SqlPoolReference"
-												},
-												"typeProperties": {
-													"storedProcedureName": "[Config].[FailedToUpdate]",
-													"storedProcedureParameters": {
-														"RowId": {
-															"value": {
-																"value": "@item().Id",
-																"type": "Expression"
-															},
-															"type": "Int32"
-														},
-														"RowSCN": {
-															"value": {
-																"value": "@item().TableMaxSCN",
-																"type": "Expression"
-															},
-															"type": "Int32"
-														}
-													}
-												}
-											},
-											{
 												"name": "Raw Data Copy - ADLS2",
 												"type": "Copy",
 												"dependsOn": [
@@ -476,82 +379,6 @@
 														}
 													}
 												}
-											},
-											{
-												"name": "Set as Updated",
-												"type": "SqlPoolStoredProcedure",
-												"dependsOn": [
-													{
-														"activity": "Execute Netsuite Data Refresh",
-														"dependencyConditions": [
-															"Succeeded"
-														]
-													}
-												],
-												"policy": {
-													"timeout": "7.00:00:00",
-													"retry": 0,
-													"retryIntervalInSeconds": 30,
-													"secureOutput": false,
-													"secureInput": false
-												},
-												"userProperties": [],
-												"sqlPool": {
-													"referenceName": "Modineer",
-													"type": "SqlPoolReference"
-												},
-												"typeProperties": {
-													"storedProcedureName": "[Config].[SetAsUpdated]",
-													"storedProcedureParameters": {
-														"rowId": {
-															"value": {
-																"value": "@item().Id",
-																"type": "Expression"
-															},
-															"type": "Int32"
-														}
-													}
-												}
-											},
-											{
-												"name": "Failed",
-												"type": "SqlPoolStoredProcedure",
-												"dependsOn": [
-													{
-														"activity": "Execute Netsuite Data Refresh",
-														"dependencyConditions": [
-															"Failed"
-														]
-													}
-												],
-												"policy": {
-													"timeout": "7.00:00:00",
-													"retry": 0,
-													"retryIntervalInSeconds": 30,
-													"secureOutput": false,
-													"secureInput": false
-												},
-												"userProperties": [],
-												"sqlPool": {
-													"referenceName": "Modineer",
-													"type": "SqlPoolReference"
-												},
-												"typeProperties": {
-													"storedProcedureName": "[Config].[FailedToUpdate]",
-													"storedProcedureParameters": {
-														"RowId": {
-															"value": {
-																"value": "@item().Id",
-																"type": "Expression"
-															},
-															"type": "Int32"
-														},
-														"RowSCN": {
-															"value": "0",
-															"type": "Int32"
-														}
-													}
-												}
 											}
 										]
 									},
@@ -626,6 +453,85 @@
 									"rowId": {
 										"value": {
 											"value": "@item().Id",
+											"type": "Expression"
+										},
+										"type": "Int32"
+									}
+								}
+							}
+						},
+						{
+							"name": "Set Table to Processed",
+							"type": "SqlPoolStoredProcedure",
+							"dependsOn": [
+								{
+									"activity": "Switch on RowGroup",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"sqlPool": {
+								"referenceName": "Modineer",
+								"type": "SqlPoolReference"
+							},
+							"typeProperties": {
+								"storedProcedureName": "[Config].[SetAsUpdated]",
+								"storedProcedureParameters": {
+									"rowId": {
+										"value": {
+											"value": "@item().Id",
+											"type": "Expression"
+										},
+										"type": "Int32"
+									}
+								}
+							}
+						},
+						{
+							"name": "Failed To Update",
+							"type": "SqlPoolStoredProcedure",
+							"dependsOn": [
+								{
+									"activity": "Switch on RowGroup",
+									"dependencyConditions": [
+										"Failed"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"sqlPool": {
+								"referenceName": "Modineer",
+								"type": "SqlPoolReference"
+							},
+							"typeProperties": {
+								"storedProcedureName": "[Config].[FailedToUpdate]",
+								"storedProcedureParameters": {
+									"RowId": {
+										"value": {
+											"value": "@item().Id",
+											"type": "Expression"
+										},
+										"type": "Int32"
+									},
+									"RowSCN": {
+										"value": {
+											"value": "@item().TableMaxSCN",
 											"type": "Expression"
 										},
 										"type": "Int32"
