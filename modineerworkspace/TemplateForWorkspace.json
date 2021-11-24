@@ -288,7 +288,7 @@
 													"type": "Expression"
 												},
 												"FilePath": {
-													"value": "@{pipeline().parameters.item.SchemaName}/@{pipeline().parameters.item.TableName}/@{pipeline().parameters.DateData.Year}/@{pipeline().parameters.DateData.Month}/@{pipeline().parameters.DateData.Day}/*",
+													"value": "@{pipeline().parameters.item.SchemaName}/@{pipeline().parameters.item.TableName}/@{pipeline().parameters.DateData.Year}/@{pipeline().parameters.DateData.Month}/@{pipeline().parameters.DateData.Day}",
 													"type": "Expression"
 												}
 											}
