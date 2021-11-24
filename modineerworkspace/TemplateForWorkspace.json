@@ -550,6 +550,12 @@
 																"dependencyConditions": [
 																	"Failed"
 																]
+															},
+															{
+																"activity": "Raw Data Copy - SQL Pool",
+																"dependencyConditions": [
+																	"Failed"
+																]
 															}
 														],
 														"policy": {
