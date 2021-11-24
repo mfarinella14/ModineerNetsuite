@@ -16,7 +16,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"expression": {
-						"value": "@greater(activity('Check If Table Exists').output.firstRow.name,0)",
+						"value": "@greater(activity('Check If Table Exists').output.firstRow.Count,0)",
 						"type": "Expression"
 					},
 					"ifFalseActivities": [
@@ -183,7 +183,10 @@
 									"storeSettings": {
 										"type": "AzureBlobFSReadSettings",
 										"recursive": true,
-										"wildcardFolderPath": "@{pipeline().parameters.item.SchemaName}/@{pipeline().parameters.item.TableName}/@{pipeline().parameters.DateData.Year}/@{pipeline().parameters.DateData.Month}/@{pipeline().parameters.DateData.Day}",
+										"wildcardFolderPath": {
+											"value": "@{pipeline().parameters.item.SchemaName}/@{pipeline().parameters.item.TableName}/@{pipeline().parameters.DateData.Year}/@{pipeline().parameters.DateData.Month}/@{pipeline().parameters.DateData.Day}",
+											"type": "Expression"
+										},
 										"wildcardFileName": "*",
 										"enablePartitionDiscovery": false
 									}
