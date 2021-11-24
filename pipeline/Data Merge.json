@@ -49,7 +49,6 @@
 								},
 								"sink": {
 									"type": "SqlDWSink",
-									"sqlWriterUseTableLock": false,
 									"tableOption": "autoCreate",
 									"disableMetricsCollection": false
 								},
@@ -216,10 +215,18 @@
 						"sqlReaderStoredProcedureName": "[Config].[usp_CreateTableIfNotExistant]",
 						"storedProcedureParameters": {
 							"SchemaName": {
-								"type": "String"
+								"type": "String",
+								"value": {
+									"value": "@pipeline().parameters.item.SchemaName",
+									"type": "Expression"
+								}
 							},
 							"TableName": {
-								"type": "String"
+								"type": "String",
+								"value": {
+									"value": "@pipeline().parameters.item.TableName",
+									"type": "Expression"
+								}
 							}
 						},
 						"queryTimeout": "02:00:00"
