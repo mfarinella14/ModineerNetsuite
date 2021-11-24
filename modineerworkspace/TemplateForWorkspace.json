@@ -87,7 +87,7 @@
 						"type": "IfCondition",
 						"dependsOn": [
 							{
-								"activity": "Check If Table Exists",
+								"activity": "Check If Parent Table Exists",
 								"dependencyConditions": [
 									"Succeeded"
 								]
@@ -96,7 +96,7 @@
 						"userProperties": [],
 						"typeProperties": {
 							"expression": {
-								"value": "@greater(activity('Check If Table Exists').output.firstRow.Count,0)",
+								"value": "@greater(activity('Check If Parent Table Exists').output.firstRow.Count,0)",
 								"type": "Expression"
 							},
 							"ifFalseActivities": [
@@ -178,18 +178,13 @@
 											}
 										}
 									]
-								},
+								}
+							],
+							"ifTrueActivities": [
 								{
-									"name": "Merge SP After Table Created",
+									"name": "Merge SP",
 									"type": "SqlPoolStoredProcedure",
-									"dependsOn": [
-										{
-											"activity": "Raw Data Copy - SQL Pool",
-											"dependencyConditions": [
-												"Succeeded"
-											]
-										}
-									],
+									"dependsOn": [],
 									"policy": {
 										"timeout": "7.00:00:00",
 										"retry": 0,
@@ -228,18 +223,111 @@
 											}
 										}
 									}
-								},
-								{
-									"name": "Raw Data Copy - SQL Pool",
-									"type": "Copy",
-									"dependsOn": [
-										{
-											"activity": "Copy Entire Table To SQL Pool",
-											"dependencyConditions": [
-												"Succeeded"
-											]
+								}
+							]
+						}
+					},
+					{
+						"name": "Check If Parent Table Exists",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "SqlPoolSource",
+								"sqlReaderStoredProcedureName": "[Config].[usp_CreateTableIfNotExistant]",
+								"storedProcedureParameters": {
+									"SchemaName": {
+										"type": "String",
+										"value": {
+											"value": "@pipeline().parameters.item.SchemaName",
+											"type": "Expression"
 										}
-									],
+									},
+									"TableName": {
+										"type": "String",
+										"value": {
+											"value": "@pipeline().parameters.item.TableName",
+											"type": "Expression"
+										}
+									}
+								},
+								"queryTimeout": "02:00:00"
+							},
+							"dataset": {
+								"referenceName": "Modineer",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						}
+					},
+					{
+						"name": "Check If Delta Table Exists",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "SqlPoolSource",
+								"sqlReaderStoredProcedureName": "[Config].[usp_CreateTableIfNotExistant]",
+								"storedProcedureParameters": {
+									"SchemaName": {
+										"type": "String",
+										"value": "Delta"
+									},
+									"TableName": {
+										"type": "String",
+										"value": {
+											"value": "@pipeline().parameters.item.TableName",
+											"type": "Expression"
+										}
+									}
+								},
+								"queryTimeout": "02:00:00"
+							},
+							"dataset": {
+								"referenceName": "Modineer",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						}
+					},
+					{
+						"name": "If Condition1_copy1",
+						"type": "IfCondition",
+						"dependsOn": [
+							{
+								"activity": "Check If Delta Table Exists",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@greater(activity('Check If Delta Table Exists').output.firstRow.Count,0)",
+								"type": "Expression"
+							},
+							"ifFalseActivities": [
+								{
+									"name": "Raw Data Copy - SQL Pool_copy1",
+									"type": "Copy",
+									"dependsOn": [],
 									"policy": {
 										"timeout": "7.00:00:00",
 										"retry": 0,
@@ -315,55 +403,28 @@
 							],
 							"ifTrueActivities": [
 								{
-									"name": "Merge SP",
-									"type": "SqlPoolStoredProcedure",
+									"name": "Wait1",
+									"type": "Wait",
 									"dependsOn": [],
-									"policy": {
-										"timeout": "7.00:00:00",
-										"retry": 0,
-										"retryIntervalInSeconds": 30,
-										"secureOutput": false,
-										"secureInput": false
-									},
 									"userProperties": [],
-									"sqlPool": {
-										"referenceName": "Modineer",
-										"type": "SqlPoolReference"
-									},
 									"typeProperties": {
-										"storedProcedureName": "[Config].[usp_MergeData]",
-										"storedProcedureParameters": {
-											"KeyColumns": {
-												"value": {
-													"value": "@pipeline().parameters.item.TableKeysArray",
-													"type": "Expression"
-												},
-												"type": "String"
-											},
-											"SchemaName": {
-												"value": {
-													"value": "@pipeline().parameters.item.SchemaName",
-													"type": "Expression"
-												},
-												"type": "String"
-											},
-											"TableName": {
-												"value": {
-													"value": "@pipeline().parameters.item.TableName",
-													"type": "Expression"
-												},
-												"type": "String"
-											}
-										}
+										"waitTimeInSeconds": 1
 									}
 								}
 							]
 						}
 					},
 					{
-						"name": "Check If Table Exists",
-						"type": "Lookup",
-						"dependsOn": [],
+						"name": "Merge SP After Table Created",
+						"type": "SqlPoolStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "If Condition1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
 						"policy": {
 							"timeout": "7.00:00:00",
 							"retry": 0,
@@ -372,32 +433,34 @@
 							"secureInput": false
 						},
 						"userProperties": [],
+						"sqlPool": {
+							"referenceName": "Modineer",
+							"type": "SqlPoolReference"
+						},
 						"typeProperties": {
-							"source": {
-								"type": "SqlPoolSource",
-								"sqlReaderStoredProcedureName": "[Config].[usp_CreateTableIfNotExistant]",
-								"storedProcedureParameters": {
-									"SchemaName": {
-										"type": "String",
-										"value": {
-											"value": "@pipeline().parameters.item.SchemaName",
-											"type": "Expression"
-										}
+							"storedProcedureName": "[Config].[usp_MergeData]",
+							"storedProcedureParameters": {
+								"KeyColumns": {
+									"value": {
+										"value": "@pipeline().parameters.item.TableKeysArray",
+										"type": "Expression"
 									},
-									"TableName": {
-										"type": "String",
-										"value": {
-											"value": "@pipeline().parameters.item.TableName",
-											"type": "Expression"
-										}
-									}
+									"type": "String"
 								},
-								"queryTimeout": "02:00:00"
-							},
-							"dataset": {
-								"referenceName": "Modineer",
-								"type": "DatasetReference",
-								"parameters": {}
+								"SchemaName": {
+									"value": {
+										"value": "@pipeline().parameters.item.SchemaName",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"TableName": {
+									"value": {
+										"value": "@pipeline().parameters.item.TableName",
+										"type": "Expression"
+									},
+									"type": "String"
+								}
 							}
 						}
 					}
@@ -421,9 +484,9 @@
 			},
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/datasets/Modineer')]",
+				"[concat(variables('workspaceId'), '/sqlPools/Modineer')]",
 				"[concat(variables('workspaceId'), '/datasets/GloviaProd')]",
 				"[concat(variables('workspaceId'), '/datasets/AzureSynapseDatabase')]",
-				"[concat(variables('workspaceId'), '/sqlPools/Modineer')]",
 				"[concat(variables('workspaceId'), '/datasets/ReadParquet')]"
 			]
 		},
