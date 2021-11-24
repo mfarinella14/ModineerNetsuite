@@ -31,7 +31,16 @@
 								"secureOutput": false,
 								"secureInput": false
 							},
-							"userProperties": [],
+							"userProperties": [
+								{
+									"name": "Source",
+									"value": "@{'Delta'}.@{pipeline().parameters.item.TableName}"
+								},
+								{
+									"name": "Destination",
+									"value": "@{pipeline().parameters.item.SchemaName}.@{pipeline().parameters.item.TableName}"
+								}
+							],
 							"typeProperties": {
 								"source": {
 									"type": "SqlDWSource",

@@ -265,7 +265,16 @@
 													"secureOutput": true,
 													"secureInput": false
 												},
-												"userProperties": [],
+												"userProperties": [
+													{
+														"name": "Source",
+														"value": "@{item().SchemaName}.@{item().TableName}"
+													},
+													{
+														"name": "Destination",
+														"value": "@{item().FileSystem}/@{concat('\"', item().SchemaName, '/', item().TableName, '/', activity('Get EST Date').output.firstRow.Year, '/', activity('Get EST Date').output.firstRow.Month, '/', activity('Get EST Date').output.firstRow.Day, '\"')}/@{concat('\"', item().TableName, '-', activity('Get EST Date').output.firstRow.EST, '\"')}"
+													}
+												],
 												"typeProperties": {
 													"source": {
 														"type": "OracleSource",
@@ -342,7 +351,16 @@
 													"secureOutput": true,
 													"secureInput": false
 												},
-												"userProperties": [],
+												"userProperties": [
+													{
+														"name": "Source",
+														"value": "@{item().SchemaName}.@{item().TableName}"
+													},
+													{
+														"name": "Destination",
+														"value": "@{'Delta'}.@{item().TableName}"
+													}
+												],
 												"typeProperties": {
 													"source": {
 														"type": "OracleSource",
