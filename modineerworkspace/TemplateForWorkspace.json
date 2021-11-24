@@ -546,13 +546,7 @@
 																]
 															},
 															{
-																"activity": "Raw Data Copy - SQL Pool",
-																"dependencyConditions": [
-																	"Failed"
-																]
-															},
-															{
-																"activity": "Raw Data Copy - ADLS2",
+																"activity": "Create Table Or Merge Data",
 																"dependencyConditions": [
 																	"Failed"
 																]
@@ -766,7 +760,8 @@
 															{
 																"activity": "Raw Data Copy - SQL Pool",
 																"dependencyConditions": [
-																	"Succeeded"
+																	"Succeeded",
+																	"Failed"
 																]
 															}
 														],
