@@ -3826,6 +3826,56 @@
 											}
 										}
 									]
+								},
+								{
+									"name": "Merge SP After Table Created",
+									"type": "SqlPoolStoredProcedure",
+									"dependsOn": [
+										{
+											"activity": "Copy Entire Table To SQL Pool",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"sqlPool": {
+										"referenceName": "Modineer",
+										"type": "SqlPoolReference"
+									},
+									"typeProperties": {
+										"storedProcedureName": "[Config].[usp_MergeData]",
+										"storedProcedureParameters": {
+											"KeyColumns": {
+												"value": {
+													"value": "@pipeline().parameters.item.TableKeysArray",
+													"type": "Expression"
+												},
+												"type": "String"
+											},
+											"SchemaName": {
+												"value": {
+													"value": "@pipeline().parameters.item.SchemaName",
+													"type": "Expression"
+												},
+												"type": "String"
+											},
+											"TableName": {
+												"value": {
+													"value": "@pipeline().parameters.item.TableName",
+													"type": "Expression"
+												},
+												"type": "String"
+											}
+										}
+									}
 								}
 							],
 							"ifTrueActivities": [
@@ -3849,15 +3899,24 @@
 										"storedProcedureName": "[Config].[usp_MergeData]",
 										"storedProcedureParameters": {
 											"KeyColumns": {
-												"value": "",
+												"value": {
+													"value": "@pipeline().parameters.item.TableKeysArray",
+													"type": "Expression"
+												},
 												"type": "String"
 											},
 											"SchemaName": {
-												"value": "",
+												"value": {
+													"value": "@pipeline().parameters.item.SchemaName",
+													"type": "Expression"
+												},
 												"type": "String"
 											},
 											"TableName": {
-												"value": "",
+												"value": {
+													"value": "@pipeline().parameters.item.TableName",
+													"type": "Expression"
+												},
 												"type": "String"
 											}
 										}
