@@ -3316,7 +3316,16 @@
 															"secureOutput": true,
 															"secureInput": false
 														},
-														"userProperties": [],
+														"userProperties": [
+															{
+																"name": "Source",
+																"value": "@{item().SchemaName}.@{item().TableName}"
+															},
+															{
+																"name": "Destination",
+																"value": "@{item().FileSystem}/@{concat('\"', item().SchemaName, '/', item().TableName, '/', activity('Get EST Date').output.firstRow.Year, '/', activity('Get EST Date').output.firstRow.Month, '/', activity('Get EST Date').output.firstRow.Day, '\"')}/@{concat('\"', item().TableName, '-', activity('Get EST Date').output.firstRow.EST, '\"')}"
+															}
+														],
 														"typeProperties": {
 															"source": {
 																"type": "OracleSource",
@@ -3393,7 +3402,16 @@
 															"secureOutput": true,
 															"secureInput": false
 														},
-														"userProperties": [],
+														"userProperties": [
+															{
+																"name": "Source",
+																"value": "@{item().SchemaName}.@{item().TableName}"
+															},
+															{
+																"name": "Destination",
+																"value": "@{'Delta'}.@{item().TableName}"
+															}
+														],
 														"typeProperties": {
 															"source": {
 																"type": "OracleSource",
@@ -3730,7 +3748,7 @@
 							},
 							"ifFalseActivities": [
 								{
-									"name": "Copy Delta To Source",
+									"name": "Copy Entire Table To SQL Pool",
 									"type": "Copy",
 									"dependsOn": [],
 									"policy": {
@@ -3740,12 +3758,21 @@
 										"secureOutput": false,
 										"secureInput": false
 									},
-									"userProperties": [],
+									"userProperties": [
+										{
+											"name": "Source",
+											"value": "@{'Delta'}.@{pipeline().parameters.item.TableName}"
+										},
+										{
+											"name": "Destination",
+											"value": "@{pipeline().parameters.item.SchemaName}.@{pipeline().parameters.item.TableName}"
+										}
+									],
 									"typeProperties": {
 										"source": {
-											"type": "SqlDWSource",
-											"queryTimeout": "02:00:00",
-											"partitionOption": "None"
+											"type": "OracleSource",
+											"partitionOption": "None",
+											"queryTimeout": "02:00:00"
 										},
 										"sink": {
 											"type": "SqlDWSink",
@@ -3765,19 +3792,15 @@
 									},
 									"inputs": [
 										{
-											"referenceName": "AzureSynapseDatabase",
+											"referenceName": "GloviaProd",
 											"type": "DatasetReference",
 											"parameters": {
-												"TableName": {
+												"tablename": {
 													"value": "@pipeline().parameters.item.TableName",
 													"type": "Expression"
 												},
-												"DbName": {
-													"value": "@pipeline().parameters.item.DbName",
-													"type": "Expression"
-												},
-												"SchemaName": {
-													"value": "Delta",
+												"schemaname": {
+													"value": "@pipeline().parameters.item.SchemaName",
 													"type": "Expression"
 												}
 											}
@@ -3894,6 +3917,7 @@
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/datasets/Modineer')]",
 				"[concat(variables('workspaceId'), '/sqlPools/Modineer')]",
+				"[concat(variables('workspaceId'), '/datasets/GloviaProd')]",
 				"[concat(variables('workspaceId'), '/datasets/AzureSynapseDatabase')]"
 			]
 		}
