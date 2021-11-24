@@ -3264,6 +3264,12 @@
 																"dependencyConditions": [
 																	"Failed"
 																]
+															},
+															{
+																"activity": "Raw Data Copy - ADLS2",
+																"dependencyConditions": [
+																	"Failed"
+																]
 															}
 														],
 														"policy": {
