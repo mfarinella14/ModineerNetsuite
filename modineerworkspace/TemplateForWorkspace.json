@@ -96,7 +96,7 @@
 						"userProperties": [],
 						"typeProperties": {
 							"expression": {
-								"value": "@greater(activity('Check If Table Exists').output.firstRow.name,0)",
+								"value": "@greater(activity('Check If Table Exists').output.firstRow.Count,0)",
 								"type": "Expression"
 							},
 							"ifFalseActivities": [
@@ -2538,11 +2538,11 @@
 			"properties": {
 				"activities": [
 					{
-						"name": "Data flow1",
-						"type": "ExecuteDataFlow",
+						"name": "Check If Table Exists",
+						"type": "Lookup",
 						"dependsOn": [],
 						"policy": {
-							"timeout": "1.00:00:00",
+							"timeout": "7.00:00:00",
 							"retry": 0,
 							"retryIntervalInSeconds": 30,
 							"secureOutput": false,
@@ -2550,37 +2550,26 @@
 						},
 						"userProperties": [],
 						"typeProperties": {
-							"dataflow": {
-								"referenceName": "UpdateSQLTableFromParquet",
-								"type": "DataFlowReference",
-								"parameters": {
+							"source": {
+								"type": "SqlPoolSource",
+								"sqlReaderStoredProcedureName": "[Config].[usp_CreateTableIfNotExistant]",
+								"storedProcedureParameters": {
 									"SchemaName": {
-										"value": "@string('GLOVIA_PROD')",
-										"type": "Expression"
+										"type": "String",
+										"value": "GLOVIA_PROD"
 									},
 									"TableName": {
-										"value": "@string('JE_DET')",
-										"type": "Expression"
-									},
-									"KeyColumns": {
-										"value": "@string('JE_CCN,JE,JE_SUB,JE_LINE')",
-										"type": "Expression"
+										"type": "String",
+										"value": "EMPLOYEE"
 									}
 								},
-								"datasetParameters": {
-									"NewData": {
-										"FileSystem": "unified-data-cluster",
-										"FilePath": "GLOVIA_PROD/JE_DET/NotProcessed"
-									},
-									"SinkToAzureTable": {}
-								}
+								"queryTimeout": "02:00:00"
 							},
-							"staging": {},
-							"compute": {
-								"coreCount": 8,
-								"computeType": "General"
-							},
-							"traceLevel": "Fine"
+							"dataset": {
+								"referenceName": "Modineer",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
 						}
 					}
 				],
@@ -2594,7 +2583,7 @@
 				"annotations": []
 			},
 			"dependsOn": [
-				"[concat(variables('workspaceId'), '/dataflows/UpdateSQLTableFromParquet')]"
+				"[concat(variables('workspaceId'), '/datasets/Modineer')]"
 			]
 		},
 		{
