@@ -182,46 +182,12 @@
 							],
 							"ifTrueActivities": [
 								{
-									"name": "Merge SP",
-									"type": "SqlPoolStoredProcedure",
+									"name": "Wait2",
+									"type": "Wait",
 									"dependsOn": [],
-									"policy": {
-										"timeout": "7.00:00:00",
-										"retry": 0,
-										"retryIntervalInSeconds": 30,
-										"secureOutput": false,
-										"secureInput": false
-									},
 									"userProperties": [],
-									"sqlPool": {
-										"referenceName": "Modineer",
-										"type": "SqlPoolReference"
-									},
 									"typeProperties": {
-										"storedProcedureName": "[Config].[usp_MergeData]",
-										"storedProcedureParameters": {
-											"KeyColumns": {
-												"value": {
-													"value": "@pipeline().parameters.item.TableKeysArray",
-													"type": "Expression"
-												},
-												"type": "String"
-											},
-											"SchemaName": {
-												"value": {
-													"value": "@pipeline().parameters.item.SchemaName",
-													"type": "Expression"
-												},
-												"type": "String"
-											},
-											"TableName": {
-												"value": {
-													"value": "@pipeline().parameters.item.TableName",
-													"type": "Expression"
-												},
-												"type": "String"
-											}
-										}
+										"waitTimeInSeconds": 1
 									}
 								}
 							]
@@ -420,6 +386,12 @@
 						"dependsOn": [
 							{
 								"activity": "If Condition1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							},
+							{
+								"activity": "If Condition1_copy1",
 								"dependencyConditions": [
 									"Succeeded"
 								]
