@@ -21,7 +21,7 @@
 					},
 					"ifFalseActivities": [
 						{
-							"name": "Copy Delta To Source",
+							"name": "Copy Entire Table To SQL Pool",
 							"type": "Copy",
 							"dependsOn": [],
 							"policy": {
@@ -43,9 +43,9 @@
 							],
 							"typeProperties": {
 								"source": {
-									"type": "SqlDWSource",
-									"queryTimeout": "02:00:00",
-									"partitionOption": "None"
+									"type": "OracleSource",
+									"partitionOption": "None",
+									"queryTimeout": "02:00:00"
 								},
 								"sink": {
 									"type": "SqlDWSink",
@@ -65,19 +65,15 @@
 							},
 							"inputs": [
 								{
-									"referenceName": "AzureSynapseDatabase",
+									"referenceName": "GloviaProd",
 									"type": "DatasetReference",
 									"parameters": {
-										"TableName": {
+										"tablename": {
 											"value": "@pipeline().parameters.item.TableName",
 											"type": "Expression"
 										},
-										"DbName": {
-											"value": "@pipeline().parameters.item.DbName",
-											"type": "Expression"
-										},
-										"SchemaName": {
-											"value": "Delta",
+										"schemaname": {
+											"value": "@pipeline().parameters.item.SchemaName",
 											"type": "Expression"
 										}
 									}
