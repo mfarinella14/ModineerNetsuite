@@ -332,21 +332,21 @@
 					"storedProcedureParameters": {
 						"KeyColumns": {
 							"value": {
-								"value": "@pipeline().parameters.item.TableKeysArray",
+								"value": "@{pipeline().parameters.item.TableKeysArray}",
 								"type": "Expression"
 							},
 							"type": "String"
 						},
 						"SchemaName": {
 							"value": {
-								"value": "@pipeline().parameters.item.SchemaName",
+								"value": "@{pipeline().parameters.item.SchemaName}",
 								"type": "Expression"
 							},
 							"type": "String"
 						},
 						"TableName": {
 							"value": {
-								"value": "@pipeline().parameters.item.TableName",
+								"value": "@{pipeline().parameters.item.TableName}",
 								"type": "Expression"
 							},
 							"type": "String"
