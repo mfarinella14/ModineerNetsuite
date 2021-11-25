@@ -817,7 +817,7 @@
 																	"type": "Expression"
 																},
 																"DateData": {
-																	"value": "@activity('Get EST Date').output",
+																	"value": "@activity('Get EST Date').output.firstRow",
 																	"type": "Expression"
 																}
 															}
