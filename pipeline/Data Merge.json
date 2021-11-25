@@ -353,6 +353,83 @@
 						}
 					}
 				}
+			},
+			{
+				"name": "Insert Delta Data To Production",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "Merge SP After Table Created",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlDWSource",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"sink": {
+						"type": "SqlDWSink",
+						"sqlWriterUseTableLock": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "AzureSynapseDatabase",
+						"type": "DatasetReference",
+						"parameters": {
+							"TableName": {
+								"value": "@pipeline().parameters.item.TableName",
+								"type": "Expression"
+							},
+							"DbName": {
+								"value": "@pipeline().parameters.item.DbName",
+								"type": "Expression"
+							},
+							"SchemaName": "Delta"
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "AzureSynapseDatabase",
+						"type": "DatasetReference",
+						"parameters": {
+							"TableName": {
+								"value": "@pipeline().parameters.item.TableName",
+								"type": "Expression"
+							},
+							"DbName": {
+								"value": "@pipeline().parameters.item.DbName",
+								"type": "Expression"
+							},
+							"SchemaName": {
+								"value": "@pipeline().parameters.item.SchemaName",
+								"type": "Expression"
+							}
+						}
+					}
+				]
 			}
 		],
 		"parameters": {
