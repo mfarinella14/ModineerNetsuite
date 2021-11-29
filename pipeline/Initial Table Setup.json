@@ -23,11 +23,11 @@
 				"userProperties": [
 					{
 						"name": "Source",
-						"value": "@{item().SchemaName}.@{item().TableName}"
+						"value": "@{variables('SchemaName')}.@{variables('TableName')}"
 					},
 					{
 						"name": "Destination",
-						"value": "@{item().FileSystem}/@{concat(item().SchemaName, '/', item().TableName, '/', activity('Get EST Date').output.firstRow.Year, '/', activity('Get EST Date').output.firstRow.Month, '/', activity('Get EST Date').output.firstRow.Day)}/@{concat(item().TableName, '-', activity('Get EST Date').output.firstRow.EST)}"
+						"value": "@{'unified-data-cluster'}/@{concat(variables('SchemaName'), '/', variables('TableName'), '/', activity('Get EST Date').output.firstRow.Year, '/', activity('Get EST Date').output.firstRow.Month, '/', activity('Get EST Date').output.firstRow.Day)}/@{concat(variables('TableName'), '-', activity('Get EST Date').output.firstRow.EST)}"
 					}
 				],
 				"typeProperties": {
@@ -108,7 +108,8 @@
 		],
 		"variables": {
 			"TableName": {
-				"type": "String"
+				"type": "String",
+				"defaultValue": "GLOVIA_PROD"
 			},
 			"SchemaName": {
 				"type": "String"
