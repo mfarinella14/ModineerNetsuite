@@ -2,11 +2,17 @@
 	"name": "Data Refresh Trigger",
 	"properties": {
 		"annotations": [],
-		"runtimeState": "Stopped",
+		"runtimeState": "Started",
 		"pipelines": [
 			{
 				"pipelineReference": {
 					"referenceName": "Data Refresh",
+					"type": "PipelineReference"
+				}
+			},
+			{
+				"pipelineReference": {
+					"referenceName": "Data Refresh Delta",
 					"type": "PipelineReference"
 				}
 			}
