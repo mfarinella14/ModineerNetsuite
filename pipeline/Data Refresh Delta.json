@@ -430,7 +430,7 @@
 								"storedProcedureParameters": {
 									"nextRefresh": {
 										"value": {
-											"value": "@addToTime(item().NextRefresh,item().RefreshNumber,item().RefreshInterval)",
+											"value": "@addToTime(utcnow(),item().RefreshNumber,item().RefreshInterval)",
 											"type": "Expression"
 										},
 										"type": "DateTime"
