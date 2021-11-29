@@ -3481,13 +3481,6 @@
 				"pipelines": [
 					{
 						"pipelineReference": {
-							"referenceName": "Data Refresh",
-							"type": "PipelineReference"
-						},
-						"parameters": {}
-					},
-					{
-						"pipelineReference": {
 							"referenceName": "Data Refresh Delta",
 							"type": "PipelineReference"
 						},
@@ -3505,7 +3498,6 @@
 				}
 			},
 			"dependsOn": [
-				"[concat(variables('workspaceId'), '/pipelines/Data Refresh')]",
 				"[concat(variables('workspaceId'), '/pipelines/Data Refresh Delta')]"
 			]
 		},
