@@ -1076,7 +1076,7 @@
 													"value": "@item().TableMaxSCN",
 													"type": "Expression"
 												},
-												"type": "Int32"
+												"type": "Int64"
 											}
 										}
 									}
@@ -2300,6 +2300,142 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/Initial Table Setup')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "Raw Data Copy - ADLS2",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "Get EST Date",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": true,
+							"secureInput": false
+						},
+						"userProperties": [
+							{
+								"name": "Source",
+								"value": "@{variables('SchemaName')}.@{variables('TableName')}"
+							},
+							{
+								"name": "Destination",
+								"value": "@{'unified-data-cluster'}/@{concat(variables('SchemaName'), '/', variables('TableName'), '/', activity('Get EST Date').output.firstRow.Year, '/', activity('Get EST Date').output.firstRow.Month, '/', activity('Get EST Date').output.firstRow.Day)}/@{concat(variables('TableName'), '-', activity('Get EST Date').output.firstRow.EST)}"
+							}
+						],
+						"typeProperties": {
+							"source": {
+								"type": "OracleSource",
+								"partitionOption": "None",
+								"queryTimeout": "02:00:00"
+							},
+							"sink": {
+								"type": "ParquetSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "ParquetWriteSettings"
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "GloviaProd",
+								"type": "DatasetReference",
+								"parameters": {
+									"tablename": {
+										"value": "@variables('TableName')",
+										"type": "Expression"
+									},
+									"schemaname": {
+										"value": "@variables('SchemaName')",
+										"type": "Expression"
+									}
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "SinkParquet",
+								"type": "DatasetReference",
+								"parameters": {
+									"file_system": "unified-data-cluster",
+									"directory": {
+										"value": "@{variables('SchemaName')}/@{variables('TableName')}/@{activity('Get EST Date').output.firstRow.Year}/@{activity('Get EST Date').output.firstRow.Month}/@{activity('Get EST Date').output.firstRow.Day}",
+										"type": "Expression"
+									},
+									"file_name": {
+										"value": "@{variables('TableName')}-@{activity('Get EST Date').output.firstRow.EST}",
+										"type": "Expression"
+									}
+								}
+							}
+						]
+					},
+					{
+						"name": "Get EST Date",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "SqlPoolSource",
+								"sqlReaderStoredProcedureName": "[Config].[usp_GetESTDate]",
+								"queryTimeout": "02:00:00"
+							},
+							"dataset": {
+								"referenceName": "Modineer",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"variables": {
+					"TableName": {
+						"type": "String",
+						"defaultValue": "JE_SUB"
+					},
+					"SchemaName": {
+						"type": "String",
+						"defaultValue": "GLOVIA_PROD"
+					}
+				},
+				"folder": {
+					"name": "Temp"
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/datasets/GloviaProd')]",
+				"[concat(variables('workspaceId'), '/datasets/SinkParquet')]",
+				"[concat(variables('workspaceId'), '/datasets/Modineer')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/Netsuite Data Refresh')]",
 			"type": "Microsoft.Synapse/workspaces/pipelines",
 			"apiVersion": "2019-06-01-preview",
@@ -2545,61 +2681,6 @@
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/datasets/NetsuiteODBCSource')]",
 				"[concat(variables('workspaceId'), '/datasets/AzureSynapseDatabase')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/Pipeline 1')]",
-			"type": "Microsoft.Synapse/workspaces/pipelines",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"activities": [
-					{
-						"name": "Check If Table Exists",
-						"type": "Lookup",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "SqlPoolSource",
-								"sqlReaderStoredProcedureName": "[Config].[usp_CreateTableIfNotExistant]",
-								"storedProcedureParameters": {
-									"SchemaName": {
-										"type": "String",
-										"value": "GLOVIA_PROD"
-									},
-									"TableName": {
-										"type": "String",
-										"value": "EMPLOYEE"
-									}
-								},
-								"queryTimeout": "02:00:00"
-							},
-							"dataset": {
-								"referenceName": "Modineer",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
-						}
-					}
-				],
-				"policy": {
-					"elapsedTimeMetric": {},
-					"cancelAfter": {}
-				},
-				"folder": {
-					"name": "Temp"
-				},
-				"annotations": []
-			},
-			"dependsOn": [
-				"[concat(variables('workspaceId'), '/datasets/Modineer')]"
 			]
 		},
 		{
