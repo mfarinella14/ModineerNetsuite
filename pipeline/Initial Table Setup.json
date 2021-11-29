@@ -109,10 +109,11 @@
 		"variables": {
 			"TableName": {
 				"type": "String",
-				"defaultValue": "GLOVIA_PROD"
+				"defaultValue": "JE_DET"
 			},
 			"SchemaName": {
-				"type": "String"
+				"type": "String",
+				"defaultValue": "GLOVIA_PROD"
 			}
 		},
 		"folder": {
