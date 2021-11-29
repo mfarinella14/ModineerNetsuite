@@ -83,9 +83,15 @@
 			"properties": {
 				"activities": [
 					{
-						"name": "If Condition1",
+						"name": "Parent Table Check",
 						"type": "IfCondition",
 						"dependsOn": [
+							{
+								"activity": "Check If Delta Table Exists",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							},
 							{
 								"activity": "Check If Parent Table Exists",
 								"dependencyConditions": [
@@ -273,11 +279,11 @@
 						}
 					},
 					{
-						"name": "If Condition1_copy1",
+						"name": "Child Table Check",
 						"type": "IfCondition",
 						"dependsOn": [
 							{
-								"activity": "Check If Delta Table Exists",
+								"activity": "Parent Table Check",
 								"dependencyConditions": [
 									"Succeeded"
 								]
@@ -291,7 +297,7 @@
 							},
 							"ifFalseActivities": [
 								{
-									"name": "Raw Data Copy - SQL Pool_copy1",
+									"name": "Raw Data Copy - SQL Pool",
 									"type": "Copy",
 									"dependsOn": [],
 									"policy": {
@@ -385,13 +391,7 @@
 						"type": "SqlPoolStoredProcedure",
 						"dependsOn": [
 							{
-								"activity": "If Condition1",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							},
-							{
-								"activity": "If Condition1_copy1",
+								"activity": "Child Table Check",
 								"dependencyConditions": [
 									"Succeeded"
 								]
@@ -875,8 +875,7 @@
 															{
 																"activity": "Raw Data Copy - SQL Pool",
 																"dependencyConditions": [
-																	"Succeeded",
-																	"Failed"
+																	"Succeeded"
 																]
 															}
 														],
@@ -3478,11 +3477,18 @@
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
 				"annotations": [],
-				"runtimeState": "Stopped",
+				"runtimeState": "Started",
 				"pipelines": [
 					{
 						"pipelineReference": {
 							"referenceName": "Data Refresh",
+							"type": "PipelineReference"
+						},
+						"parameters": {}
+					},
+					{
+						"pipelineReference": {
+							"referenceName": "Data Refresh Delta",
 							"type": "PipelineReference"
 						},
 						"parameters": {}
@@ -3499,7 +3505,8 @@
 				}
 			},
 			"dependsOn": [
-				"[concat(variables('workspaceId'), '/pipelines/Data Refresh')]"
+				"[concat(variables('workspaceId'), '/pipelines/Data Refresh')]",
+				"[concat(variables('workspaceId'), '/pipelines/Data Refresh Delta')]"
 			]
 		},
 		{
