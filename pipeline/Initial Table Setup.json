@@ -109,7 +109,7 @@
 		"variables": {
 			"TableName": {
 				"type": "String",
-				"defaultValue": "JE_DET"
+				"defaultValue": "JE_SUB"
 			},
 			"SchemaName": {
 				"type": "String",
