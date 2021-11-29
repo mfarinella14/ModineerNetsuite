@@ -1,9 +1,88 @@
 {
-	"name": "Pipeline 1",
+	"name": "Initial Table Setup",
 	"properties": {
 		"activities": [
 			{
-				"name": "Check If Table Exists",
+				"name": "Raw Data Copy - ADLS2",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "Get EST Date",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": true,
+					"secureInput": false
+				},
+				"userProperties": [
+					{
+						"name": "Source",
+						"value": "@{item().SchemaName}.@{item().TableName}"
+					},
+					{
+						"name": "Destination",
+						"value": "@{item().FileSystem}/@{concat(item().SchemaName, '/', item().TableName, '/', activity('Get EST Date').output.firstRow.Year, '/', activity('Get EST Date').output.firstRow.Month, '/', activity('Get EST Date').output.firstRow.Day)}/@{concat(item().TableName, '-', activity('Get EST Date').output.firstRow.EST)}"
+					}
+				],
+				"typeProperties": {
+					"source": {
+						"type": "OracleSource",
+						"partitionOption": "None",
+						"queryTimeout": "02:00:00"
+					},
+					"sink": {
+						"type": "ParquetSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						},
+						"formatSettings": {
+							"type": "ParquetWriteSettings"
+						}
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "GloviaProd",
+						"type": "DatasetReference",
+						"parameters": {
+							"tablename": {
+								"value": "@variables('TableName')",
+								"type": "Expression"
+							},
+							"schemaname": {
+								"value": "@variables('SchemaName')",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "SinkParquet",
+						"type": "DatasetReference",
+						"parameters": {
+							"file_system": "unified-data-cluster",
+							"directory": {
+								"value": "@{variables('SchemaName')}/@{variables('TableName')}/@{activity('Get EST Date').output.firstRow.Year}/@{activity('Get EST Date').output.firstRow.Month}/@{activity('Get EST Date').output.firstRow.Day}",
+								"type": "Expression"
+							},
+							"file_name": {
+								"value": "@{variables('TableName')}-@{activity('Get EST Date').output.firstRow.EST}",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "Get EST Date",
 				"type": "Lookup",
 				"dependsOn": [],
 				"policy": {
@@ -17,17 +96,7 @@
 				"typeProperties": {
 					"source": {
 						"type": "SqlPoolSource",
-						"sqlReaderStoredProcedureName": "[Config].[usp_CreateTableIfNotExistant]",
-						"storedProcedureParameters": {
-							"SchemaName": {
-								"type": "String",
-								"value": "GLOVIA_PROD"
-							},
-							"TableName": {
-								"type": "String",
-								"value": "EMPLOYEE"
-							}
-						},
+						"sqlReaderStoredProcedureName": "[Config].[usp_GetESTDate]",
 						"queryTimeout": "02:00:00"
 					},
 					"dataset": {
@@ -37,6 +106,14 @@
 				}
 			}
 		],
+		"variables": {
+			"TableName": {
+				"type": "String"
+			},
+			"SchemaName": {
+				"type": "String"
+			}
+		},
 		"folder": {
 			"name": "Temp"
 		},
