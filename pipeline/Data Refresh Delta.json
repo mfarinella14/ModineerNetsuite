@@ -332,8 +332,7 @@
 													{
 														"activity": "Raw Data Copy - SQL Pool",
 														"dependencyConditions": [
-															"Succeeded",
-															"Failed"
+															"Succeeded"
 														]
 													}
 												],
