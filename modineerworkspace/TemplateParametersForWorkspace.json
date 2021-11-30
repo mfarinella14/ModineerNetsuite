@@ -26,10 +26,10 @@
 		"NetsuiteODBC_password": {
 			"value": ""
 		},
-		"modineerworkspace-WorkspaceDefaultSqlServer_connectionString": {
+		"PlexODBC_LS_connectionString": {
 			"value": ""
 		},
-		"PlexODBC_LS_connectionString": {
+		"modineerworkspace-WorkspaceDefaultSqlServer_connectionString": {
 			"value": ""
 		},
 		"HTM_NetSuite_properties_typeProperties_url": {
