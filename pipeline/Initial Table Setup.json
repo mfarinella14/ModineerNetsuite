@@ -32,8 +32,7 @@
 				],
 				"typeProperties": {
 					"source": {
-						"type": "OracleSource",
-						"partitionOption": "None",
+						"type": "OdbcSource",
 						"queryTimeout": "02:00:00"
 					},
 					"sink": {
@@ -49,15 +48,15 @@
 				},
 				"inputs": [
 					{
-						"referenceName": "GloviaProd",
+						"referenceName": "PlexODBC",
 						"type": "DatasetReference",
 						"parameters": {
-							"tablename": {
-								"value": "@variables('TableName')",
+							"SchemaName": {
+								"value": "@variables('SchemaName')",
 								"type": "Expression"
 							},
-							"schemaname": {
-								"value": "@variables('SchemaName')",
+							"TableName": {
+								"value": "@variables('TableName')",
 								"type": "Expression"
 							}
 						}
@@ -109,11 +108,11 @@
 		"variables": {
 			"TableName": {
 				"type": "String",
-				"defaultValue": "MAS_LOC"
+				"defaultValue": "Common_v_Supplier_e"
 			},
 			"SchemaName": {
 				"type": "String",
-				"defaultValue": "GLOVIA_PROD"
+				"defaultValue": "Plex"
 			}
 		},
 		"folder": {

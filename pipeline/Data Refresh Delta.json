@@ -59,7 +59,7 @@
 							"type": "Switch",
 							"dependsOn": [
 								{
-									"activity": "Set Table as Updating_copy1",
+									"activity": "Set Table as Updating",
 									"dependencyConditions": [
 										"Succeeded"
 									]
@@ -157,7 +157,7 @@
 												}
 											},
 											{
-												"name": "Raw Data Copy - ADLS2",
+												"name": "Glovia Raw Data Copy - ADLS2",
 												"type": "Copy",
 												"dependsOn": [
 													{
@@ -243,7 +243,7 @@
 												]
 											},
 											{
-												"name": "Raw Data Copy - SQL Pool",
+												"name": "Glovia Raw Data Copy - SQL Pool",
 												"type": "Copy",
 												"dependsOn": [
 													{
@@ -326,11 +326,11 @@
 												]
 											},
 											{
-												"name": "Create Table Or Merge Data",
+												"name": "Glovia Create Table Or Merge Data",
 												"type": "ExecutePipeline",
 												"dependsOn": [
 													{
-														"activity": "Raw Data Copy - SQL Pool",
+														"activity": "Glovia Raw Data Copy - SQL Pool",
 														"dependencyConditions": [
 															"Succeeded"
 														]
@@ -385,12 +385,26 @@
 										"value": "Plex",
 										"activities": [
 											{
-												"name": "Place Holder_copy2",
-												"type": "Wait",
+												"name": "Plex Data Refresh",
+												"type": "ExecutePipeline",
 												"dependsOn": [],
 												"userProperties": [],
 												"typeProperties": {
-													"waitTimeInSeconds": 1
+													"pipeline": {
+														"referenceName": "Plex Data Refresh",
+														"type": "PipelineReference"
+													},
+													"waitOnCompletion": true,
+													"parameters": {
+														"item": {
+															"value": "@item()",
+															"type": "Expression"
+														},
+														"EstDate": {
+															"value": "@activity('Get EST Date').output",
+															"type": "Expression"
+														}
+													}
 												}
 											}
 										]
@@ -410,7 +424,7 @@
 							}
 						},
 						{
-							"name": "Set Table as Updating_copy1",
+							"name": "Set Table as Updating",
 							"type": "SqlPoolStoredProcedure",
 							"dependsOn": [],
 							"policy": {

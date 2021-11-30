@@ -1,0 +1,26 @@
+{
+	"name": "PlexODBC",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "PlexODBC_LS",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"SchemaName": {
+				"type": "string"
+			},
+			"TableName": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "OdbcTable",
+		"schema": [],
+		"typeProperties": {
+			"tableName": {
+				"value": "@{dataset().SchemaName}.@{dataset().TableName}",
+				"type": "Expression"
+			}
+		}
+	}
+}
