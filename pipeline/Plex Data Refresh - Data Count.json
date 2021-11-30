@@ -113,7 +113,7 @@
 			}
 		},
 		"folder": {
-			"name": "Master Data/Slave Pipeline/Plex Data Refresh"
+			"name": "Master Data/Slave Pipelines/Plex Data Refresh"
 		},
 		"annotations": []
 	}
