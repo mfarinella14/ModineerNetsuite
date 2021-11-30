@@ -29,6 +29,9 @@
 		"modineerworkspace-WorkspaceDefaultSqlServer_connectionString": {
 			"value": ""
 		},
+		"PlexODBC_LS_connectionString": {
+			"value": ""
+		},
 		"HTM_NetSuite_properties_typeProperties_url": {
 			"value": "https://3675944.restlets.api.netsuite.com"
 		},
