@@ -49,7 +49,7 @@
 								"source": {
 									"type": "OdbcSource",
 									"query": {
-										"value": "SELECT * FROM @{pipeline().parameters.item.SchemaName}.@{pipeline().parameters.item.TableName} ",
+										"value": "SELECT * FROM @{pipeline().parameters.item.SchemaName}.@{pipeline().parameters.item.TableName} t1 WHERE Updated_Date >= SUBSTRING('@{pipeline().parameters.item.LastRefreshStart}',1,23)",
 										"type": "Expression"
 									},
 									"queryTimeout": "02:00:00"
@@ -154,7 +154,7 @@
 								"source": {
 									"type": "OdbcSource",
 									"query": {
-										"value": "SELECT * FROM @{pipeline().parameters.item.SchemaName}.@{pipeline().parameters.item.TableName} ",
+										"value": "SELECT * FROM @{pipeline().parameters.item.SchemaName}.@{pipeline().parameters.item.TableName} t1 WHERE Updated_Date >= SUBSTRING('@{pipeline().parameters.item.LastRefreshStart}',1,23)",
 										"type": "Expression"
 									},
 									"queryTimeout": "02:00:00"
