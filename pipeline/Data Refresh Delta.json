@@ -391,7 +391,7 @@
 												"userProperties": [],
 												"typeProperties": {
 													"pipeline": {
-														"referenceName": "Plex Data Refresh",
+														"referenceName": "Plex Data Refresh - Data Count",
 														"type": "PipelineReference"
 													},
 													"waitOnCompletion": true,

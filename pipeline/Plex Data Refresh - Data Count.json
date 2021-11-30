@@ -1,5 +1,5 @@
 {
-	"name": "Plex Data Refresh",
+	"name": "Plex Data Refresh - Data Count",
 	"properties": {
 		"activities": [
 			{
@@ -54,8 +54,8 @@
 									}
 								},
 								{
-									"name": "Count of Changed Rows",
-									"type": "IfCondition",
+									"name": "PDR - Process",
+									"type": "ExecutePipeline",
 									"dependsOn": [
 										{
 											"activity": "Check For Processing",
@@ -66,206 +66,25 @@
 									],
 									"userProperties": [],
 									"typeProperties": {
-										"expression": {
-											"value": "@greater(int(activity('Check For Processing').output.firstRow.Count),0)",
-											"type": "Expression"
+										"pipeline": {
+											"referenceName": "Plex Data Refresh - Process",
+											"type": "PipelineReference"
 										},
-										"ifFalseActivities": [
-											{
-												"name": "Wait1_copy1",
-												"type": "Wait",
-												"dependsOn": [],
-												"userProperties": [],
-												"typeProperties": {
-													"waitTimeInSeconds": 1
-												}
-											}
-										],
-										"ifTrueActivities": [
-											{
-												"name": "Plex Raw Data Copy - SQL Pool",
-												"type": "Copy",
-												"dependsOn": [],
-												"policy": {
-													"timeout": "7.00:00:00",
-													"retry": 0,
-													"retryIntervalInSeconds": 30,
-													"secureOutput": true,
-													"secureInput": false
-												},
-												"userProperties": [
-													{
-														"name": "Source",
-														"value": "@{pipeline().parameters.item.SchemaName}.@{pipeline().parameters.item.TableName}"
-													},
-													{
-														"name": "Destination",
-														"value": "@{'Delta'}.@{pipeline().parameters.item.TableName}"
-													}
-												],
-												"typeProperties": {
-													"source": {
-														"type": "OdbcSource",
-														"query": {
-															"value": "SELECT * FROM @{pipeline().parameters.item.SchemaName}.@{pipeline().parameters.item.TableName} ",
-															"type": "Expression"
-														},
-														"queryTimeout": "02:00:00"
-													},
-													"sink": {
-														"type": "SqlDWSink",
-														"preCopyScript": {
-															"value": "TRUNCATE TABLE Delta.@{pipeline().parameters.item.TableName}",
-															"type": "Expression"
-														},
-														"tableOption": "autoCreate",
-														"disableMetricsCollection": false
-													},
-													"enableStaging": false
-												},
-												"inputs": [
-													{
-														"referenceName": "PlexODBC",
-														"type": "DatasetReference",
-														"parameters": {
-															"SchemaName": {
-																"value": "@pipeline().parameters.item.SchemaName",
-																"type": "Expression"
-															},
-															"TableName": {
-																"value": "@pipeline().parameters.item.TableName",
-																"type": "Expression"
-															}
-														}
-													}
-												],
-												"outputs": [
-													{
-														"referenceName": "AzureSynapseDatabase",
-														"type": "DatasetReference",
-														"parameters": {
-															"TableName": {
-																"value": "@pipeline().parameters.item.TableName",
-																"type": "Expression"
-															},
-															"DbName": {
-																"value": "@pipeline().parameters.item.DbName",
-																"type": "Expression"
-															},
-															"SchemaName": "Delta"
-														}
-													}
-												]
+										"waitOnCompletion": true,
+										"parameters": {
+											"item": {
+												"value": "@pipeline().parameters.item",
+												"type": "Expression"
 											},
-											{
-												"name": "Plex Create Table Or Merge Data",
-												"type": "ExecutePipeline",
-												"dependsOn": [
-													{
-														"activity": "Plex Raw Data Copy - SQL Pool",
-														"dependencyConditions": [
-															"Succeeded"
-														]
-													}
-												],
-												"userProperties": [],
-												"typeProperties": {
-													"pipeline": {
-														"referenceName": "Data Merge",
-														"type": "PipelineReference"
-													},
-													"waitOnCompletion": true,
-													"parameters": {
-														"item": {
-															"value": "@pipeline().parameters.item",
-															"type": "Expression"
-														},
-														"DateData": {
-															"value": "@pipeline().parameters.EstDate",
-															"type": "Expression"
-														}
-													}
-												}
+											"EstDate": {
+												"value": "@pipeline().parameters.EstDate",
+												"type": "Expression"
 											},
-											{
-												"name": "Plex Raw Data Copy - ADLS2",
-												"type": "Copy",
-												"dependsOn": [],
-												"policy": {
-													"timeout": "7.00:00:00",
-													"retry": 0,
-													"retryIntervalInSeconds": 30,
-													"secureOutput": true,
-													"secureInput": false
-												},
-												"userProperties": [
-													{
-														"name": "Source",
-														"value": "@{pipeline().parameters.item.SchemaName}.@{pipeline().parameters.item.TableName}"
-													},
-													{
-														"name": "Destination",
-														"value": "@{pipeline().parameters.item.FileSystem}/@{concat(pipeline().parameters.item.SchemaName, '/', pipeline().parameters.item.TableName, '/', pipeline().parameters.EstDate.firstRow.Year, '/', pipeline().parameters.EstDate.firstRow.Month, '/', pipeline().parameters.EstDate.firstRow.Day)}/@{concat(pipeline().parameters.item.TableName, '-', pipeline().parameters.EstDate.firstRow.EST)}"
-													}
-												],
-												"typeProperties": {
-													"source": {
-														"type": "OdbcSource",
-														"query": {
-															"value": "SELECT * FROM @{pipeline().parameters.item.SchemaName}.@{pipeline().parameters.item.TableName} ",
-															"type": "Expression"
-														},
-														"queryTimeout": "02:00:00"
-													},
-													"sink": {
-														"type": "ParquetSink",
-														"storeSettings": {
-															"type": "AzureBlobFSWriteSettings"
-														},
-														"formatSettings": {
-															"type": "ParquetWriteSettings"
-														}
-													},
-													"enableStaging": false
-												},
-												"inputs": [
-													{
-														"referenceName": "PlexODBC",
-														"type": "DatasetReference",
-														"parameters": {
-															"SchemaName": {
-																"value": "@pipeline().parameters.item.SchemaName",
-																"type": "Expression"
-															},
-															"TableName": {
-																"value": "@pipeline().parameters.item.TableName",
-																"type": "Expression"
-															}
-														}
-													}
-												],
-												"outputs": [
-													{
-														"referenceName": "SinkParquet",
-														"type": "DatasetReference",
-														"parameters": {
-															"file_system": {
-																"value": "@pipeline().parameters.item.FileSystem",
-																"type": "Expression"
-															},
-															"directory": {
-																"value": "@{pipeline().parameters.item.SchemaName}/@{pipeline().parameters.item.TableName}/@{pipeline().parameters.EstDate.firstRow.Year}/@{pipeline().parameters.EstDate.firstRow.Month}/@{pipeline().parameters.EstDate.firstRow.Day}",
-																"type": "Expression"
-															},
-															"file_name": {
-																"value": "@{pipeline().parameters.item.TableName}-@{pipeline().parameters.EstDate.firstRow.EST}",
-																"type": "Expression"
-															}
-														}
-													}
-												]
+											"DataCount": {
+												"value": "@activity('Check For Processing').output.firstRow.Count",
+												"type": "Expression"
 											}
-										]
+										}
 									}
 								}
 							]
@@ -294,7 +113,7 @@
 			}
 		},
 		"folder": {
-			"name": "Master Data/Slave Pipeline"
+			"name": "Master Data/Slave Pipeline/Plex Data Refresh"
 		},
 		"annotations": []
 	}
