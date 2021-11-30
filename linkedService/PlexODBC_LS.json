@@ -1,0 +1,19 @@
+{
+	"name": "PlexODBC_LS",
+	"type": "Microsoft.Synapse/workspaces/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "Odbc",
+		"typeProperties": {
+			"connectionString": {
+				"type": "SecureString",
+				"value": "**********"
+			},
+			"authenticationType": "Anonymous"
+		},
+		"connectVia": {
+			"referenceName": "GloviaServerIntegrationRuntime",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}
