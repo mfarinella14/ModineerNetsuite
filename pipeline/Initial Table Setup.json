@@ -83,7 +83,14 @@
 			{
 				"name": "Get EST Date",
 				"type": "Lookup",
-				"dependsOn": [],
+				"dependsOn": [
+					{
+						"activity": "Copy From File Cabinet",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
 				"policy": {
 					"timeout": "7.00:00:00",
 					"retry": 0,
@@ -103,6 +110,64 @@
 						"type": "DatasetReference"
 					}
 				}
+			},
+			{
+				"name": "Copy From File Cabinet",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "RestSource",
+						"httpRequestTimeout": "00:01:40",
+						"requestInterval": "00.00:00:00.010",
+						"requestMethod": "GET",
+						"paginationRules": {
+							"supportRFC5988": "true"
+						}
+					},
+					"sink": {
+						"type": "SqlDWSink",
+						"allowCopyCommand": true,
+						"tableOption": "autoCreate",
+						"disableMetricsCollection": false
+					},
+					"enableStaging": true,
+					"stagingSettings": {
+						"linkedServiceName": {
+							"referenceName": "modineerlake",
+							"type": "LinkedServiceReference"
+						},
+						"path": "unified-data-cluster/ModNS/HTMYearEndTanks2021"
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "NetsuiteFileCabinet",
+						"type": "DatasetReference",
+						"parameters": {
+							"RelativeURL": "media.nl?id=322577&c=4828307&h=Fpjz5UOxwrITMIyCEEUEJNj0x6CemS9HaJp8I-rmKWLRZRBT&_xt=.csv"
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "AzureSynapseDatabase",
+						"type": "DatasetReference",
+						"parameters": {
+							"TableName": "HTMYearEndTanks2021",
+							"DbName": "Modineer",
+							"SchemaName": "ModNS"
+						}
+					}
+				]
 			}
 		],
 		"variables": {
