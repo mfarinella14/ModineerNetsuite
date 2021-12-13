@@ -3,57 +3,6 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "Dataflow1",
-				"type": "ExecuteDataFlow",
-				"dependsOn": [
-					{
-						"activity": "Copy data1",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"timeout": "1.00:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"dataflow": {
-						"referenceName": "UpdateSQLTableFromParquet",
-						"type": "DataFlowReference",
-						"parameters": {
-							"SchemaName": {
-								"value": "'@{concat('GLOVIA_PROD')}'",
-								"type": "Expression"
-							},
-							"TableName": {
-								"value": "'@{concat('JE_DET.parquet')}'",
-								"type": "Expression"
-							},
-							"KeyColumns": {
-								"value": "@createArray('JE_CCN','JE','JE_SUB','JE_LINE')",
-								"type": "Expression"
-							}
-						},
-						"datasetParameters": {
-							"NewData": {
-								"FileSystem": "a",
-								"FilePath": "b"
-							}
-						}
-					},
-					"compute": {
-						"coreCount": 8,
-						"computeType": "General"
-					},
-					"traceLevel": "Fine"
-				}
-			},
-			{
 				"name": "Copy data1",
 				"type": "Copy",
 				"dependsOn": [],
@@ -67,51 +16,42 @@
 				"userProperties": [],
 				"typeProperties": {
 					"source": {
-						"type": "ParquetSource",
-						"storeSettings": {
-							"type": "AzureBlobFSReadSettings",
-							"recursive": true,
-							"enablePartitionDiscovery": false
-						}
+						"type": "OracleSource",
+						"partitionOption": "None",
+						"queryTimeout": "02:00:00"
 					},
 					"sink": {
-						"type": "ParquetSink",
-						"storeSettings": {
-							"type": "AzureBlobFSWriteSettings"
-						},
-						"formatSettings": {
-							"type": "ParquetWriteSettings"
-						}
+						"type": "SqlDWSink",
+						"allowCopyCommand": true
 					},
-					"enableStaging": false,
-					"translator": {
-						"type": "TabularTranslator",
-						"typeConversion": true,
-						"typeConversionSettings": {
-							"allowDataTruncation": true,
-							"treatBooleanAsNumber": false
-						}
-					}
+					"enableStaging": true,
+					"stagingSettings": {
+						"linkedServiceName": {
+							"referenceName": "modineerworkspace-WorkspaceDefaultStorage",
+							"type": "LinkedServiceReference"
+						},
+						"path": "unified-data-cluster/GLOVIA_PROD/WO/Processed"
+					},
+					"parallelCopies": 5
 				},
 				"inputs": [
 					{
-						"referenceName": "SinkParquet",
+						"referenceName": "GloviaProd",
 						"type": "DatasetReference",
 						"parameters": {
-							"file_system": "a",
-							"directory": "b",
-							"file_name": "c"
+							"tablename": "WO",
+							"schemaname": "GLOVIA_PROD"
 						}
 					}
 				],
 				"outputs": [
 					{
-						"referenceName": "SinkParquet",
+						"referenceName": "AzureSynapseDatabase",
 						"type": "DatasetReference",
 						"parameters": {
-							"file_system": "unified-data-cluster",
-							"directory": "GLOVIA_PROD/WO/Test",
-							"file_name": "WO[n].parquet"
+							"TableName": "WO",
+							"DbName": "Modineer",
+							"SchemaName": "GLOVIA_PROD"
 						}
 					}
 				]
