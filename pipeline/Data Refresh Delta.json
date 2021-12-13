@@ -235,7 +235,7 @@
 																"type": "Expression"
 															},
 															"file_name": {
-																"value": "@{item().TableName}-@{activity('Get EST Date').output.firstRow.EST}",
+																"value": "@{item().TableName}-@{activity('Get EST Date').output.firstRow.EST}.parquet",
 																"type": "Expression"
 															}
 														}
