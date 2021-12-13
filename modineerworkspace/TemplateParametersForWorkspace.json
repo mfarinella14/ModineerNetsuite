@@ -50,6 +50,9 @@
 		"NetsuiteODBC_properties_typeProperties_userName": {
 			"value": "mfarinella@modineer.com"
 		},
+		"NetsuiteUnAuthorized_properties_typeProperties_url": {
+			"value": "https://4828307.app.netsuite.com/core/media/"
+		},
 		"modineerlake_properties_typeProperties_url": {
 			"value": "https://modineerlake.dfs.core.windows.net/"
 		},

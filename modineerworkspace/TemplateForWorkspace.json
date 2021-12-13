@@ -67,6 +67,10 @@
 			"type": "string",
 			"defaultValue": "mfarinella@modineer.com"
 		},
+		"NetsuiteUnAuthorized_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://4828307.app.netsuite.com/core/media/"
+		},
 		"modineerlake_properties_typeProperties_url": {
 			"type": "string",
 			"defaultValue": "https://modineerlake.dfs.core.windows.net/"
@@ -735,7 +739,7 @@
 															"source": {
 																"type": "OracleSource",
 																"oracleReaderQuery": {
-																	"value": "SELECT * FROM @{item().SchemaName}.@{item().TableName} VERSIONS BETWEEN TIMESTAMP TO_TIMESTAMP(REPLACE(REPLACE('@{addminutes(item().LastRefreshStart,-15)}','T',' '),'Z',''), 'YYYY-MM-DD HH24:MI:SS.FF') AND CURRENT_TIMESTAMP WHERE versions_operation IN ('D','U','I')",
+																	"value": "SELECT * FROM @{item().SchemaName}.@{item().TableName} VERSIONS BETWEEN TIMESTAMP TO_TIMESTAMP(REPLACE(REPLACE('@{addminutes(item().LastRefreshStart,-15)}','T',' '),'Z',''), 'YYYY-MM-DD HH24:MI:SS.FF') AND CURRENT_TIMESTAMP WHERE versions_operation IN ('D','U','I') AND versions_endtime IS NULL",
 																	"type": "Expression"
 																},
 																"partitionOption": "None",
@@ -782,7 +786,7 @@
 																		"type": "Expression"
 																	},
 																	"file_name": {
-																		"value": "@{item().TableName}-@{activity('Get EST Date').output.firstRow.EST}",
+																		"value": "@{item().TableName}-@{activity('Get EST Date').output.firstRow.EST}.parquet",
 																		"type": "Expression"
 																	}
 																}
@@ -821,7 +825,7 @@
 															"source": {
 																"type": "OracleSource",
 																"oracleReaderQuery": {
-																	"value": "SELECT * FROM @{item().SchemaName}.@{item().TableName} VERSIONS BETWEEN TIMESTAMP TO_TIMESTAMP(REPLACE(REPLACE('@{addminutes(item().LastRefreshStart,-15)}','T',' '),'Z',''), 'YYYY-MM-DD HH24:MI:SS.FF') AND CURRENT_TIMESTAMP WHERE versions_operation IN ('D','U','I')",
+																	"value": "SELECT * FROM @{item().SchemaName}.@{item().TableName} VERSIONS BETWEEN TIMESTAMP TO_TIMESTAMP(REPLACE(REPLACE('@{addminutes(item().LastRefreshStart,-15)}','T',' '),'Z',''), 'YYYY-MM-DD HH24:MI:SS.FF') AND CURRENT_TIMESTAMP WHERE versions_operation IN ('D','U','I') AND versions_endtime IS NULL",
 																	"type": "Expression"
 																},
 																"partitionOption": "None",
@@ -1996,7 +2000,8 @@
 															"runConcurrently": true,
 															"cacheSinks": {
 																"firstRowOnly": true
-															}
+															},
+															"continuationSettings": {}
 														}
 													}
 												]
@@ -2174,59 +2179,6 @@
 			"properties": {
 				"activities": [
 					{
-						"name": "Dataflow1",
-						"type": "ExecuteDataFlow",
-						"dependsOn": [
-							{
-								"activity": "Copy data1",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"policy": {
-							"timeout": "1.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"dataflow": {
-								"referenceName": "UpdateSQLTableFromParquet",
-								"type": "DataFlowReference",
-								"parameters": {
-									"SchemaName": {
-										"value": "'@{concat('GLOVIA_PROD')}'",
-										"type": "Expression"
-									},
-									"TableName": {
-										"value": "'@{concat('JE_DET.parquet')}'",
-										"type": "Expression"
-									},
-									"KeyColumns": {
-										"value": "@createArray('JE_CCN','JE','JE_SUB','JE_LINE')",
-										"type": "Expression"
-									}
-								},
-								"datasetParameters": {
-									"NewData": {
-										"FileSystem": "a",
-										"FilePath": "b"
-									},
-									"SinkToAzureTable": {}
-								}
-							},
-							"staging": {},
-							"compute": {
-								"coreCount": 8,
-								"computeType": "General"
-							},
-							"traceLevel": "Fine"
-						}
-					},
-					{
 						"name": "Copy data1",
 						"type": "Copy",
 						"dependsOn": [],
@@ -2240,51 +2192,43 @@
 						"userProperties": [],
 						"typeProperties": {
 							"source": {
-								"type": "ParquetSource",
-								"storeSettings": {
-									"type": "AzureBlobFSReadSettings",
-									"recursive": true,
-									"enablePartitionDiscovery": false
-								}
+								"type": "OracleSource",
+								"partitionOption": "None",
+								"queryTimeout": "02:00:00"
 							},
 							"sink": {
-								"type": "ParquetSink",
-								"storeSettings": {
-									"type": "AzureBlobFSWriteSettings"
-								},
-								"formatSettings": {
-									"type": "ParquetWriteSettings"
-								}
+								"type": "SqlDWSink",
+								"allowCopyCommand": true,
+								"copyCommandSettings": {}
 							},
-							"enableStaging": false,
-							"translator": {
-								"type": "TabularTranslator",
-								"typeConversion": true,
-								"typeConversionSettings": {
-									"allowDataTruncation": true,
-									"treatBooleanAsNumber": false
-								}
-							}
+							"enableStaging": true,
+							"stagingSettings": {
+								"linkedServiceName": {
+									"referenceName": "modineerworkspace-WorkspaceDefaultStorage",
+									"type": "LinkedServiceReference"
+								},
+								"path": "unified-data-cluster/GLOVIA_PROD/WO/Processed"
+							},
+							"parallelCopies": 5
 						},
 						"inputs": [
 							{
-								"referenceName": "SinkParquet",
+								"referenceName": "GloviaProd",
 								"type": "DatasetReference",
 								"parameters": {
-									"file_system": "a",
-									"directory": "b",
-									"file_name": "c"
+									"tablename": "WO",
+									"schemaname": "GLOVIA_PROD"
 								}
 							}
 						],
 						"outputs": [
 							{
-								"referenceName": "SinkParquet",
+								"referenceName": "AzureSynapseDatabase",
 								"type": "DatasetReference",
 								"parameters": {
-									"file_system": "unified-data-cluster",
-									"directory": "GLOVIA_PROD/WO/Test",
-									"file_name": "WO[n].parquet"
+									"TableName": "WO",
+									"DbName": "Modineer",
+									"SchemaName": "GLOVIA_PROD"
 								}
 							}
 						]
@@ -2300,8 +2244,9 @@
 				"annotations": []
 			},
 			"dependsOn": [
-				"[concat(variables('workspaceId'), '/dataflows/UpdateSQLTableFromParquet')]",
-				"[concat(variables('workspaceId'), '/datasets/SinkParquet')]"
+				"[concat(variables('workspaceId'), '/datasets/GloviaProd')]",
+				"[concat(variables('workspaceId'), '/datasets/AzureSynapseDatabase')]",
+				"[concat(variables('workspaceId'), '/linkedServices/modineerworkspace-WorkspaceDefaultStorage')]"
 			]
 		},
 		{
@@ -2391,7 +2336,14 @@
 					{
 						"name": "Get EST Date",
 						"type": "Lookup",
-						"dependsOn": [],
+						"dependsOn": [
+							{
+								"activity": "Copy From File Cabinet",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
 						"policy": {
 							"timeout": "7.00:00:00",
 							"retry": 0,
@@ -2412,6 +2364,65 @@
 								"parameters": {}
 							}
 						}
+					},
+					{
+						"name": "Copy From File Cabinet",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "RestSource",
+								"httpRequestTimeout": "00:01:40",
+								"requestInterval": "00.00:00:00.010",
+								"requestMethod": "GET",
+								"paginationRules": {
+									"supportRFC5988": "true"
+								}
+							},
+							"sink": {
+								"type": "SqlDWSink",
+								"allowCopyCommand": true,
+								"copyCommandSettings": {},
+								"tableOption": "autoCreate",
+								"disableMetricsCollection": false
+							},
+							"enableStaging": true,
+							"stagingSettings": {
+								"linkedServiceName": {
+									"referenceName": "modineerlake",
+									"type": "LinkedServiceReference"
+								},
+								"path": "unified-data-cluster/ModNS/HTMYearEndTanks2021"
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "NetsuiteFileCabinet",
+								"type": "DatasetReference",
+								"parameters": {
+									"RelativeURL": "media.nl?id=322577&c=4828307&h=Fpjz5UOxwrITMIyCEEUEJNj0x6CemS9HaJp8I-rmKWLRZRBT&_xt=.csv"
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "AzureSynapseDatabase",
+								"type": "DatasetReference",
+								"parameters": {
+									"TableName": "HTMYearEndTanks2021",
+									"DbName": "Modineer",
+									"SchemaName": "ModNS"
+								}
+							}
+						]
 					}
 				],
 				"policy": {
@@ -2436,7 +2447,10 @@
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/datasets/PlexODBC')]",
 				"[concat(variables('workspaceId'), '/datasets/SinkParquet')]",
-				"[concat(variables('workspaceId'), '/datasets/Modineer')]"
+				"[concat(variables('workspaceId'), '/datasets/Modineer')]",
+				"[concat(variables('workspaceId'), '/datasets/NetsuiteFileCabinet')]",
+				"[concat(variables('workspaceId'), '/datasets/AzureSynapseDatabase')]",
+				"[concat(variables('workspaceId'), '/linkedServices/modineerlake')]"
 			]
 		},
 		{
@@ -2488,7 +2502,13 @@
 													},
 													"disableMetricsCollection": false
 												},
-												"enableStaging": false,
+												"enableStaging": true,
+												"stagingSettings": {
+													"linkedServiceName": {
+														"referenceName": "modineerlake",
+														"type": "LinkedServiceReference"
+													}
+												},
 												"translator": {
 													"type": "TabularTranslator",
 													"typeConversion": true,
@@ -2527,6 +2547,98 @@
 											]
 										}
 									]
+								},
+								{
+									"value": "WEB",
+									"activities": [
+										{
+											"name": "Copy From File Cabinet",
+											"type": "Copy",
+											"dependsOn": [],
+											"policy": {
+												"timeout": "7.00:00:00",
+												"retry": 0,
+												"retryIntervalInSeconds": 30,
+												"secureOutput": false,
+												"secureInput": false
+											},
+											"userProperties": [],
+											"typeProperties": {
+												"source": {
+													"type": "RestSource",
+													"httpRequestTimeout": "00:01:40",
+													"requestInterval": "00.00:00:00.010",
+													"requestMethod": "GET",
+													"paginationRules": {
+														"supportRFC5988": "true"
+													}
+												},
+												"sink": {
+													"type": "SqlDWSink",
+													"preCopyScript": {
+														"value": "@{pipeline().parameters.item.PreCopySql}",
+														"type": "Expression"
+													},
+													"allowCopyCommand": true,
+													"copyCommandSettings": {},
+													"disableMetricsCollection": false
+												},
+												"enableStaging": true,
+												"stagingSettings": {
+													"linkedServiceName": {
+														"referenceName": "modineerlake",
+														"type": "LinkedServiceReference"
+													}
+												}
+											},
+											"inputs": [
+												{
+													"referenceName": "NetsuiteFileCabinet",
+													"type": "DatasetReference",
+													"parameters": {
+														"RelativeURL": {
+															"value": "@pipeline().parameters.item.DataQuery",
+															"type": "Expression"
+														}
+													}
+												}
+											],
+											"outputs": [
+												{
+													"referenceName": "AzureSynapseDatabase",
+													"type": "DatasetReference",
+													"parameters": {
+														"TableName": {
+															"value": "@pipeline().parameters.item.TableName",
+															"type": "Expression"
+														},
+														"DbName": {
+															"value": "@pipeline().parameters.item.DbName",
+															"type": "Expression"
+														},
+														"SchemaName": {
+															"value": "@pipeline().parameters.item.SchemaName",
+															"type": "Expression"
+														}
+													}
+												}
+											]
+										}
+									]
+								},
+								{
+									"value": "ODBC2",
+									"activities": [
+										{
+											"name": "Wait2",
+											"type": "Wait",
+											"dependsOn": [],
+											"userProperties": [],
+											"typeProperties": {
+												"waitTimeInSeconds": 1
+											}
+										}
+									]
 								}
 							],
 							"defaultActivities": [
@@ -2560,7 +2672,9 @@
 			},
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/datasets/NetsuiteODBCSource')]",
-				"[concat(variables('workspaceId'), '/datasets/AzureSynapseDatabase')]"
+				"[concat(variables('workspaceId'), '/datasets/AzureSynapseDatabase')]",
+				"[concat(variables('workspaceId'), '/datasets/NetsuiteFileCabinet')]",
+				"[concat(variables('workspaceId'), '/linkedServices/modineerlake')]"
 			]
 		},
 		{
@@ -3189,6 +3303,34 @@
 			},
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/sqlPools/NetsuiteData')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/NetsuiteFileCabinet')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "NetsuiteUnAuthorized",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"RelativeURL": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "RestResource",
+				"typeProperties": {
+					"relativeUrl": {
+						"value": "@dataset().RelativeURL",
+						"type": "Expression"
+					}
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/NetsuiteUnAuthorized')]"
 			]
 		},
 		{
@@ -3901,6 +4043,27 @@
 			},
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/integrationRuntimes/GloviaServerIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/NetsuiteUnAuthorized')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "RestService",
+				"typeProperties": {
+					"url": "[parameters('NetsuiteUnAuthorized_properties_typeProperties_url')]",
+					"enableServerCertificateValidation": true,
+					"authenticationType": "Anonymous"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
 			]
 		},
 		{
