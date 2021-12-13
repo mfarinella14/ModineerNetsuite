@@ -45,7 +45,13 @@
 											},
 											"disableMetricsCollection": false
 										},
-										"enableStaging": false,
+										"enableStaging": true,
+										"stagingSettings": {
+											"linkedServiceName": {
+												"referenceName": "modineerlake",
+												"type": "LinkedServiceReference"
+											}
+										},
 										"translator": {
 											"type": "TabularTranslator",
 											"typeConversion": true,
@@ -118,7 +124,13 @@
 											"allowCopyCommand": true,
 											"disableMetricsCollection": false
 										},
-										"enableStaging": false
+										"enableStaging": true,
+										"stagingSettings": {
+											"linkedServiceName": {
+												"referenceName": "modineerlake",
+												"type": "LinkedServiceReference"
+											}
+										}
 									},
 									"inputs": [
 										{
