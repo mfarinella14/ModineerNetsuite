@@ -1873,7 +1873,7 @@
 						"type": "Copy",
 						"dependsOn": [
 							{
-								"activity": "Lookup1",
+								"activity": "Modineer Netsuite Raw Data Copy - Data Lake",
 								"dependencyConditions": [
 									"Succeeded"
 								]
@@ -1931,8 +1931,8 @@
 						]
 					},
 					{
-						"name": "Lookup1",
-						"type": "Lookup",
+						"name": "Modineer Netsuite Raw Data Copy - Data Lake",
+						"type": "Copy",
 						"dependsOn": [],
 						"policy": {
 							"timeout": "7.00:00:00",
@@ -1945,16 +1945,58 @@
 						"typeProperties": {
 							"source": {
 								"type": "OdbcSource",
-								"query": "SELECT * FROM transaction WHERE lastmodifieddate >= TO_TIMESTAMP(REPLACE(REPLACE('2021-12-15T13:01:21.96Z','T',' '),'Z',''), 'YYYY-MM-DD HH24:MI:SS.FF')",
+								"query": {
+									"value": "SELECT * FROM transaction WHERE lastmodifieddate >= TO_TIMESTAMP(REPLACE(REPLACE('@{addminutes('2021-11-30 14:00:34.457',-15)}','T',' '),'Z',''), 'YYYY-MM-DD HH24:MI:SS.FF')",
+									"type": "Expression"
+								},
 								"queryTimeout": "02:00:00"
 							},
-							"dataset": {
+							"sink": {
+								"type": "ParquetSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "ParquetWriteSettings"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
 								"referenceName": "NetsuiteODBCSource",
 								"type": "DatasetReference",
 								"parameters": {}
-							},
-							"firstRowOnly": false
-						}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "SinkParquet",
+								"type": "DatasetReference",
+								"parameters": {
+									"file_system": {
+										"value": "unified-data-cluster",
+										"type": "Expression"
+									},
+									"directory": {
+										"value": "ModNS/transaction/2021/12/15",
+										"type": "Expression"
+									},
+									"file_name": {
+										"value": "transaction[n].parquet",
+										"type": "Expression"
+									}
+								}
+							}
+						]
 					}
 				],
 				"policy": {
@@ -1970,6 +2012,7 @@
 				"[concat(variables('workspaceId'), '/datasets/GloviaProd')]",
 				"[concat(variables('workspaceId'), '/datasets/AzureSynapseDatabase')]",
 				"[concat(variables('workspaceId'), '/datasets/NetsuiteODBCSource')]",
+				"[concat(variables('workspaceId'), '/datasets/SinkParquet')]",
 				"[concat(variables('workspaceId'), '/linkedServices/modineerworkspace-WorkspaceDefaultStorage')]"
 			]
 		},
@@ -2374,7 +2417,7 @@
 												"source": {
 													"type": "OdbcSource",
 													"query": {
-														"value": "SELECT * FROM @{pipeline().parameters.item.TableName} WHERE lastmodifieddate >= TO_TIMESTAMP(REPLACE(REPLACE('@{addminutes(pipeline().parameters.item.LastRefreshStart,-15)}','T',' '),'Z',''), 'YYYY-MM-DD HH24:MI:SS.FF')",
+														"value": "SELECT * FROM @{pipeline().parameters.item.TableName} WHERE @{pipeline().parameters.item.DataQuery} >= TO_TIMESTAMP(REPLACE(REPLACE('@{addminutes(pipeline().parameters.item.LastRefreshStart,-15)}','T',' '),'Z',''), 'YYYY-MM-DD HH24:MI:SS.FF')",
 														"type": "Expression"
 													},
 													"queryTimeout": "02:00:00"
@@ -2447,7 +2490,7 @@
 												"source": {
 													"type": "OdbcSource",
 													"query": {
-														"value": "SELECT * FROM @{pipeline().parameters.item.TableName} WHERE lastmodifieddate >= TO_TIMESTAMP(REPLACE(REPLACE('@{addminutes(pipeline().parameters.item.LastRefreshStart,-15)}','T',' '),'Z',''), 'YYYY-MM-DD HH24:MI:SS.FF')",
+														"value": "SELECT * FROM @{pipeline().parameters.item.TableName} WHERE @{pipeline().parameters.item.DataQuery} >= TO_TIMESTAMP(REPLACE(REPLACE('@{addminutes(pipeline().parameters.item.LastRefreshStart,-15)}','T',' '),'Z',''), 'YYYY-MM-DD HH24:MI:SS.FF')",
 														"type": "Expression"
 													},
 													"queryTimeout": "02:00:00"
