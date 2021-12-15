@@ -171,12 +171,165 @@
 							"value": "ODBC2",
 							"activities": [
 								{
-									"name": "Wait2",
-									"type": "Wait",
+									"name": "Modineer Netsuite Raw Data Copy - Data Lake",
+									"type": "Copy",
 									"dependsOn": [],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
 									"userProperties": [],
 									"typeProperties": {
-										"waitTimeInSeconds": 1
+										"source": {
+											"type": "OdbcSource",
+											"query": {
+												"value": "SELECT * FROM @{pipeline().parameters.item.TableName} WHERE lastmodifieddate >= TO_TIMESTAMP(REPLACE(REPLACE('@{pipeline().parameters.item.LastRefreshStart,-15)}','T',' '),'Z',''), 'YYYY-MM-DD HH24:MI:SS.FF')",
+												"type": "Expression"
+											},
+											"queryTimeout": "02:00:00"
+										},
+										"sink": {
+											"type": "ParquetSink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											},
+											"formatSettings": {
+												"type": "ParquetWriteSettings"
+											}
+										},
+										"enableStaging": false,
+										"translator": {
+											"type": "TabularTranslator",
+											"typeConversion": true,
+											"typeConversionSettings": {
+												"allowDataTruncation": true,
+												"treatBooleanAsNumber": false
+											}
+										}
+									},
+									"inputs": [
+										{
+											"referenceName": "NetsuiteODBCSource",
+											"type": "DatasetReference"
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "SinkParquet",
+											"type": "DatasetReference",
+											"parameters": {
+												"file_system": {
+													"value": "@pipeline().parameters.item.FileSystem",
+													"type": "Expression"
+												},
+												"directory": {
+													"value": "@{pipeline().parameters.item.SchemaName}/@{pipeline().parameters.item.TableName}/@{pipeline().parameters.EstDate.Year}/@{pipeline().parameters.EstDate.Month}/@{pipeline().parameters.EstDate.Day}",
+													"type": "Expression"
+												},
+												"file_name": {
+													"value": "@{pipeline().parameters.item.TableName}[n].parquet",
+													"type": "Expression"
+												}
+											}
+										}
+									]
+								},
+								{
+									"name": "Modineer Netsuite Raw Data Copy - SQL Pool",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": true,
+										"secureInput": false
+									},
+									"userProperties": [
+										{
+											"name": "Source",
+											"value": "@{item().SchemaName}.@{item().TableName}"
+										},
+										{
+											"name": "Destination",
+											"value": "@{'Delta'}.@{item().TableName}"
+										}
+									],
+									"typeProperties": {
+										"source": {
+											"type": "OdbcSource",
+											"query": {
+												"value": "SELECT * FROM @{pipeline().parameters.item.TableName} WHERE lastmodifieddate >= TO_TIMESTAMP(REPLACE(REPLACE('@{pipeline().parameters.item.LastRefreshStart,-15)}','T',' '),'Z',''), 'YYYY-MM-DD HH24:MI:SS.FF')",
+												"type": "Expression"
+											},
+											"queryTimeout": "02:00:00"
+										},
+										"sink": {
+											"type": "SqlDWSink",
+											"preCopyScript": {
+												"value": "TRUNCATE TABLE Delta.@{pipeline().parameters.item.TableName}",
+												"type": "Expression"
+											},
+											"tableOption": "autoCreate",
+											"disableMetricsCollection": false
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "NetsuiteODBCSource",
+											"type": "DatasetReference"
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "AzureSynapseDatabase",
+											"type": "DatasetReference",
+											"parameters": {
+												"TableName": {
+													"value": "@pipeline().parameters.item.TableName",
+													"type": "Expression"
+												},
+												"DbName": {
+													"value": "@pipeline().parameters.item.DbName",
+													"type": "Expression"
+												},
+												"SchemaName": "Delta"
+											}
+										}
+									]
+								},
+								{
+									"name": "Data Merge",
+									"type": "ExecutePipeline",
+									"dependsOn": [
+										{
+											"activity": "Modineer Netsuite Raw Data Copy - SQL Pool",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "Data Merge",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {
+											"item": {
+												"value": "@pipeline().parameters.item",
+												"type": "Expression"
+											},
+											"DateData": {
+												"value": "@pipeline().parameters.EstDate",
+												"type": "Expression"
+											}
+										}
 									}
 								}
 							]
@@ -199,6 +352,9 @@
 		],
 		"parameters": {
 			"item": {
+				"type": "object"
+			},
+			"EstDate": {
 				"type": "object"
 			}
 		},

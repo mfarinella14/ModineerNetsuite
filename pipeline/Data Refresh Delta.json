@@ -375,6 +375,10 @@
 														"item": {
 															"value": "@item()",
 															"type": "Expression"
+														},
+														"EstDate": {
+															"value": "@activity('Get EST Date').output.firstRow",
+															"type": "Expression"
 														}
 													}
 												}

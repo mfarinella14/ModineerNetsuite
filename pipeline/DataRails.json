@@ -5,7 +5,14 @@
 			{
 				"name": "Copy data1",
 				"type": "Copy",
-				"dependsOn": [],
+				"dependsOn": [
+					{
+						"activity": "Lookup1",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
 				"policy": {
 					"timeout": "7.00:00:00",
 					"retry": 0,
@@ -30,7 +37,7 @@
 							"referenceName": "modineerworkspace-WorkspaceDefaultStorage",
 							"type": "LinkedServiceReference"
 						},
-						"path": "unified-data-cluster/GLOVIA_PROD/WO/Processed"
+						"path": "unified-data-cluster/GLOVIA_PROD/FIM_BL"
 					},
 					"parallelCopies": 5
 				},
@@ -39,7 +46,7 @@
 						"referenceName": "GloviaProd",
 						"type": "DatasetReference",
 						"parameters": {
-							"tablename": "WO",
+							"tablename": "FIM_BL",
 							"schemaname": "GLOVIA_PROD"
 						}
 					}
@@ -49,12 +56,37 @@
 						"referenceName": "AzureSynapseDatabase",
 						"type": "DatasetReference",
 						"parameters": {
-							"TableName": "WO",
+							"TableName": "FIM_BL",
 							"DbName": "Modineer",
 							"SchemaName": "GLOVIA_PROD"
 						}
 					}
 				]
+			},
+			{
+				"name": "Lookup1",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "OdbcSource",
+						"query": "SELECT * FROM transaction WHERE lastmodifieddate >= TO_TIMESTAMP(REPLACE(REPLACE('2021-12-15T13:01:21.96Z','T',' '),'Z',''), 'YYYY-MM-DD HH24:MI:SS.FF')",
+						"queryTimeout": "02:00:00"
+					},
+					"dataset": {
+						"referenceName": "NetsuiteODBCSource",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
 			}
 		],
 		"folder": {
