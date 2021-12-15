@@ -91,320 +91,9 @@
 			"properties": {
 				"activities": [
 					{
-						"name": "Parent Table Check",
-						"type": "IfCondition",
-						"dependsOn": [
-							{
-								"activity": "Check If Delta Table Exists",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							},
-							{
-								"activity": "Check If Parent Table Exists",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"userProperties": [],
-						"typeProperties": {
-							"expression": {
-								"value": "@greater(activity('Check If Parent Table Exists').output.firstRow.Count,0)",
-								"type": "Expression"
-							},
-							"ifFalseActivities": [
-								{
-									"name": "Copy Entire Table To SQL Pool",
-									"type": "Copy",
-									"dependsOn": [],
-									"policy": {
-										"timeout": "7.00:00:00",
-										"retry": 0,
-										"retryIntervalInSeconds": 30,
-										"secureOutput": false,
-										"secureInput": false
-									},
-									"userProperties": [
-										{
-											"name": "Source",
-											"value": "@{pipeline().parameters.item.SchemaName}.@{pipeline().parameters.item.TableName}"
-										},
-										{
-											"name": "Destination",
-											"value": "@{pipeline().parameters.item.SchemaName}.@{pipeline().parameters.item.TableName}"
-										}
-									],
-									"typeProperties": {
-										"source": {
-											"type": "OracleSource",
-											"partitionOption": "None",
-											"queryTimeout": "02:00:00"
-										},
-										"sink": {
-											"type": "SqlDWSink",
-											"tableOption": "autoCreate",
-											"disableMetricsCollection": false
-										},
-										"enableStaging": false,
-										"translator": {
-											"type": "TabularTranslator",
-											"typeConversion": true,
-											"typeConversionSettings": {
-												"allowDataTruncation": true,
-												"treatBooleanAsNumber": false
-											}
-										}
-									},
-									"inputs": [
-										{
-											"referenceName": "GloviaProd",
-											"type": "DatasetReference",
-											"parameters": {
-												"tablename": {
-													"value": "@pipeline().parameters.item.TableName",
-													"type": "Expression"
-												},
-												"schemaname": {
-													"value": "@pipeline().parameters.item.SchemaName",
-													"type": "Expression"
-												}
-											}
-										}
-									],
-									"outputs": [
-										{
-											"referenceName": "AzureSynapseDatabase",
-											"type": "DatasetReference",
-											"parameters": {
-												"TableName": {
-													"value": "@pipeline().parameters.item.TableName",
-													"type": "Expression"
-												},
-												"DbName": {
-													"value": "@pipeline().parameters.item.DbName",
-													"type": "Expression"
-												},
-												"SchemaName": {
-													"value": "@pipeline().parameters.item.SchemaName",
-													"type": "Expression"
-												}
-											}
-										}
-									]
-								}
-							],
-							"ifTrueActivities": [
-								{
-									"name": "Wait2",
-									"type": "Wait",
-									"dependsOn": [],
-									"userProperties": [],
-									"typeProperties": {
-										"waitTimeInSeconds": 1
-									}
-								}
-							]
-						}
-					},
-					{
-						"name": "Check If Parent Table Exists",
-						"type": "Lookup",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "SqlPoolSource",
-								"sqlReaderStoredProcedureName": "[Config].[usp_CreateTableIfNotExistant]",
-								"storedProcedureParameters": {
-									"SchemaName": {
-										"type": "String",
-										"value": {
-											"value": "@pipeline().parameters.item.SchemaName",
-											"type": "Expression"
-										}
-									},
-									"TableName": {
-										"type": "String",
-										"value": {
-											"value": "@pipeline().parameters.item.TableName",
-											"type": "Expression"
-										}
-									}
-								},
-								"queryTimeout": "02:00:00"
-							},
-							"dataset": {
-								"referenceName": "Modineer",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
-						}
-					},
-					{
-						"name": "Check If Delta Table Exists",
-						"type": "Lookup",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "SqlPoolSource",
-								"sqlReaderStoredProcedureName": "[Config].[usp_CreateTableIfNotExistant]",
-								"storedProcedureParameters": {
-									"SchemaName": {
-										"type": "String",
-										"value": "Delta"
-									},
-									"TableName": {
-										"type": "String",
-										"value": {
-											"value": "@pipeline().parameters.item.TableName",
-											"type": "Expression"
-										}
-									}
-								},
-								"queryTimeout": "02:00:00"
-							},
-							"dataset": {
-								"referenceName": "Modineer",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
-						}
-					},
-					{
-						"name": "Child Table Check",
-						"type": "IfCondition",
-						"dependsOn": [
-							{
-								"activity": "Parent Table Check",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"userProperties": [],
-						"typeProperties": {
-							"expression": {
-								"value": "@greater(activity('Check If Delta Table Exists').output.firstRow.Count,0)",
-								"type": "Expression"
-							},
-							"ifFalseActivities": [
-								{
-									"name": "Raw Data Copy - SQL Pool",
-									"type": "Copy",
-									"dependsOn": [],
-									"policy": {
-										"timeout": "7.00:00:00",
-										"retry": 0,
-										"retryIntervalInSeconds": 30,
-										"secureOutput": true,
-										"secureInput": false
-									},
-									"userProperties": [
-										{
-											"name": "Source",
-											"value": "@{pipeline().parameters.item.FileSystem}/@{concat(pipeline().parameters.item.SchemaName, '/', pipeline().parameters.item.TableName, '/', pipeline().parameters.DateData.Year, '/', pipeline().parameters.DateData.Month, '/', pipeline().parameters.DateData.Day)}/"
-										},
-										{
-											"name": "Destination",
-											"value": "@{'Delta'}.@{pipeline().parameters.item.TableName}"
-										}
-									],
-									"typeProperties": {
-										"source": {
-											"type": "ParquetSource",
-											"storeSettings": {
-												"type": "AzureBlobFSReadSettings",
-												"recursive": true,
-												"wildcardFolderPath": {
-													"value": "@{pipeline().parameters.item.SchemaName}/@{pipeline().parameters.item.TableName}/@{pipeline().parameters.DateData.Year}/@{pipeline().parameters.DateData.Month}/@{pipeline().parameters.DateData.Day}",
-													"type": "Expression"
-												},
-												"wildcardFileName": "*",
-												"enablePartitionDiscovery": false
-											}
-										},
-										"sink": {
-											"type": "SqlDWSink",
-											"tableOption": "autoCreate",
-											"disableMetricsCollection": false
-										},
-										"enableStaging": false
-									},
-									"inputs": [
-										{
-											"referenceName": "ReadParquet",
-											"type": "DatasetReference",
-											"parameters": {
-												"FileSystem": {
-													"value": "@pipeline().parameters.item.FileSystem",
-													"type": "Expression"
-												},
-												"FilePath": {
-													"value": "@{pipeline().parameters.item.SchemaName}/@{pipeline().parameters.item.TableName}/@{pipeline().parameters.DateData.Year}/@{pipeline().parameters.DateData.Month}/@{pipeline().parameters.DateData.Day}",
-													"type": "Expression"
-												}
-											}
-										}
-									],
-									"outputs": [
-										{
-											"referenceName": "AzureSynapseDatabase",
-											"type": "DatasetReference",
-											"parameters": {
-												"TableName": {
-													"value": "@pipeline().parameters.item.TableName",
-													"type": "Expression"
-												},
-												"DbName": {
-													"value": "@pipeline().parameters.item.DbName",
-													"type": "Expression"
-												},
-												"SchemaName": "Delta"
-											}
-										}
-									]
-								}
-							],
-							"ifTrueActivities": [
-								{
-									"name": "Wait1",
-									"type": "Wait",
-									"dependsOn": [],
-									"userProperties": [],
-									"typeProperties": {
-										"waitTimeInSeconds": 1
-									}
-								}
-							]
-						}
-					},
-					{
 						"name": "Merge SP After Table Created",
 						"type": "SqlPoolStoredProcedure",
-						"dependsOn": [
-							{
-								"activity": "Child Table Check",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
+						"dependsOn": [],
 						"policy": {
 							"timeout": "7.00:00:00",
 							"retry": 0,
@@ -539,11 +228,8 @@
 				"annotations": []
 			},
 			"dependsOn": [
-				"[concat(variables('workspaceId'), '/datasets/Modineer')]",
 				"[concat(variables('workspaceId'), '/sqlPools/Modineer')]",
-				"[concat(variables('workspaceId'), '/datasets/AzureSynapseDatabase')]",
-				"[concat(variables('workspaceId'), '/datasets/GloviaProd')]",
-				"[concat(variables('workspaceId'), '/datasets/ReadParquet')]"
+				"[concat(variables('workspaceId'), '/datasets/AzureSynapseDatabase')]"
 			]
 		},
 		{
@@ -925,6 +611,10 @@
 															"parameters": {
 																"item": {
 																	"value": "@item()",
+																	"type": "Expression"
+																},
+																"EstDate": {
+																	"value": "@activity('Get EST Date').output.firstRow",
 																	"type": "Expression"
 																}
 															}
@@ -2181,7 +1871,14 @@
 					{
 						"name": "Copy data1",
 						"type": "Copy",
-						"dependsOn": [],
+						"dependsOn": [
+							{
+								"activity": "Lookup1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
 						"policy": {
 							"timeout": "7.00:00:00",
 							"retry": 0,
@@ -2207,7 +1904,7 @@
 									"referenceName": "modineerworkspace-WorkspaceDefaultStorage",
 									"type": "LinkedServiceReference"
 								},
-								"path": "unified-data-cluster/GLOVIA_PROD/WO/Processed"
+								"path": "unified-data-cluster/GLOVIA_PROD/FIM_BL"
 							},
 							"parallelCopies": 5
 						},
@@ -2216,7 +1913,7 @@
 								"referenceName": "GloviaProd",
 								"type": "DatasetReference",
 								"parameters": {
-									"tablename": "WO",
+									"tablename": "FIM_BL",
 									"schemaname": "GLOVIA_PROD"
 								}
 							}
@@ -2226,12 +1923,38 @@
 								"referenceName": "AzureSynapseDatabase",
 								"type": "DatasetReference",
 								"parameters": {
-									"TableName": "WO",
+									"TableName": "FIM_BL",
 									"DbName": "Modineer",
 									"SchemaName": "GLOVIA_PROD"
 								}
 							}
 						]
+					},
+					{
+						"name": "Lookup1",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "OdbcSource",
+								"query": "SELECT * FROM transaction WHERE lastmodifieddate >= TO_TIMESTAMP(REPLACE(REPLACE('2021-12-15T13:01:21.96Z','T',' '),'Z',''), 'YYYY-MM-DD HH24:MI:SS.FF')",
+								"queryTimeout": "02:00:00"
+							},
+							"dataset": {
+								"referenceName": "NetsuiteODBCSource",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
 					}
 				],
 				"policy": {
@@ -2246,6 +1969,7 @@
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/datasets/GloviaProd')]",
 				"[concat(variables('workspaceId'), '/datasets/AzureSynapseDatabase')]",
+				"[concat(variables('workspaceId'), '/datasets/NetsuiteODBCSource')]",
 				"[concat(variables('workspaceId'), '/linkedServices/modineerworkspace-WorkspaceDefaultStorage')]"
 			]
 		},
@@ -2630,12 +2354,167 @@
 									"value": "ODBC2",
 									"activities": [
 										{
-											"name": "Wait2",
-											"type": "Wait",
+											"name": "Modineer Netsuite Raw Data Copy - Data Lake",
+											"type": "Copy",
 											"dependsOn": [],
+											"policy": {
+												"timeout": "7.00:00:00",
+												"retry": 0,
+												"retryIntervalInSeconds": 30,
+												"secureOutput": false,
+												"secureInput": false
+											},
 											"userProperties": [],
 											"typeProperties": {
-												"waitTimeInSeconds": 1
+												"source": {
+													"type": "OdbcSource",
+													"query": {
+														"value": "SELECT * FROM @{pipeline().parameters.item.TableName} WHERE lastmodifieddate >= TO_TIMESTAMP(REPLACE(REPLACE('@{pipeline().parameters.item.LastRefreshStart,-15)}','T',' '),'Z',''), 'YYYY-MM-DD HH24:MI:SS.FF')",
+														"type": "Expression"
+													},
+													"queryTimeout": "02:00:00"
+												},
+												"sink": {
+													"type": "ParquetSink",
+													"storeSettings": {
+														"type": "AzureBlobFSWriteSettings"
+													},
+													"formatSettings": {
+														"type": "ParquetWriteSettings"
+													}
+												},
+												"enableStaging": false,
+												"translator": {
+													"type": "TabularTranslator",
+													"typeConversion": true,
+													"typeConversionSettings": {
+														"allowDataTruncation": true,
+														"treatBooleanAsNumber": false
+													}
+												}
+											},
+											"inputs": [
+												{
+													"referenceName": "NetsuiteODBCSource",
+													"type": "DatasetReference",
+													"parameters": {}
+												}
+											],
+											"outputs": [
+												{
+													"referenceName": "SinkParquet",
+													"type": "DatasetReference",
+													"parameters": {
+														"file_system": {
+															"value": "@pipeline().parameters.item.FileSystem",
+															"type": "Expression"
+														},
+														"directory": {
+															"value": "@{pipeline().parameters.item.SchemaName}/@{pipeline().parameters.item.TableName}/@{pipeline().parameters.EstDate.Year}/@{pipeline().parameters.EstDate.Month}/@{pipeline().parameters.EstDate.Day}",
+															"type": "Expression"
+														},
+														"file_name": {
+															"value": "@{pipeline().parameters.item.TableName}[n].parquet",
+															"type": "Expression"
+														}
+													}
+												}
+											]
+										},
+										{
+											"name": "Modineer Netsuite Raw Data Copy - SQL Pool",
+											"type": "Copy",
+											"dependsOn": [],
+											"policy": {
+												"timeout": "7.00:00:00",
+												"retry": 0,
+												"retryIntervalInSeconds": 30,
+												"secureOutput": true,
+												"secureInput": false
+											},
+											"userProperties": [
+												{
+													"name": "Source",
+													"value": "@{item().SchemaName}.@{item().TableName}"
+												},
+												{
+													"name": "Destination",
+													"value": "@{'Delta'}.@{item().TableName}"
+												}
+											],
+											"typeProperties": {
+												"source": {
+													"type": "OdbcSource",
+													"query": {
+														"value": "SELECT * FROM @{pipeline().parameters.item.TableName} WHERE lastmodifieddate >= TO_TIMESTAMP(REPLACE(REPLACE('@{pipeline().parameters.item.LastRefreshStart,-15)}','T',' '),'Z',''), 'YYYY-MM-DD HH24:MI:SS.FF')",
+														"type": "Expression"
+													},
+													"queryTimeout": "02:00:00"
+												},
+												"sink": {
+													"type": "SqlDWSink",
+													"preCopyScript": {
+														"value": "TRUNCATE TABLE Delta.@{pipeline().parameters.item.TableName}",
+														"type": "Expression"
+													},
+													"tableOption": "autoCreate",
+													"disableMetricsCollection": false
+												},
+												"enableStaging": false
+											},
+											"inputs": [
+												{
+													"referenceName": "NetsuiteODBCSource",
+													"type": "DatasetReference",
+													"parameters": {}
+												}
+											],
+											"outputs": [
+												{
+													"referenceName": "AzureSynapseDatabase",
+													"type": "DatasetReference",
+													"parameters": {
+														"TableName": {
+															"value": "@pipeline().parameters.item.TableName",
+															"type": "Expression"
+														},
+														"DbName": {
+															"value": "@pipeline().parameters.item.DbName",
+															"type": "Expression"
+														},
+														"SchemaName": "Delta"
+													}
+												}
+											]
+										},
+										{
+											"name": "Data Merge",
+											"type": "ExecutePipeline",
+											"dependsOn": [
+												{
+													"activity": "Modineer Netsuite Raw Data Copy - SQL Pool",
+													"dependencyConditions": [
+														"Succeeded"
+													]
+												}
+											],
+											"userProperties": [],
+											"typeProperties": {
+												"pipeline": {
+													"referenceName": "Data Merge",
+													"type": "PipelineReference"
+												},
+												"waitOnCompletion": true,
+												"parameters": {
+													"item": {
+														"value": "@pipeline().parameters.item",
+														"type": "Expression"
+													},
+													"DateData": {
+														"value": "@pipeline().parameters.EstDate",
+														"type": "Expression"
+													}
+												}
 											}
 										}
 									]
@@ -2663,6 +2542,9 @@
 				"parameters": {
 					"item": {
 						"type": "object"
+					},
+					"EstDate": {
+						"type": "object"
 					}
 				},
 				"folder": {
@@ -2674,6 +2556,8 @@
 				"[concat(variables('workspaceId'), '/datasets/NetsuiteODBCSource')]",
 				"[concat(variables('workspaceId'), '/datasets/AzureSynapseDatabase')]",
 				"[concat(variables('workspaceId'), '/datasets/NetsuiteFileCabinet')]",
+				"[concat(variables('workspaceId'), '/datasets/SinkParquet')]",
+				"[concat(variables('workspaceId'), '/pipelines/Data Merge')]",
 				"[concat(variables('workspaceId'), '/linkedServices/modineerlake')]"
 			]
 		},
