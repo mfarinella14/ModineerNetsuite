@@ -2364,7 +2364,12 @@
 												"secureOutput": false,
 												"secureInput": false
 											},
-											"userProperties": [],
+											"userProperties": [
+												{
+													"name": "Destination",
+													"value": "@{pipeline().parameters.item.FileSystem}/@{concat(pipeline().parameters.item.SchemaName, '/', pipeline().parameters.item.TableName, '/', pipeline().parameters.EstDate.Year, '/', pipeline().parameters.EstDate.Month, '/', pipeline().parameters.EstDate.Day)}/@{concat(pipeline().parameters.item.TableName, '[n].parquet')}"
+												}
+											],
 											"typeProperties": {
 												"source": {
 													"type": "OdbcSource",
@@ -2434,12 +2439,8 @@
 											},
 											"userProperties": [
 												{
-													"name": "Source",
-													"value": "@{item().SchemaName}.@{item().TableName}"
-												},
-												{
 													"name": "Destination",
-													"value": "@{'Delta'}.@{item().TableName}"
+													"value": "@{'Delta'}.@{pipeline().parameters.item.TableName}"
 												}
 											],
 											"typeProperties": {
