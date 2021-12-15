@@ -2369,7 +2369,7 @@
 												"source": {
 													"type": "OdbcSource",
 													"query": {
-														"value": "SELECT * FROM @{pipeline().parameters.item.TableName} WHERE lastmodifieddate >= TO_TIMESTAMP(REPLACE(REPLACE('@{pipeline().parameters.item.LastRefreshStart,-15)}','T',' '),'Z',''), 'YYYY-MM-DD HH24:MI:SS.FF')",
+														"value": "SELECT * FROM @{pipeline().parameters.item.TableName} WHERE lastmodifieddate >= TO_TIMESTAMP(REPLACE(REPLACE('@{addminutes(pipeline().parameters.item.LastRefreshStart,-15)}','T',' '),'Z',''), 'YYYY-MM-DD HH24:MI:SS.FF')",
 														"type": "Expression"
 													},
 													"queryTimeout": "02:00:00"
@@ -2446,7 +2446,7 @@
 												"source": {
 													"type": "OdbcSource",
 													"query": {
-														"value": "SELECT * FROM @{pipeline().parameters.item.TableName} WHERE lastmodifieddate >= TO_TIMESTAMP(REPLACE(REPLACE('@{pipeline().parameters.item.LastRefreshStart,-15)}','T',' '),'Z',''), 'YYYY-MM-DD HH24:MI:SS.FF')",
+														"value": "SELECT * FROM @{pipeline().parameters.item.TableName} WHERE lastmodifieddate >= TO_TIMESTAMP(REPLACE(REPLACE('@{addminutes(pipeline().parameters.item.LastRefreshStart,-15)}','T',' '),'Z',''), 'YYYY-MM-DD HH24:MI:SS.FF')",
 														"type": "Expression"
 													},
 													"queryTimeout": "02:00:00"
