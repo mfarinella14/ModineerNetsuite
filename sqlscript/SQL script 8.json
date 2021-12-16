@@ -1,0 +1,17 @@
+{
+	"name": "SQL script 8",
+	"properties": {
+		"content": {
+			"query": "SET ANSI_NULLS ON\nGO\nSET QUOTED_IDENTIFIER ON\nGO\n\nALTER PROC [Config].[usp_MergeData] @SchemaName [NVARCHAR](25),@TableName [NVARCHAR](50),@KeyColumns [NVARCHAR](1000) AS\nBEGIN\nDECLARE @sql NVARCHAR(4000) = N'\n    MERGE ['+ @SchemaName + '].[' + @TableName + '] tgt\n    USING(\n        SELECT CONCAT(' + @KeyColumns + ') AS RowKey\n        FROM [delta].[' + @TableName + ']\n    ) as src\n    ON CONCAT(' + @KeyColumns + ') = src.RowKey\n    WHEN MATCHED\n        THEN DELETE;'\n\nEXECUTE sp_executesql @sql\nEND\nGO",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "Modineer",
+				"poolName": "Modineer"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
