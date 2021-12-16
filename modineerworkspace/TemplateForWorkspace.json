@@ -2497,7 +2497,7 @@
 												"sink": {
 													"type": "SqlDWSink",
 													"preCopyScript": {
-														"value": "TRUNCATE TABLE Delta.@{pipeline().parameters.item.TableName}",
+														"value": "TRUNCATE TABLE Delta.[@{pipeline().parameters.item.TableName}]",
 														"type": "Expression"
 													},
 													"tableOption": "autoCreate",
