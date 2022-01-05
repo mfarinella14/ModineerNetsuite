@@ -2022,87 +2022,6 @@
 			"properties": {
 				"activities": [
 					{
-						"name": "Raw Data Copy - ADLS2",
-						"type": "Copy",
-						"dependsOn": [
-							{
-								"activity": "Get EST Date",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": true,
-							"secureInput": false
-						},
-						"userProperties": [
-							{
-								"name": "Source",
-								"value": "@{variables('SchemaName')}.@{variables('TableName')}"
-							},
-							{
-								"name": "Destination",
-								"value": "@{'unified-data-cluster'}/@{concat(variables('SchemaName'), '/', variables('TableName'), '/', activity('Get EST Date').output.firstRow.Year, '/', activity('Get EST Date').output.firstRow.Month, '/', activity('Get EST Date').output.firstRow.Day)}/@{concat(variables('TableName'), '-', activity('Get EST Date').output.firstRow.EST)}"
-							}
-						],
-						"typeProperties": {
-							"source": {
-								"type": "OdbcSource",
-								"queryTimeout": "02:00:00"
-							},
-							"sink": {
-								"type": "ParquetSink",
-								"storeSettings": {
-									"type": "AzureBlobFSWriteSettings"
-								},
-								"formatSettings": {
-									"type": "ParquetWriteSettings"
-								}
-							},
-							"enableStaging": false
-						},
-						"inputs": [
-							{
-								"referenceName": "PlexODBC",
-								"type": "DatasetReference",
-								"parameters": {
-									"SchemaName": {
-										"value": "@variables('SchemaName')",
-										"type": "Expression"
-									},
-									"TableName": {
-										"value": "@variables('TableName')",
-										"type": "Expression"
-									}
-								}
-							}
-						],
-						"outputs": [
-							{
-								"referenceName": "SinkParquet",
-								"type": "DatasetReference",
-								"parameters": {
-									"file_system": {
-										"value": "unified-data-cluster",
-										"type": "Expression"
-									},
-									"directory": {
-										"value": "@variables('SchemaName')",
-										"type": "Expression"
-									},
-									"file_name": {
-										"value": "@variables('TableName')",
-										"type": "Expression"
-									}
-								}
-							}
-						]
-					},
-					{
 						"name": "Get EST Date",
 						"type": "Lookup",
 						"dependsOn": [],
@@ -2126,6 +2045,194 @@
 								"parameters": {}
 							}
 						}
+					},
+					{
+						"name": "System Switch",
+						"type": "Switch",
+						"dependsOn": [
+							{
+								"activity": "Get EST Date",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"on": {
+								"value": "@variables('SchemaName')",
+								"type": "Expression"
+							},
+							"cases": [
+								{
+									"value": "Netsuite",
+									"activities": [
+										{
+											"name": "Raw Data Copy - ADLS2_copy1",
+											"type": "Copy",
+											"dependsOn": [],
+											"policy": {
+												"timeout": "7.00:00:00",
+												"retry": 0,
+												"retryIntervalInSeconds": 30,
+												"secureOutput": true,
+												"secureInput": false
+											},
+											"userProperties": [
+												{
+													"name": "Source",
+													"value": "@{variables('SchemaName')}.@{variables('TableName')}"
+												},
+												{
+													"name": "Destination",
+													"value": "@{'unified-data-cluster'}/@{concat(variables('SchemaName'), '/', variables('TableName'), '/', activity('Get EST Date').output.firstRow.Year, '/', activity('Get EST Date').output.firstRow.Month, '/', activity('Get EST Date').output.firstRow.Day)}/@{concat(variables('TableName'), '-', activity('Get EST Date').output.firstRow.EST)}"
+												}
+											],
+											"typeProperties": {
+												"source": {
+													"type": "OdbcSource",
+													"query": {
+														"value": "SELECT * FROM @{variables('TableName')}",
+														"type": "Expression"
+													},
+													"queryTimeout": "02:00:00"
+												},
+												"sink": {
+													"type": "ParquetSink",
+													"storeSettings": {
+														"type": "AzureBlobFSWriteSettings"
+													},
+													"formatSettings": {
+														"type": "ParquetWriteSettings"
+													}
+												},
+												"enableStaging": false
+											},
+											"inputs": [
+												{
+													"referenceName": "NetsuiteODBCSource",
+													"type": "DatasetReference",
+													"parameters": {}
+												}
+											],
+											"outputs": [
+												{
+													"referenceName": "SinkParquet",
+													"type": "DatasetReference",
+													"parameters": {
+														"file_system": {
+															"value": "unified-data-cluster",
+															"type": "Expression"
+														},
+														"directory": {
+															"value": "@{variables('SchemaName')}/@{variables('TableName')}/@{activity('Get EST Date').output.firstRow.Year}/@{activity('Get EST Date').output.firstRow.Month}/@{activity('Get EST Date').output.firstRow.Day}",
+															"type": "Expression"
+														},
+														"file_name": {
+															"value": "@{variables('TableName')}-Initial Load.parquet",
+															"type": "Expression"
+														}
+													}
+												}
+											]
+										}
+									]
+								},
+								{
+									"value": "Plex",
+									"activities": [
+										{
+											"name": "Raw Data Copy - ADLS2",
+											"type": "Copy",
+											"dependsOn": [],
+											"policy": {
+												"timeout": "7.00:00:00",
+												"retry": 0,
+												"retryIntervalInSeconds": 30,
+												"secureOutput": true,
+												"secureInput": false
+											},
+											"userProperties": [
+												{
+													"name": "Source",
+													"value": "@{variables('SchemaName')}.@{variables('TableName')}"
+												},
+												{
+													"name": "Destination",
+													"value": "@{'unified-data-cluster'}/@{concat(variables('SchemaName'), '/', variables('TableName'), '/', activity('Get EST Date').output.firstRow.Year, '/', activity('Get EST Date').output.firstRow.Month, '/', activity('Get EST Date').output.firstRow.Day)}/@{concat(variables('TableName'), '-', activity('Get EST Date').output.firstRow.EST)}"
+												}
+											],
+											"typeProperties": {
+												"source": {
+													"type": "OdbcSource",
+													"queryTimeout": "02:00:00"
+												},
+												"sink": {
+													"type": "ParquetSink",
+													"storeSettings": {
+														"type": "AzureBlobFSWriteSettings"
+													},
+													"formatSettings": {
+														"type": "ParquetWriteSettings"
+													}
+												},
+												"enableStaging": false
+											},
+											"inputs": [
+												{
+													"referenceName": "PlexODBC",
+													"type": "DatasetReference",
+													"parameters": {
+														"SchemaName": {
+															"value": "@variables('SchemaName')",
+															"type": "Expression"
+														},
+														"TableName": {
+															"value": "@variables('TableName')",
+															"type": "Expression"
+														}
+													}
+												}
+											],
+											"outputs": [
+												{
+													"referenceName": "SinkParquet",
+													"type": "DatasetReference",
+													"parameters": {
+														"file_system": {
+															"value": "unified-data-cluster",
+															"type": "Expression"
+														},
+														"directory": {
+															"value": "@{variables('SchemaName')}/@{variables('TableName')}/@{activity('Get EST Date').output.firstRow.Year}/@{activity('Get EST Date').output.firstRow.Month}/@{activity('Get EST Date').output.firstRow.Day}",
+															"type": "Expression"
+														},
+														"file_name": {
+															"value": "@{variables('TableName')}-Initial Load.parquet",
+															"type": "Expression"
+														}
+													}
+												}
+											]
+										}
+									]
+								},
+								{
+									"value": "GloviaProd"
+								}
+							],
+							"defaultActivities": [
+								{
+									"name": "Wait1",
+									"type": "Wait",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"waitTimeInSeconds": 1
+									}
+								}
+							]
+						}
 					}
 				],
 				"policy": {
@@ -2135,11 +2242,11 @@
 				"variables": {
 					"TableName": {
 						"type": "String",
-						"defaultValue": "Common_v_Customer"
+						"defaultValue": "Customer"
 					},
 					"SchemaName": {
 						"type": "String",
-						"defaultValue": "Plex"
+						"defaultValue": "Netsuite"
 					}
 				},
 				"folder": {
@@ -2148,9 +2255,10 @@
 				"annotations": []
 			},
 			"dependsOn": [
-				"[concat(variables('workspaceId'), '/datasets/PlexODBC')]",
+				"[concat(variables('workspaceId'), '/datasets/Modineer')]",
+				"[concat(variables('workspaceId'), '/datasets/NetsuiteODBCSource')]",
 				"[concat(variables('workspaceId'), '/datasets/SinkParquet')]",
-				"[concat(variables('workspaceId'), '/datasets/Modineer')]"
+				"[concat(variables('workspaceId'), '/datasets/PlexODBC')]"
 			]
 		},
 		{
@@ -2841,7 +2949,7 @@
 										"source": {
 											"type": "OdbcSource",
 											"query": {
-												"value": "SELECT * FROM @{pipeline().parameters.item.SchemaName}.@{pipeline().parameters.item.TableName} t1 WHERE Updated_Date >= CAST(@{pipeline().parameters.item.LastRefreshStart} AS DATE)",
+												"value": "SELECT * FROM @{pipeline().parameters.item.SchemaName}.@{pipeline().parameters.item.TableName} t1 WHERE @{pipeline().parameters.item.DataQuery} >= CAST('@{pipeline().parameters.item.LastRefreshStart}' AS DATE)",
 												"type": "Expression"
 											},
 											"queryTimeout": "02:00:00"
@@ -2946,7 +3054,7 @@
 										"source": {
 											"type": "OdbcSource",
 											"query": {
-												"value": "SELECT * FROM @{pipeline().parameters.item.SchemaName}.@{pipeline().parameters.item.TableName} t1 WHERE Updated_Date >= CAST(@{pipeline().parameters.item.LastRefreshStart} AS DATE)",
+												"value": "SELECT * FROM @{pipeline().parameters.item.SchemaName}.@{pipeline().parameters.item.TableName} t1 WHERE @{pipeline().parameters.item.DataQuery} >= CAST('@{pipeline().parameters.item.LastRefreshStart}' AS DATE)",
 												"type": "Expression"
 											},
 											"queryTimeout": "02:00:00"
