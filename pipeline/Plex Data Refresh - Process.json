@@ -217,6 +217,9 @@
 			},
 			"DataCount": {
 				"type": "int"
+			},
+			"EstDate": {
+				"type": "object"
 			}
 		},
 		"folder": {

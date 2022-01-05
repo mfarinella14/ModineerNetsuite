@@ -419,22 +419,12 @@
 										"value": "Plex",
 										"activities": [
 											{
-												"name": "Plex Data Refresh",
-												"type": "ExecutePipeline",
+												"name": "Wait1",
+												"type": "Wait",
 												"dependsOn": [],
 												"userProperties": [],
 												"typeProperties": {
-													"pipeline": {
-														"referenceName": "Plex Data Refresh - Data Count",
-														"type": "PipelineReference"
-													},
-													"waitOnCompletion": true,
-													"parameters": {
-														"item": {
-															"value": "@item()",
-															"type": "Expression"
-														}
-													}
+													"waitTimeInSeconds": 1
 												}
 											}
 										]
