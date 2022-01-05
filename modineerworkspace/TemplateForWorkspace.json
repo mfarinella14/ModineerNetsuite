@@ -1253,7 +1253,7 @@
 												"value": "Plex",
 												"activities": [
 													{
-														"name": "Place Holder_copy2",
+														"name": "Wait1",
 														"type": "Wait",
 														"dependsOn": [],
 														"userProperties": [],
@@ -2086,13 +2086,16 @@
 								"referenceName": "SinkParquet",
 								"type": "DatasetReference",
 								"parameters": {
-									"file_system": "unified-data-cluster",
+									"file_system": {
+										"value": "unified-data-cluster",
+										"type": "Expression"
+									},
 									"directory": {
-										"value": "@{variables('SchemaName')}/@{variables('TableName')}/@{activity('Get EST Date').output.firstRow.Year}/@{activity('Get EST Date').output.firstRow.Month}/@{activity('Get EST Date').output.firstRow.Day}",
+										"value": "@variables('SchemaName')",
 										"type": "Expression"
 									},
 									"file_name": {
-										"value": "@{variables('TableName')}-@{activity('Get EST Date').output.firstRow.EST}",
+										"value": "@variables('TableName')",
 										"type": "Expression"
 									}
 								}
@@ -2102,14 +2105,7 @@
 					{
 						"name": "Get EST Date",
 						"type": "Lookup",
-						"dependsOn": [
-							{
-								"activity": "Copy From File Cabinet",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
+						"dependsOn": [],
 						"policy": {
 							"timeout": "7.00:00:00",
 							"retry": 0,
@@ -2130,65 +2126,6 @@
 								"parameters": {}
 							}
 						}
-					},
-					{
-						"name": "Copy From File Cabinet",
-						"type": "Copy",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "RestSource",
-								"httpRequestTimeout": "00:01:40",
-								"requestInterval": "00.00:00:00.010",
-								"requestMethod": "GET",
-								"paginationRules": {
-									"supportRFC5988": "true"
-								}
-							},
-							"sink": {
-								"type": "SqlDWSink",
-								"allowCopyCommand": true,
-								"copyCommandSettings": {},
-								"tableOption": "autoCreate",
-								"disableMetricsCollection": false
-							},
-							"enableStaging": true,
-							"stagingSettings": {
-								"linkedServiceName": {
-									"referenceName": "modineerlake",
-									"type": "LinkedServiceReference"
-								},
-								"path": "unified-data-cluster/ModNS/HTMYearEndTanks2021"
-							}
-						},
-						"inputs": [
-							{
-								"referenceName": "NetsuiteFileCabinet",
-								"type": "DatasetReference",
-								"parameters": {
-									"RelativeURL": "media.nl?id=322577&c=4828307&h=Fpjz5UOxwrITMIyCEEUEJNj0x6CemS9HaJp8I-rmKWLRZRBT&_xt=.csv"
-								}
-							}
-						],
-						"outputs": [
-							{
-								"referenceName": "AzureSynapseDatabase",
-								"type": "DatasetReference",
-								"parameters": {
-									"TableName": "HTMYearEndTanks2021",
-									"DbName": "Modineer",
-									"SchemaName": "ModNS"
-								}
-							}
-						]
 					}
 				],
 				"policy": {
@@ -2198,7 +2135,7 @@
 				"variables": {
 					"TableName": {
 						"type": "String",
-						"defaultValue": "Common_v_Supplier_e"
+						"defaultValue": "Common_v_Customer"
 					},
 					"SchemaName": {
 						"type": "String",
@@ -2213,10 +2150,7 @@
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/datasets/PlexODBC')]",
 				"[concat(variables('workspaceId'), '/datasets/SinkParquet')]",
-				"[concat(variables('workspaceId'), '/datasets/Modineer')]",
-				"[concat(variables('workspaceId'), '/datasets/NetsuiteFileCabinet')]",
-				"[concat(variables('workspaceId'), '/datasets/AzureSynapseDatabase')]",
-				"[concat(variables('workspaceId'), '/linkedServices/modineerlake')]"
+				"[concat(variables('workspaceId'), '/datasets/Modineer')]"
 			]
 		},
 		{
@@ -2764,7 +2698,7 @@
 												"source": {
 													"type": "OdbcSource",
 													"query": {
-														"value": "SELECT COUNT(*) AS Count FROM @{pipeline().parameters.item.SchemaName}.@{pipeline().parameters.item.TableName} t1 WHERE Updated_Date >= SUBSTRING('@{pipeline().parameters.item.LastRefreshStart}',1,23)",
+														"value": "SELECT COUNT(*) AS Count FROM @{pipeline().parameters.item.SchemaName}.@{pipeline().parameters.item.TableName} t1 WHERE @{pipeline().parameters.item.DataQuery} >= CAST(@{pipeline().parameters.item.LastRefreshStart} AS DATE)",
 														"type": "Expression"
 													},
 													"queryTimeout": "02:00:00"
@@ -2806,10 +2740,6 @@
 												"parameters": {
 													"item": {
 														"value": "@pipeline().parameters.item",
-														"type": "Expression"
-													},
-													"EstDate": {
-														"value": "@pipeline().parameters.EstDate",
 														"type": "Expression"
 													},
 													"DataCount": {
@@ -2911,7 +2841,7 @@
 										"source": {
 											"type": "OdbcSource",
 											"query": {
-												"value": "SELECT * FROM @{pipeline().parameters.item.SchemaName}.@{pipeline().parameters.item.TableName} t1 WHERE Updated_Date >= SUBSTRING('@{pipeline().parameters.item.LastRefreshStart}',1,23)",
+												"value": "SELECT * FROM @{pipeline().parameters.item.SchemaName}.@{pipeline().parameters.item.TableName} t1 WHERE Updated_Date >= CAST(@{pipeline().parameters.item.LastRefreshStart} AS DATE)",
 												"type": "Expression"
 											},
 											"queryTimeout": "02:00:00"
@@ -3016,7 +2946,7 @@
 										"source": {
 											"type": "OdbcSource",
 											"query": {
-												"value": "SELECT * FROM @{pipeline().parameters.item.SchemaName}.@{pipeline().parameters.item.TableName} t1 WHERE Updated_Date >= SUBSTRING('@{pipeline().parameters.item.LastRefreshStart}',1,23)",
+												"value": "SELECT * FROM @{pipeline().parameters.item.SchemaName}.@{pipeline().parameters.item.TableName} t1 WHERE Updated_Date >= CAST(@{pipeline().parameters.item.LastRefreshStart} AS DATE)",
 												"type": "Expression"
 											},
 											"queryTimeout": "02:00:00"
@@ -3081,11 +3011,11 @@
 					"item": {
 						"type": "object"
 					},
-					"EstDate": {
-						"type": "object"
-					},
 					"DataCount": {
 						"type": "int"
+					},
+					"EstDate": {
+						"type": "object"
 					}
 				},
 				"folder": {
