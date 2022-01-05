@@ -32,7 +32,7 @@
 										"source": {
 											"type": "OdbcSource",
 											"query": {
-												"value": "SELECT COUNT(*) AS Count FROM @{pipeline().parameters.item.SchemaName}.@{pipeline().parameters.item.TableName} t1 WHERE Updated_Date >= SUBSTRING('@{pipeline().parameters.item.LastRefreshStart}',1,23)",
+												"value": "SELECT COUNT(*) AS Count FROM @{pipeline().parameters.item.SchemaName}.@{pipeline().parameters.item.TableName} t1 WHERE @{pipeline().parameters.item.DataQuery} >= CAST(@{pipeline().parameters.item.LastRefreshStart} AS DATE)",
 												"type": "Expression"
 											},
 											"queryTimeout": "02:00:00"
@@ -74,10 +74,6 @@
 										"parameters": {
 											"item": {
 												"value": "@pipeline().parameters.item",
-												"type": "Expression"
-											},
-											"EstDate": {
-												"value": "@pipeline().parameters.EstDate",
 												"type": "Expression"
 											},
 											"DataCount": {

@@ -419,12 +419,22 @@
 										"value": "Plex",
 										"activities": [
 											{
-												"name": "Place Holder_copy2",
-												"type": "Wait",
+												"name": "Plex Data Refresh",
+												"type": "ExecutePipeline",
 												"dependsOn": [],
 												"userProperties": [],
 												"typeProperties": {
-													"waitTimeInSeconds": 1
+													"pipeline": {
+														"referenceName": "Plex Data Refresh - Data Count",
+														"type": "PipelineReference"
+													},
+													"waitOnCompletion": true,
+													"parameters": {
+														"item": {
+															"value": "@item()",
+															"type": "Expression"
+														}
+													}
 												}
 											}
 										]
