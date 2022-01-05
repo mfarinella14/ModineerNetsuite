@@ -36,8 +36,13 @@
 						"queryTimeout": "02:00:00"
 					},
 					"sink": {
-						"type": "SqlPoolSink",
-						"allowCopyCommand": true
+						"type": "ParquetSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						},
+						"formatSettings": {
+							"type": "ParquetWriteSettings"
+						}
 					},
 					"enableStaging": false
 				},
@@ -59,8 +64,22 @@
 				],
 				"outputs": [
 					{
-						"referenceName": "Modineer",
-						"type": "DatasetReference"
+						"referenceName": "SinkParquet",
+						"type": "DatasetReference",
+						"parameters": {
+							"file_system": {
+								"value": "unified-data-cluster",
+								"type": "Expression"
+							},
+							"directory": {
+								"value": "@variables('SchemaName')",
+								"type": "Expression"
+							},
+							"file_name": {
+								"value": "@variables('TableName')",
+								"type": "Expression"
+							}
+						}
 					}
 				]
 			},
