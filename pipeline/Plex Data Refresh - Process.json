@@ -49,7 +49,7 @@
 								"source": {
 									"type": "OdbcSource",
 									"query": {
-										"value": "SELECT * FROM @{pipeline().parameters.item.SchemaName}.@{pipeline().parameters.item.TableName} t1 WHERE Updated_Date >= CAST(@{pipeline().parameters.item.LastRefreshStart} AS DATE)",
+										"value": "SELECT * FROM @{pipeline().parameters.item.SchemaName}.@{pipeline().parameters.item.TableName} t1 WHERE @{pipeline().parameters.item.DataQuery} >= CAST('@{pipeline().parameters.item.LastRefreshStart}' AS DATE)",
 										"type": "Expression"
 									},
 									"queryTimeout": "02:00:00"
@@ -154,7 +154,7 @@
 								"source": {
 									"type": "OdbcSource",
 									"query": {
-										"value": "SELECT * FROM @{pipeline().parameters.item.SchemaName}.@{pipeline().parameters.item.TableName} t1 WHERE Updated_Date >= CAST(@{pipeline().parameters.item.LastRefreshStart} AS DATE)",
+										"value": "SELECT * FROM @{pipeline().parameters.item.SchemaName}.@{pipeline().parameters.item.TableName} t1 WHERE @{pipeline().parameters.item.DataQuery} >= CAST('@{pipeline().parameters.item.LastRefreshStart}' AS DATE)",
 										"type": "Expression"
 									},
 									"queryTimeout": "02:00:00"
