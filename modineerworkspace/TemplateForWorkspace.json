@@ -123,6 +123,13 @@
 									},
 									"type": "String"
 								},
+								"StagingSchema": {
+									"value": {
+										"value": "@{pipeline().parameters.item.StagingSchema}",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
 								"TableName": {
 									"value": {
 										"value": "@{pipeline().parameters.item.TableName}",
@@ -4127,7 +4134,7 @@
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
 				"annotations": [],
-				"runtimeState": "Started",
+				"runtimeState": "Stopped",
 				"pipelines": [
 					{
 						"pipelineReference": {
@@ -4267,6 +4274,9 @@
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
+				"folder": {
+					"name": "General"
+				},
 				"content": {
 					"query": "CREATE PROCEDURE dbo.usp_DynamicMerge\n    @SchemaName NVARCHAR(25),\n    @TableName NVARCHAR(50),\n    @JoinStatement NVARCHAR(4000),\n    @keyColumns NVARCHAR(4000),\n    @keyColumnsSplit = NVARCHAR(4000)\n\nAS  \nSELECT *\nFROM sys.tables\n\nDECLARE @sql NVARCHAR(4000) = 'MERGE '+ @SchemaName +'.'+ @TableName + 'AS tgt  \nUSING delta.' +@TableName + ' as src\n    ON ' + @keyColumns + ' WHEN NOT MATCHED BY SOURCE \n    THEN DELETE\nWHEN MATCHED\n    THEN UPDATE SET tgt.Quantity = tgt.Quantity - src.OrderQty,\n                    tgt.ModifiedDate = GETDATE()  \nOUTPUT deleted.*, $action, inserted.* into'\nGO  \n\nEXECUTE sp_executesql   \n          N'SELECT * FROM AdventureWorksPDW2012.dbo.DimEmployee   \n          WHERE EmployeeKey = @level',  \n          N'@level TINYINT',  \n          @level = 109; \nGO\n\n\n\n",
 					"metadata": {
@@ -4298,166 +4308,6 @@
 					"currentConnection": {
 						"databaseName": "Glovia",
 						"poolName": "Built-in"
-					},
-					"resultLimit": 5000
-				},
-				"type": "SqlQuery"
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/SQL script 1')]",
-			"type": "Microsoft.Synapse/workspaces/sqlscripts",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"content": {
-					"query": "SELECT COUNT(*)\nFROM OPENROWSET(BULK 'https://modineerlake.blob.core.windows.net/unified-data-cluster/GLOVIA_PROD/JE_DET/NotProcessed/*.parquet',\n                FORMAT = 'PARQUET') AS ROWS\n\nSELECT *\nFROM OPENROWSET(\n    BULK 'https://modineerlake.blob.core.windows.net/unified-data-cluster/GLOVIA_PROD/JE_DET/Processed/',\n    FORMAT = 'delta') as rows;",
-					"metadata": {
-						"language": "sql"
-					},
-					"currentConnection": {
-						"databaseName": "master",
-						"poolName": "Built-in"
-					},
-					"resultLimit": 5000
-				},
-				"type": "SqlQuery"
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/SQL script 2')]",
-			"type": "Microsoft.Synapse/workspaces/sqlscripts",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"content": {
-					"query": "IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n\tWITH ( FORMAT_TYPE = PARQUET)\nGO\n\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'unified-data-cluster_modineerlake_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [unified-data-cluster_modineerlake_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION = 'abfss://unified-data-cluster@modineerlake.dfs.core.windows.net' \n\t)\nGO\n\nCREATE EXTERNAL TABLE GLOVIA_PROD.JE_DET (\t[JE_CCN] varchar(8000),\n\t[JE] varchar(8000),\n\t[JE_SUB] varchar(8000),\n\t[JE_LINE] varchar(8000),\n\t[GL_ACCT] varchar(8000),\n\t[CCN] varchar(8000),\n\t[ASOF_DATE] datetime2(7),\n\t[PCT] numeric(38,18),\n\t[QTY] numeric(38,18),\n\t[REF] varchar(8000),\n\t[SU] varchar(8000),\n\t[ASOF_YEAR] varchar(8000),\n\t[REVERSE_YEAR] varchar(8000),\n\t[MEMO] varchar(8000),\n\t[OVT] varchar(8000),\n\t[PA_COST_FLAG] varchar(8000),\n\t[PROJECT_ID] varchar(8000),\n\t[TASK_ID] varchar(8000),\n\t[GL_SL] varchar(8000),\n\t[GL_DL] varchar(8000),\n\t[DEBIT_AMT] numeric(38,18),\n\t[CREDIT_AMT] numeric(38,18),\n\t[USER_ALPHA1] varchar(8000),\n\t[USER_ALPHA2] varchar(8000),\n\t[USER_ALPHA3] varchar(8000),\n\t[USER_NUM1] numeric(38,18),\n\t[USER_NUM2] numeric(38,18),\n\t[USER_NUM3] numeric(38,18),\n\t[USER_DATE] datetime2(7),\n\t[USER_TIME] varchar(8000),\n\t[BANK] varchar(8000),\n\t[REF_SEQ] varchar(8000),\n\t[VAT] varchar(8000)\n\t)\n\tWITH (\n\tLOCATION = 'GLOVIA_PROD/JE_DET/JE_DET.parquet',\n\tDATA_SOURCE = [unified-data-cluster_modineerlake_dfs_core_windows_net],\n\tFILE_FORMAT = [SynapseParquetFormat]\n\t)\nGO\n\nSELECT TOP 100 * FROM GLOVIA_PROD.JE_DET\nGO\n\n",
-					"metadata": {
-						"language": "sql"
-					},
-					"currentConnection": {
-						"databaseName": "Modineer",
-						"poolName": "Modineer"
-					},
-					"resultLimit": 5000
-				},
-				"type": "SqlQuery"
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/SQL script 3')]",
-			"type": "Microsoft.Synapse/workspaces/sqlscripts",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"content": {
-					"query": "-- Create a new stored procedure called 'AddTableToRefresh' in schema 'Config'\n-- Drop the stored procedure if it already exists\nIF EXISTS (\nSELECT *\n    FROM INFORMATION_SCHEMA.ROUTINES\nWHERE SPECIFIC_SCHEMA = N'Config'\n    AND SPECIFIC_NAME = N'AddTableToRefresh'\n    AND ROUTINE_TYPE = N'PROCEDURE'\n)\nDROP PROCEDURE Config.AddTableToRefresh\nGO\n-- Create the stored procedure in the specified schema\nCREATE PROCEDURE Config.AddTableToRefresh\n    @RowGroup NVARCHAR(50),\n    @DbName NVARCHAR(50),\n    @SchemaName NVARCHAR(50),\n    @TableName NVARCHAR(50),\n    @FileSystem NVARCHAR(50),\n    @TableKeysArray NVARCHAR(500),\n    @ConnectionType NVARCHAR(50),\n    @DataQuery NVARCHAR(4000),\n    @CurrentProcess BIT,\n    @TableMaxSCN NVARCHAR(20),\n    @RefreshInterval NVARCHAR(15),\n    @RefreshNumber INT,\n    @Columns NVARCHAR(2000)\n-- add more stored procedure parameters here\nAS\nBEGIN\n    -- body of the stored procedure\n    INSERT INTO Config.DataRefreshSchedule (RowGroup, DbName, SchemaName, TableName, FileSystem, TableKeysArray, ConnectionType, DataQuery)\n    VALUES(@RowGroup, @DbName, @SchemaName, @TableName, @FileSystem, @TableKeysArray, @ConnectionType, @DataQuery)\n\n    DECLARE @ScheduleId INT = (SELECT TOP 1  Id \n                                FROM Config.DataRefreshSchedule \n                                WHERE RowGroup = @RowGroup\n                                AND DbName = @DbName\n                                AND SchemaName = @SchemaName\n                                AND TableName = @TableName\n                                AND FileSystem = @FileSystem)\n    INSERT INTO Config.DataRefreshScheduleDetail (ScheduleId, CurrentProcess, TableMaxSCN, RefreshInterval, RefreshNumber)\n    VALUES(@ScheduleId, @CurrentProcess, @TableMaxSCN, @RefreshInterval, @RefreshNumber)\n\n    DECLARE @SchemaId INT = (SELECT schema_id FROM sys.schemas WHERE name = @SchemaName)\n\n    DECLARE @sql NVARCHAR(4000) = 'IF ((SELECT COUNT(*) FROM sys.tables WHERE name = @TableName AND schema_id = @SchemaId) > 0)\n    DROP TABLE [@SchemaName].[@TableName]\n\n    CREATE TABLE [@SchemaName].[@TableName]' + @Columns\n    SET @sql = REPLACE(@sql,'@SchemaName',@SchemaName)\n    SET @sql = REPLACE(@sql, '@TableName', @TableName)\n\n    EXEC sp_executesql @sql\nEND\nGO",
-					"metadata": {
-						"language": "sql"
-					},
-					"currentConnection": {
-						"databaseName": "Modineer",
-						"poolName": "Modineer"
-					},
-					"resultLimit": 5000
-				},
-				"type": "SqlQuery"
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/SQL script 4')]",
-			"type": "Microsoft.Synapse/workspaces/sqlscripts",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"content": {
-					"query": "IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n\tWITH ( FORMAT_TYPE = PARQUET)\nGO\n\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'unified-data-cluster_modineerlake_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [unified-data-cluster_modineerlake_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION = 'abfss://unified-data-cluster@modineerlake.dfs.core.windows.net' \n\t)\nGO\nCREATE EXTERNAL TABLE GloviaProd.CR_CNTDT (\n\t[SALES_CCN] nvarchar(1000),\n\t[CNT_NUM] nvarchar(1000),\n\t[CR_CNTDT_SEQ] nvarchar(1000),\n\t[REQD_DATE] datetime2(7),\n\t[REQD_TIME] nvarchar(1000),\n\t[DOCK] nvarchar(1000),\n\t[INBOUND_SEQ] nvarchar(1000),\n\t[REL_QTY_TYPE] nvarchar(1000),\n\t[CUM_ORDER_QTY] numeric(38,18),\n\t[DIS_ORDER_QTY] numeric(38,18),\n\t[QTY_QUAL] nvarchar(1000),\n\t[PER_QUAL] nvarchar(1000),\n\t[SHIP_QTY] numeric(38,18),\n\t[COMMIT_QTY] numeric(38,18),\n\t[CANC_QTY] numeric(38,18),\n\t[BO_QTY] numeric(38,18),\n\t[UNIT_PRICE] numeric(38,18),\n\t[LAST_PICK_SEQ] numeric(38,18),\n\t[EST_PARTS_AMT] numeric(38,18),\n\t[EST_TAX_AMT] numeric(38,18),\n\t[SHIP_PARTS_AMT] numeric(38,18),\n\t[SHIP_TAX_AMT] numeric(38,18),\n\t[DEL_ORD_NUM] nvarchar(1000),\n\t[DEL_DATE] datetime2(7),\n\t[DEL_TIME] nvarchar(1000),\n\t[SHIP_VAT_AMT] numeric(38,18),\n\t[PRICE_OVERRIDDEN] nvarchar(1000),\n\t[NC_REASON] nvarchar(1000),\n\t[CANC_REASON] nvarchar(1000),\n\t[BOOK_RATE] numeric(38,18),\n\t[BOOT_RATE_DIV] nvarchar(1000),\n\t[LAST_SHIP_SEQ] numeric(38,18),\n\t[LAST_PROF_INV] nvarchar(1000),\n\t[LAST_PROF_ASN] nvarchar(1000),\n\t[EST_BACKLOG_AMT] numeric(38,18),\n\t[SHIP_BACKLOG_AMT] numeric(38,18),\n\t[INBOUND_CNR_ITEM] nvarchar(1000),\n\t[INBOUND_CNR_REV] nvarchar(1000),\n\t[CONSIGNED_QTY] numeric(38,18),\n\t[CONSIGNMENT_LOC] nvarchar(1000),\n\t[CONSIGNMENT_BIN] nvarchar(1000),\n\t[USER_ALPHA1] nvarchar(1000),\n\t[USER_ALPHA2] nvarchar(1000),\n\t[USER_ALPHA3] nvarchar(1000),\n\t[USER_NUM1] numeric(38,18),\n\t[USER_NUM2] numeric(38,18),\n\t[USER_NUM3] numeric(38,18),\n\t[USER_DATE] datetime2(7),\n\t[USER_TIME] nvarchar(1000)\n\t)\n\tWITH (\n\tLOCATION = 'GLOVIA_PROD/CR_CNTDT/**',\n\tDATA_SOURCE = [unified-data-cluster_modineerlake_dfs_core_windows_net],\n\tFILE_FORMAT = [SynapseParquetFormat]\n\t)\nGO\n\n\nSELECT TOP 100 * FROM GloviaProd.CR_CNTDT\nGO",
-					"metadata": {
-						"language": "sql"
-					},
-					"currentConnection": {
-						"databaseName": "ModineerServerless",
-						"poolName": "Built-in"
-					},
-					"resultLimit": 5000
-				},
-				"type": "SqlQuery"
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/SQL script 5')]",
-			"type": "Microsoft.Synapse/workspaces/sqlscripts",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"content": {
-					"query": "MERGE ",
-					"metadata": {
-						"language": "sql"
-					},
-					"currentConnection": {
-						"databaseName": "Modineer",
-						"poolName": "Modineer"
-					},
-					"resultLimit": 5000
-				},
-				"type": "SqlQuery"
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/SQL script 6')]",
-			"type": "Microsoft.Synapse/workspaces/sqlscripts",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"content": {
-					"query": "IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n\tWITH ( FORMAT_TYPE = PARQUET)\nGO\n\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'unified-data-cluster_modineerlake_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [unified-data-cluster_modineerlake_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION = 'abfss://unified-data-cluster@modineerlake.dfs.core.windows.net' \n\t)\nGO\n\nCREATE EXTERNAL TABLE delta.JE_DET (\n\t[JE_CCN] nvarchar(4000),\n\t[JE] nvarchar(4000),\n\t[JE_SUB] nvarchar(4000),\n\t[JE_LINE] nvarchar(4000),\n\t[GL_ACCT] nvarchar(4000),\n\t[CCN] nvarchar(4000),\n\t[ASOF_DATE] datetime2(7),\n\t[PCT] numeric(38,18),\n\t[QTY] numeric(38,18),\n\t[REF] nvarchar(4000),\n\t[SU] nvarchar(4000),\n\t[ASOF_YEAR] nvarchar(4000),\n\t[REVERSE_YEAR] nvarchar(4000),\n\t[MEMO] nvarchar(4000),\n\t[OVT] nvarchar(4000),\n\t[PA_COST_FLAG] nvarchar(4000),\n\t[PROJECT_ID] nvarchar(4000),\n\t[TASK_ID] nvarchar(4000),\n\t[GL_SL] nvarchar(4000),\n\t[GL_DL] nvarchar(4000),\n\t[DEBIT_AMT] numeric(38,18),\n\t[CREDIT_AMT] numeric(38,18),\n\t[USER_ALPHA1] nvarchar(4000),\n\t[USER_ALPHA2] nvarchar(4000),\n\t[USER_ALPHA3] nvarchar(4000),\n\t[USER_NUM1] numeric(38,18),\n\t[USER_NUM2] numeric(38,18),\n\t[USER_NUM3] numeric(38,18),\n\t[USER_DATE] datetime2(7),\n\t[USER_TIME] nvarchar(4000),\n\t[BANK] nvarchar(4000),\n\t[REF_SEQ] nvarchar(4000),\n\t[VAT] nvarchar(4000)\n\t)\n\tWITH (\n\tLOCATION = 'GLOVIA_PROD/JE_DET/NotProcessed/*.parquet',\n\tDATA_SOURCE = [unified-data-cluster_modineerlake_dfs_core_windows_net],\n\tFILE_FORMAT = [SynapseParquetFormat]\n\t)\nGO\n\nSELECT COUNT(*)\nFROM delta.JE_DET",
-					"metadata": {
-						"language": "sql"
-					},
-					"currentConnection": {
-						"databaseName": "ModineerServerless",
-						"poolName": "Built-in"
-					},
-					"resultLimit": 5000
-				},
-				"type": "SqlQuery"
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/SQL script 7')]",
-			"type": "Microsoft.Synapse/workspaces/sqlscripts",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"content": {
-					"query": "-- This is auto-generated code\nSELECT\n    COUNT(*)\nFROM\n    OPENROWSET(\n        BULK 'https://modineerlake.dfs.core.windows.net/unified-data-cluster/GLOVIA_PROD/JE_DET/*.parquet',\n        FORMAT = 'PARQUET'\n    ) AS [result]\n",
-					"metadata": {
-						"language": "sql"
-					},
-					"currentConnection": {
-						"databaseName": "master",
-						"poolName": "Built-in"
-					},
-					"resultLimit": 5000
-				},
-				"type": "SqlQuery"
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/SQL script 8')]",
-			"type": "Microsoft.Synapse/workspaces/sqlscripts",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"content": {
-					"query": "SET ANSI_NULLS ON\nGO\nSET QUOTED_IDENTIFIER ON\nGO\n\nALTER PROC [Config].[usp_MergeData] @SchemaName [NVARCHAR](25),@TableName [NVARCHAR](50),@KeyColumns [NVARCHAR](1000) AS\nBEGIN\nDECLARE @sql NVARCHAR(4000) = N'\n    MERGE ['+ @SchemaName + '].[' + @TableName + '] tgt\n    USING(\n        SELECT CONCAT(' + @KeyColumns + ') AS RowKey\n        FROM [delta].[' + @TableName + ']\n    ) as src\n    ON CONCAT(' + @KeyColumns + ') = src.RowKey\n    WHEN MATCHED\n        THEN DELETE;'\n\nEXECUTE sp_executesql @sql\nEND\nGO",
-					"metadata": {
-						"language": "sql"
-					},
-					"currentConnection": {
-						"databaseName": "Modineer",
-						"poolName": "Modineer"
 					},
 					"resultLimit": 5000
 				},
