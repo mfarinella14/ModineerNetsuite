@@ -140,16 +140,7 @@
 								"secureOutput": true,
 								"secureInput": false
 							},
-							"userProperties": [
-								{
-									"name": "Source",
-									"value": "@{pipeline().parameters.item.SchemaName}.@{pipeline().parameters.item.TableName}"
-								},
-								{
-									"name": "Destination",
-									"value": "@{pipeline().parameters.item.FileSystem}/@{concat(pipeline().parameters.item.SchemaName, '/', pipeline().parameters.item.TableName, '/', pipeline().parameters.EstDate.firstRow.Year, '/', pipeline().parameters.EstDate.firstRow.Month, '/', pipeline().parameters.EstDate.firstRow.Day)}/@{concat(pipeline().parameters.item.TableName, '-', pipeline().parameters.EstDate.firstRow.EST)}"
-								}
-							],
+							"userProperties": [],
 							"typeProperties": {
 								"source": {
 									"type": "OdbcSource",

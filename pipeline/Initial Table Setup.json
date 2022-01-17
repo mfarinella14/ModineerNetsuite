@@ -228,11 +228,11 @@
 		"variables": {
 			"TableName": {
 				"type": "String",
-				"defaultValue": "Customer"
+				"defaultValue": "WO"
 			},
 			"SchemaName": {
 				"type": "String",
-				"defaultValue": "Netsuite"
+				"defaultValue": "GloviaProd"
 			}
 		},
 		"folder": {
