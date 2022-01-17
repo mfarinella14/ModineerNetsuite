@@ -79,6 +79,10 @@
 											"DataCount": {
 												"value": "@activity('Check For Processing').output.firstRow.Count",
 												"type": "Expression"
+											},
+											"EstDate": {
+												"value": "@pipeline().parameters.EstDate",
+												"type": "Expression"
 											}
 										}
 									}
