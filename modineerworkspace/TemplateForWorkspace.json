@@ -2225,16 +2225,76 @@
 									]
 								},
 								{
-									"value": "GloviaProd",
+									"value": "GLOVIA_PROD",
 									"activities": [
 										{
-											"name": "Wait2",
-											"type": "Wait",
+											"name": "Glovia Raw Data Copy - ADLS2",
+											"type": "Copy",
 											"dependsOn": [],
+											"policy": {
+												"timeout": "7.00:00:00",
+												"retry": 0,
+												"retryIntervalInSeconds": 30,
+												"secureOutput": true,
+												"secureInput": false
+											},
 											"userProperties": [],
 											"typeProperties": {
-												"waitTimeInSeconds": 1
-											}
+												"source": {
+													"type": "OracleSource",
+													"partitionOption": "None",
+													"queryTimeout": "02:00:00"
+												},
+												"sink": {
+													"type": "ParquetSink",
+													"storeSettings": {
+														"type": "AzureBlobFSWriteSettings"
+													},
+													"formatSettings": {
+														"type": "ParquetWriteSettings"
+													}
+												},
+												"enableStaging": true,
+												"stagingSettings": {
+													"linkedServiceName": {
+														"referenceName": "modineerlake",
+														"type": "LinkedServiceReference"
+													}
+												}
+											},
+											"inputs": [
+												{
+													"referenceName": "GloviaProd",
+													"type": "DatasetReference",
+													"parameters": {
+														"tablename": {
+															"value": "@variables('TableName')",
+															"type": "Expression"
+														},
+														"schemaname": {
+															"value": "@variables('SchemaName')",
+															"type": "Expression"
+														}
+													}
+												}
+											],
+											"outputs": [
+												{
+													"referenceName": "SinkParquet",
+													"type": "DatasetReference",
+													"parameters": {
+														"file_system": "unified-data-cluster",
+														"directory": {
+															"value": "@{variables('SchemaName')}/@{variables('TableName')}",
+															"type": "Expression"
+														},
+														"file_name": {
+															"value": "WO-INITIAL.parquet",
+															"type": "Expression"
+														}
+													}
+												}
+											]
 										}
 									]
 								}
@@ -2264,7 +2324,7 @@
 					},
 					"SchemaName": {
 						"type": "String",
-						"defaultValue": "GloviaProd"
+						"defaultValue": "GLOVIA_PROD"
 					}
 				},
 				"folder": {
@@ -2276,7 +2336,9 @@
 				"[concat(variables('workspaceId'), '/datasets/Modineer')]",
 				"[concat(variables('workspaceId'), '/datasets/NetsuiteODBCSource')]",
 				"[concat(variables('workspaceId'), '/datasets/SinkParquet')]",
-				"[concat(variables('workspaceId'), '/datasets/PlexODBC')]"
+				"[concat(variables('workspaceId'), '/datasets/PlexODBC')]",
+				"[concat(variables('workspaceId'), '/datasets/GloviaProd')]",
+				"[concat(variables('workspaceId'), '/linkedServices/modineerlake')]"
 			]
 		},
 		{
@@ -2870,6 +2932,10 @@
 													},
 													"DataCount": {
 														"value": "@activity('Check For Processing').output.firstRow.Count",
+														"type": "Expression"
+													},
+													"EstDate": {
+														"value": "@pipeline().parameters.EstDate",
 														"type": "Expression"
 													}
 												}
