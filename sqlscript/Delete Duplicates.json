@@ -1,0 +1,21 @@
+{
+	"name": "Delete Duplicates",
+	"properties": {
+		"description": "Takes table name and key columns to remove duplicates from non-hash partitioned tables.",
+		"folder": {
+			"name": "Maintenance"
+		},
+		"content": {
+			"query": "DECLARE @tablname nvarchar(50)\nSET @tablname = 'GLOVIA_PROD.WO'\n\nDELETE FROM @tablename\nWHERE CONCAT(CCN,MAS_LOC,WO_NUM,WO_LINE) IN (SELECT id\nFROM (SELECT CONCAT(CCN,MAS_LOC,WO_NUM,WO_LINE) AS id,\n    ROW_NUMBER() OVER(PARTITION BY CCN,MAS_LOC,WO_NUM,WO_LINE ORDER BY CCN,MAS_LOC,WO_NUM,WO_LINE) AS rnum\n    FROM @tablename)t\n    WHERE t.rnum > 1);",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "master",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
