@@ -196,7 +196,10 @@
 										"value": "@pipeline().parameters.item.DbName",
 										"type": "Expression"
 									},
-									"SchemaName": "Delta"
+									"SchemaName": {
+										"value": "@pipeline().parameters.item.StagingSchema",
+										"type": "Expression"
+									}
 								}
 							}
 						],
@@ -2028,6 +2031,167 @@
 				"[concat(variables('workspaceId'), '/datasets/NetsuiteODBCSource')]",
 				"[concat(variables('workspaceId'), '/datasets/SinkParquet')]",
 				"[concat(variables('workspaceId'), '/linkedServices/modineerworkspace-WorkspaceDefaultStorage')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Full Data Refresh')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "Get All Table Data",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "SqlPoolSource",
+								"sqlReaderQuery": {
+									"value": "SELECT * FROM Config.DataRefreshSchedule",
+									"type": "Expression"
+								},
+								"queryTimeout": "02:00:00"
+							},
+							"dataset": {
+								"referenceName": "Modineer",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "Determine Source",
+						"type": "Switch",
+						"dependsOn": [
+							{
+								"activity": "Get All Table Data",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"on": {
+								"value": "@activity('Get All Table Data').output.SchemaName",
+								"type": "Expression"
+							},
+							"cases": [
+								{
+									"value": "GLOVIA_PROD",
+									"activities": [
+										{
+											"name": "Replicate Tables",
+											"type": "Copy",
+											"dependsOn": [],
+											"policy": {
+												"timeout": "7.00:00:00",
+												"retry": 0,
+												"retryIntervalInSeconds": 30,
+												"secureOutput": false,
+												"secureInput": false
+											},
+											"userProperties": [],
+											"typeProperties": {
+												"source": {
+													"type": "OracleSource",
+													"oracleReaderQuery": {
+														"value": "@SELECT * FROM [activity('Get All Table Data').output.SchemaName].[activity('Get All Table Data').output.TableName]",
+														"type": "Expression"
+													},
+													"partitionOption": "None",
+													"queryTimeout": "02:00:00"
+												},
+												"sink": {
+													"type": "SqlDWSink",
+													"allowCopyCommand": true,
+													"copyCommandSettings": {}
+												},
+												"enableStaging": true,
+												"stagingSettings": {
+													"linkedServiceName": {
+														"referenceName": "modineerlake",
+														"type": "LinkedServiceReference"
+													}
+												}
+											},
+											"inputs": [
+												{
+													"referenceName": "GloviaProd",
+													"type": "DatasetReference",
+													"parameters": {
+														"tablename": {
+															"value": "@activity('Get All Table Data').output.TableName",
+															"type": "Expression"
+														},
+														"schemaname": {
+															"value": "@activity('Get All Table Data').output.SchemaName",
+															"type": "Expression"
+														}
+													}
+												}
+											],
+											"outputs": [
+												{
+													"referenceName": "AzureSynapseDatabase",
+													"type": "DatasetReference",
+													"parameters": {
+														"TableName": {
+															"value": "@activity('Get All Table Data').output.TableName",
+															"type": "Expression"
+														},
+														"DbName": {
+															"value": "@activity('Get All Table Data').output.DbName",
+															"type": "Expression"
+														},
+														"SchemaName": {
+															"value": "@activity('Get All Table Data').output.SchemaName",
+															"type": "Expression"
+														}
+													}
+												}
+											]
+										}
+									]
+								}
+							],
+							"defaultActivities": [
+								{
+									"name": "Wait1",
+									"type": "Wait",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"waitTimeInSeconds": 1
+									}
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"folder": {
+					"name": "Master Data"
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/datasets/Modineer')]",
+				"[concat(variables('workspaceId'), '/datasets/GloviaProd')]",
+				"[concat(variables('workspaceId'), '/datasets/AzureSynapseDatabase')]",
+				"[concat(variables('workspaceId'), '/linkedServices/modineerlake')]"
 			]
 		},
 		{
