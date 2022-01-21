@@ -74,17 +74,8 @@
 											"queryTimeout": "02:00:00"
 										},
 										"sink": {
-											"type": "SqlPoolSink",
-											"preCopyScript": {
-												"value": "TRUNCATE TABLE [@{activity('Get All Table Data').output.SchemaName}].[@{activity('Get All Table Data').output.TableName}]",
-												"type": "Expression"
-											},
-											"allowPolyBase": true,
-											"polyBaseSettings": {
-												"rejectValue": 0,
-												"rejectType": "value",
-												"useTypeDefault": true
-											}
+											"type": "SqlDWSink",
+											"allowCopyCommand": true
 										},
 										"enableStaging": true,
 										"stagingSettings": {
@@ -112,8 +103,22 @@
 									],
 									"outputs": [
 										{
-											"referenceName": "Modineer",
-											"type": "DatasetReference"
+											"referenceName": "AzureSynapseDatabase",
+											"type": "DatasetReference",
+											"parameters": {
+												"TableName": {
+													"value": "@activity('Get All Table Data').output.TableName",
+													"type": "Expression"
+												},
+												"DbName": {
+													"value": "@activity('Get All Table Data').output.DbName",
+													"type": "Expression"
+												},
+												"SchemaName": {
+													"value": "@activity('Get All Table Data').output.SchemaName",
+													"type": "Expression"
+												}
+											}
 										}
 									]
 								}
