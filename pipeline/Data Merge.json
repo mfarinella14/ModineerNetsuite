@@ -78,7 +78,12 @@
 						"partitionOption": "None"
 					},
 					"sink": {
-						"type": "SqlDWSink"
+						"type": "SqlDWSink",
+						"preCopyScript": {
+							"value": "DELETE FROM @{pipeline().parameters.item.SchemaName}.@{pipeline().parameters.item.TableName} WHERE CONCAT(@{pipeline().parameters.item.TableKeysArray}) IN (SELECT CONCAT(@{pipeline().parameters.item.TableKeysArray}) FROM @{pipeline().parameters.item.StagingSchema}.@{pipeline().parameters.item.TableName})",
+							"type": "Expression"
+						},
+						"disableMetricsCollection": false
 					},
 					"enableStaging": false,
 					"translator": {

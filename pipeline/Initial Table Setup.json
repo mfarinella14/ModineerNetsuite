@@ -288,7 +288,7 @@
 		"variables": {
 			"TableName": {
 				"type": "String",
-				"defaultValue": "WO"
+				"defaultValue": "PO"
 			},
 			"SchemaName": {
 				"type": "String",

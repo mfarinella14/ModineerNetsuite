@@ -283,7 +283,7 @@
 													"sink": {
 														"type": "SqlDWSink",
 														"preCopyScript": {
-															"value": "TRUNCATE TABLE Delta.@{item().TableName}",
+															"value": "TRUNCATE TABLE @{item().StagingSchema}.@{item().TableName}",
 															"type": "Expression"
 														},
 														"tableOption": "autoCreate",
@@ -320,7 +320,10 @@
 																"value": "@item().DbName",
 																"type": "Expression"
 															},
-															"SchemaName": "Delta"
+															"SchemaName": {
+																"value": "@item().StagingSchema",
+																"type": "Expression"
+															}
 														}
 													}
 												]
