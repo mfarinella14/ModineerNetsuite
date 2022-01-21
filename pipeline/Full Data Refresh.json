@@ -1,0 +1,138 @@
+{
+	"name": "Full Data Refresh",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get All Table Data",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlPoolSource",
+						"sqlReaderQuery": {
+							"value": "SELECT * FROM Config.DataRefreshSchedule",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00"
+					},
+					"dataset": {
+						"referenceName": "Modineer",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "Determine Source",
+				"type": "Switch",
+				"dependsOn": [
+					{
+						"activity": "Get All Table Data",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"on": {
+						"value": "@activity('Get All Table Data').output.SchemaName",
+						"type": "Expression"
+					},
+					"cases": [
+						{
+							"value": "GLOVIA_PROD",
+							"activities": [
+								{
+									"name": "Replicate Tables",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "OracleSource",
+											"partitionOption": "None",
+											"queryTimeout": "02:00:00"
+										},
+										"sink": {
+											"type": "SqlPoolSink",
+											"preCopyScript": {
+												"value": "TRUNCATE TABLE [@{activity('Get All Table Data').output.SchemaName}].[@{activity('Get All Table Data').output.TableName}]",
+												"type": "Expression"
+											},
+											"allowPolyBase": true,
+											"polyBaseSettings": {
+												"rejectValue": 0,
+												"rejectType": "value",
+												"useTypeDefault": true
+											}
+										},
+										"enableStaging": true,
+										"stagingSettings": {
+											"linkedServiceName": {
+												"referenceName": "modineerlake",
+												"type": "LinkedServiceReference"
+											}
+										}
+									},
+									"inputs": [
+										{
+											"referenceName": "GloviaProd",
+											"type": "DatasetReference",
+											"parameters": {
+												"tablename": {
+													"value": "@activity('Get All Table Data').output.TableName",
+													"type": "Expression"
+												},
+												"schemaname": {
+													"value": "@activity('Get All Table Data').output.SchemaName",
+													"type": "Expression"
+												}
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "Modineer",
+											"type": "DatasetReference"
+										}
+									]
+								}
+							]
+						}
+					],
+					"defaultActivities": [
+						{
+							"name": "Wait1",
+							"type": "Wait",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"waitTimeInSeconds": 1
+							}
+						}
+					]
+				}
+			}
+		],
+		"folder": {
+			"name": "Master Data"
+		},
+		"annotations": []
+	}
+}

@@ -108,7 +108,10 @@
 								"value": "@pipeline().parameters.item.DbName",
 								"type": "Expression"
 							},
-							"SchemaName": "Delta"
+							"SchemaName": {
+								"value": "@pipeline().parameters.item.StagingSchema",
+								"type": "Expression"
+							}
 						}
 					}
 				],
