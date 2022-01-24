@@ -2069,8 +2069,8 @@
 						}
 					},
 					{
-						"name": "Determine Source",
-						"type": "Switch",
+						"name": "ForEach1",
+						"type": "ForEach",
 						"dependsOn": [
 							{
 								"activity": "Get All Table Data",
@@ -2081,97 +2081,117 @@
 						],
 						"userProperties": [],
 						"typeProperties": {
-							"on": {
-								"value": "@activity('Get All Table Data').output.SchemaName",
+							"items": {
+								"value": "@activity('Get All Table Data').output.value",
 								"type": "Expression"
 							},
-							"cases": [
+							"isSequential": false,
+							"batchCount": 3,
+							"activities": [
 								{
-									"value": "GLOVIA_PROD",
-									"activities": [
-										{
-											"name": "Replicate Tables",
-											"type": "Copy",
-											"dependsOn": [],
-											"policy": {
-												"timeout": "7.00:00:00",
-												"retry": 0,
-												"retryIntervalInSeconds": 30,
-												"secureOutput": false,
-												"secureInput": false
-											},
-											"userProperties": [],
-											"typeProperties": {
-												"source": {
-													"type": "OracleSource",
-													"oracleReaderQuery": {
-														"value": "@SELECT * FROM [activity('Get All Table Data').output.SchemaName].[activity('Get All Table Data').output.TableName]",
-														"type": "Expression"
-													},
-													"partitionOption": "None",
-													"queryTimeout": "02:00:00"
-												},
-												"sink": {
-													"type": "SqlDWSink",
-													"allowCopyCommand": true,
-													"copyCommandSettings": {}
-												},
-												"enableStaging": true,
-												"stagingSettings": {
-													"linkedServiceName": {
-														"referenceName": "modineerlake",
-														"type": "LinkedServiceReference"
-													}
-												}
-											},
-											"inputs": [
-												{
-													"referenceName": "GloviaProd",
-													"type": "DatasetReference",
-													"parameters": {
-														"tablename": {
-															"value": "@activity('Get All Table Data').output.TableName",
-															"type": "Expression"
-														},
-														"schemaname": {
-															"value": "@activity('Get All Table Data').output.SchemaName",
-															"type": "Expression"
-														}
-													}
-												}
-											],
-											"outputs": [
-												{
-													"referenceName": "AzureSynapseDatabase",
-													"type": "DatasetReference",
-													"parameters": {
-														"TableName": {
-															"value": "@activity('Get All Table Data').output.TableName",
-															"type": "Expression"
-														},
-														"DbName": {
-															"value": "@activity('Get All Table Data').output.DbName",
-															"type": "Expression"
-														},
-														"SchemaName": {
-															"value": "@activity('Get All Table Data').output.SchemaName",
-															"type": "Expression"
-														}
-													}
-												}
-											]
-										}
-									]
-								}
-							],
-							"defaultActivities": [
-								{
-									"name": "Wait1",
-									"type": "Wait",
+									"name": "Determine Source_copy1",
+									"type": "Switch",
 									"dependsOn": [],
 									"userProperties": [],
 									"typeProperties": {
-										"waitTimeInSeconds": 1
+										"on": {
+											"value": "@item().SchemaName",
+											"type": "Expression"
+										},
+										"cases": [
+											{
+												"value": "GLOVIA_PROD",
+												"activities": [
+													{
+														"name": "Replicate Tables_copy1",
+														"type": "Copy",
+														"dependsOn": [],
+														"policy": {
+															"timeout": "7.00:00:00",
+															"retry": 0,
+															"retryIntervalInSeconds": 30,
+															"secureOutput": false,
+															"secureInput": false
+														},
+														"userProperties": [
+															{
+																"name": "Destination",
+																"value": "@{item().SchemaName}.@{item().TableName}"
+															}
+														],
+														"typeProperties": {
+															"source": {
+																"type": "OracleSource",
+																"partitionOption": "None",
+																"queryTimeout": "02:00:00"
+															},
+															"sink": {
+																"type": "SqlDWSink",
+																"preCopyScript": {
+																	"value": "TRUNCATE TABLE @{item().SchemaName}.@{item().TableName}",
+																	"type": "Expression"
+																},
+																"disableMetricsCollection": false
+															},
+															"enableStaging": true,
+															"stagingSettings": {
+																"linkedServiceName": {
+																	"referenceName": "modineerlake",
+																	"type": "LinkedServiceReference"
+																}
+															}
+														},
+														"inputs": [
+															{
+																"referenceName": "GloviaProd",
+																"type": "DatasetReference",
+																"parameters": {
+																	"tablename": {
+																		"value": "@item().TableName",
+																		"type": "Expression"
+																	},
+																	"schemaname": {
+																		"value": "@item().SchemaName",
+																		"type": "Expression"
+																	}
+																}
+															}
+														],
+														"outputs": [
+															{
+																"referenceName": "AzureSynapseDatabase",
+																"type": "DatasetReference",
+																"parameters": {
+																	"TableName": {
+																		"value": "@item().TableName",
+																		"type": "Expression"
+																	},
+																	"DbName": {
+																		"value": "@item().DbName",
+																		"type": "Expression"
+																	},
+																	"SchemaName": {
+																		"value": "@item().SchemaName",
+																		"type": "Expression"
+																	}
+																}
+															}
+														]
+													}
+												]
+											}
+										],
+										"defaultActivities": [
+											{
+												"name": "Wait1_copy1",
+												"type": "Wait",
+												"dependsOn": [],
+												"userProperties": [],
+												"typeProperties": {
+													"waitTimeInSeconds": 1
+												}
+											}
+										]
 									}
 								}
 							]
@@ -2492,7 +2512,7 @@
 				"variables": {
 					"TableName": {
 						"type": "String",
-						"defaultValue": "PO"
+						"defaultValue": "JE_DET"
 					},
 					"SchemaName": {
 						"type": "String",
