@@ -1,0 +1,21 @@
+{
+	"name": "GlobalShopData",
+	"type": "Microsoft.Synapse/workspaces/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "Odbc",
+		"typeProperties": {
+			"connectionString": {
+				"type": "SecureString",
+				"value": "**********"
+			},
+			"authenticationType": "Basic",
+			"userName": "Administrator",
+			"encryptedCredential": "eyJDcmVkZW50aWFsSWQiOiI2N2I2ZTVjYS1hZGRmLTQ4ODYtODkzMC1mMGMyZjlhNzI5ODUiLCJWZXJzaW9uIjoiMi4wIiwiQ2xhc3NUeXBlIjoiTWljcm9zb2Z0LkRhdGFQcm94eS5Db3JlLkludGVyU2VydmljZURhdGFDb250cmFjdC5DcmVkZW50aWFsU1UwNkNZMTQifQ=="
+		},
+		"connectVia": {
+			"referenceName": "GlobalShop",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}
