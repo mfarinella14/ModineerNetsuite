@@ -1,0 +1,23 @@
+{
+	"name": "GlobalShop_Table",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "GlobalShopData",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"TableName": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "OdbcTable",
+		"schema": [],
+		"typeProperties": {
+			"tableName": {
+				"value": "@dataset().TableName",
+				"type": "Expression"
+			}
+		}
+	}
+}

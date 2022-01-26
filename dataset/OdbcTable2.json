@@ -1,0 +1,12 @@
+{
+	"name": "OdbcTable2",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "GlobalShopData",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "OdbcTable",
+		"schema": []
+	}
+}

@@ -1,0 +1,123 @@
+{
+	"name": "GlobalShopInitial",
+	"properties": {
+		"activities": [
+			{
+				"name": "GetTableNames",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "OdbcSource",
+						"query": "SELECT * FROM dbo.fSQLTables ('GLOBALMCD', null, null) WHERE TABLE_TYPE LIKE 'TABLE' ORDER BY TABLE_NAME",
+						"queryTimeout": "02:00:00"
+					},
+					"dataset": {
+						"referenceName": "OdbcTable2",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "ForEachTable",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "GetTableNames",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('GetTableNames').output.value",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "GS_Table_Copy",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "OdbcSource",
+									"queryTimeout": "02:00:00"
+								},
+								"sink": {
+									"type": "ParquetSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "ParquetWriteSettings"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "GlobalShop_Table",
+									"type": "DatasetReference",
+									"parameters": {
+										"TableName": {
+											"value": "@item().TABLE_NAME",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "SinkParquet",
+									"type": "DatasetReference",
+									"parameters": {
+										"file_system": "globalshop",
+										"directory": {
+											"value": "@item().TABLE_QUALIFIER",
+											"type": "Expression"
+										},
+										"file_name": {
+											"value": "@{item().TABLE_NAME}.parquet",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"folder": {
+			"name": "Temp"
+		},
+		"annotations": []
+	}
+}
