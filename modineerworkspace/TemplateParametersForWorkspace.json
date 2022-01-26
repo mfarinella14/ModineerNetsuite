@@ -5,6 +5,12 @@
 		"workspaceName": {
 			"value": "modineerworkspace"
 		},
+		"GlobalShopData_connectionString": {
+			"value": ""
+		},
+		"GlobalShopData_password": {
+			"value": ""
+		},
 		"GloviaData_connectionString": {
 			"value": ""
 		},
@@ -31,6 +37,9 @@
 		},
 		"modineerworkspace-WorkspaceDefaultSqlServer_connectionString": {
 			"value": ""
+		},
+		"GlobalShopData_properties_typeProperties_userName": {
+			"value": "Administrator"
 		},
 		"HTM_NetSuite_properties_typeProperties_url": {
 			"value": "https://3675944.restlets.api.netsuite.com"
