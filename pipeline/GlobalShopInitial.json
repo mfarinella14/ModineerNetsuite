@@ -44,7 +44,6 @@
 						"value": "@activity('GetTableNames').output.value",
 						"type": "Expression"
 					},
-					"batchCount": 2,
 					"activities": [
 						{
 							"name": "GS_Table_Copy",
@@ -112,7 +111,7 @@
 									"parameters": {
 										"FileSystem": "globalshop",
 										"Directory": {
-											"value": "@item().TABLE_QUALIFIER",
+											"value": "@{item().TABLE_QUALIFIER}/@{item().TABLE_NAME}",
 											"type": "Expression"
 										},
 										"FileName": {
