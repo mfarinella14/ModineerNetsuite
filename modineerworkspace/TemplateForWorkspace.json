@@ -2275,7 +2275,6 @@
 								"value": "@activity('GetTableNames').output.value",
 								"type": "Expression"
 							},
-							"batchCount": 2,
 							"activities": [
 								{
 									"name": "GS_Table_Copy",
@@ -2343,7 +2342,7 @@
 											"parameters": {
 												"FileSystem": "globalshop",
 												"Directory": {
-													"value": "@item().TABLE_QUALIFIER",
+													"value": "@{item().TABLE_QUALIFIER}/@{item().TABLE_NAME}",
 													"type": "Expression"
 												},
 												"FileName": {
@@ -5190,6 +5189,40 @@
 			},
 			"dependsOn": [],
 			"location": "eastus"
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/GetCsvFromDataLake')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "modineerlake",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"FileSystem": {
+						"type": "string"
+					},
+					"Directory": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/modineerlake')]"
+			]
 		}
 	]
 }
