@@ -288,7 +288,7 @@
 		"variables": {
 			"TableName": {
 				"type": "String",
-				"defaultValue": "JE_DET"
+				"defaultValue": "REC_ISSU"
 			},
 			"SchemaName": {
 				"type": "String",

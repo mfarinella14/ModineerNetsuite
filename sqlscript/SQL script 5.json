@@ -1,0 +1,17 @@
+{
+	"name": "SQL script 5",
+	"properties": {
+		"content": {
+			"query": "DROP PROCEDURE [Config].[AddTableToRefresh]\nGO\n\nSET ANSI_NULLS ON\nGO\nSET QUOTED_IDENTIFIER ON\nGO\n\nCREATE PROC [Config].[AddTableToRefresh] @RowGroup [NVARCHAR](50),@DbName [NVARCHAR](50),@SchemaName [NVARCHAR](50),@TableName [NVARCHAR](50),@FileSystem [NVARCHAR](50),@TableKeysArray [NVARCHAR](500),@ConnectionType [NVARCHAR](50),@DataQuery [NVARCHAR](4000),@CurrentProcess [BIT],@TableMaxSCN [NVARCHAR](20),@RefreshInterval [NVARCHAR](15),@RefreshNumber [INT],@StagingSchema [NVARCHAR](20) AS\nBEGIN\n    -- body of the stored procedure\n    INSERT INTO Config.DataRefreshSchedule (RowGroup, DbName, SchemaName, TableName, FileSystem, TableKeysArray, ConnectionType, DataQuery, StagingSchema)\n    VALUES(@RowGroup, @DbName, @SchemaName, @TableName, @FileSystem, @TableKeysArray, @ConnectionType, @DataQuery, @StagingSchema)\n\n    DECLARE @ScheduleId INT = (SELECT TOP 1  Id \n                                FROM Config.DataRefreshSchedule \n                                WHERE RowGroup = @RowGroup\n                                AND DbName = @DbName\n                                AND SchemaName = @SchemaName\n                                AND TableName = @TableName\n                                AND FileSystem = @FileSystem)\n    INSERT INTO Config.DataRefreshScheduleDetail (ScheduleId, CurrentProcess, TableMaxSCN, RefreshInterval, RefreshNumber)\n    VALUES(@ScheduleId, @CurrentProcess, @TableMaxSCN, @RefreshInterval, @RefreshNumber)\n\n    UPDATE Config.DataRefreshScheduleDetail\n    SET LastRefreshStart = GETDATE(),\n    NextRefresh = GETDATE()\n    WHERE ScheduleId = @ScheduleId\n\nEND\nGO",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "Modineer",
+				"poolName": "Modineer"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

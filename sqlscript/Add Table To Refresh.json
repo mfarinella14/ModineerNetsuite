@@ -1,0 +1,20 @@
+{
+	"name": "Add Table To Refresh",
+	"properties": {
+		"folder": {
+			"name": "General"
+		},
+		"content": {
+			"query": "EXEC Config.AddTableToRefresh \n'GloviaProd',--RowGroup\n'Modineer', --DBName\n'GLOVIA_PROD', --SchemaName\n'REC_ISSU', --TableName\n'unified-data-cluster', --FileSystem\n'CCN,MAS_LOC,RECEIVER,REC_LINE,REC_ISSU_SEQ', --TableKeysArray\nNULL, --ConnectionType\nNULL, --DataQuery\n0, --CurrentProcess\nNULL, --TableMaxSCN\n'MINUTE', --RefreshInterval\n15, --RefreshNumber\n'GDelta' --StagingSchema",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "master",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
