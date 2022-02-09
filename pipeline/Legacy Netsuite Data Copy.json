@@ -1,0 +1,142 @@
+{
+	"name": "Legacy Netsuite Data Copy",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get Table Names",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlPoolSource",
+						"sqlReaderQuery": "select schema_name(t.schema_id) as schema_name, t.name as table_name, t.create_date, t.modify_date from sys.tables t where schema_name(t.schema_id) = 'dbo' order by schema_name,table_name;",
+						"queryTimeout": "02:00:00"
+					},
+					"dataset": {
+						"referenceName": "NetsuiteData",
+						"type": "DatasetReference",
+						"parameters": {
+							"Schema": "does not",
+							"TableName": "matter"
+						}
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "ForEach1",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Get Table Names",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get Table Names').output.value",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Copy Table",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [
+								{
+									"name": "Source",
+									"value": "@{item().schema_name}.@{item().table_name}"
+								},
+								{
+									"name": "Destination",
+									"value": "@{'legacy-htm'}/@{item().schema_name}/@{item().table_name}"
+								}
+							],
+							"typeProperties": {
+								"source": {
+									"type": "SqlPoolSource",
+									"queryTimeout": "02:00:00"
+								},
+								"sink": {
+									"type": "DelimitedTextSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextWriteSettings",
+										"quoteAllText": true,
+										"fileExtension": ".txt"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "NetsuiteData",
+									"type": "DatasetReference",
+									"parameters": {
+										"Schema": {
+											"value": "@item().schema_name",
+											"type": "Expression"
+										},
+										"TableName": {
+											"value": "@item().table_name",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "SinkCSV",
+									"type": "DatasetReference",
+									"parameters": {
+										"FileSystem": "legacy-htm",
+										"Directory": {
+											"value": "@{item().schema_name}/@{item().table_name}",
+											"type": "Expression"
+										},
+										"FileName": {
+											"value": "@{item().table_name}.csv",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"folder": {
+			"name": "Temp"
+		},
+		"annotations": []
+	}
+}
