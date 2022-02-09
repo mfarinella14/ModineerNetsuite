@@ -2670,7 +2670,7 @@
 				"variables": {
 					"TableName": {
 						"type": "String",
-						"defaultValue": "JE_DET"
+						"defaultValue": "REC_ISSU"
 					},
 					"SchemaName": {
 						"type": "String",
@@ -3611,6 +3611,40 @@
 			},
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/linkedServices/modineerworkspace-WorkspaceDefaultSqlServer')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/GetCsvFromDataLake')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "modineerlake",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"FileSystem": {
+						"type": "string"
+					},
+					"Directory": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/modineerlake')]"
 			]
 		},
 		{
@@ -4767,6 +4801,29 @@
 			"dependsOn": []
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/Add Table To Refresh')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "General"
+				},
+				"content": {
+					"query": "EXEC Config.AddTableToRefresh \n'GloviaProd',--RowGroup\n'Modineer', --DBName\n'GLOVIA_PROD', --SchemaName\n'REC_ISSU', --TableName\n'unified-data-cluster', --FileSystem\n'CCN,MAS_LOC,RECEIVER,REC_LINE,REC_ISSU_SEQ', --TableKeysArray\nNULL, --ConnectionType\nNULL, --DataQuery\n0, --CurrentProcess\nNULL, --TableMaxSCN\n'MINUTE', --RefreshInterval\n15, --RefreshNumber\n'GDelta' --StagingSchema",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "master",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/Delete Duplicates')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
@@ -4883,6 +4940,46 @@
 			"properties": {
 				"content": {
 					"query": "SET ANSI_NULLS ON\nGO\nSET QUOTED_IDENTIFIER ON\nGO\n\nALTER PROC [Config].[AddTableToRefresh] @RowGroup [NVARCHAR](50),@DbName [NVARCHAR](50),@SchemaName [NVARCHAR](50),@TableName [NVARCHAR](50),@FileSystem [NVARCHAR](50),@TableKeysArray [NVARCHAR](500),@ConnectionType [NVARCHAR](50),@DataQuery [NVARCHAR](4000),@CurrentProcess [BIT],@TableMaxSCN [NVARCHAR](20),@RefreshInterval [NVARCHAR](15),@RefreshNumber [INT],@StagingSchema [NVARCHAR](20) AS\nBEGIN\n    -- body of the stored procedure\n    INSERT INTO Config.DataRefreshSchedule (RowGroup, DbName, SchemaName, TableName, FileSystem, TableKeysArray, ConnectionType, DataQuery, StagingSchema)\n    VALUES(@RowGroup, @DbName, @SchemaName, @TableName, @FileSystem, @TableKeysArray, @ConnectionType, @DataQuery, @StagingSchema)\n\n    DECLARE @ScheduleId INT = (SELECT TOP 1  Id \n                                FROM Config.DataRefreshSchedule \n                                WHERE RowGroup = @RowGroup\n                                AND DbName = @DbName\n                                AND SchemaName = @SchemaName\n                                AND TableName = @TableName\n                                AND FileSystem = @FileSystem)\n    INSERT INTO Config.DataRefreshScheduleDetail (ScheduleId, CurrentProcess, TableMaxSCN, RefreshInterval, RefreshNumber)\n    VALUES(@ScheduleId, @CurrentProcess, @TableMaxSCN, @RefreshInterval, @RefreshNumber)\n\n    UPDATE Config.DataRefreshScheduleDetail\n    SET LastRefreshStart = GETDATE(),\n    NextRefresh = GETDATE()\n    WHERE ScheduleId = @ScheduleId\n\nEND\nGO",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "Modineer",
+						"poolName": "Modineer"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 4')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "IF NOT EXISTS (SELECT * FROM sys.objects O JOIN sys.schemas S ON O.schema_id = S.schema_id WHERE O.NAME = 'REC_ISSU' AND O.TYPE = 'U' AND S.NAME = 'GLOVIA_PROD')\nCREATE TABLE GLOVIA_PROD.REC_ISSU\n\t(\n\t [CCN] nvarchar(500),\n\t [MAS_LOC] nvarchar(500),\n\t [RECEIVER] nvarchar(500),\n\t [REC_LINE] nvarchar(500),\n\t [REC_ISSU_SEQ] nvarchar(500),\n\t [SERIAL] nvarchar(500),\n\t [ORDER_NUM] nvarchar(500),\n\t [ORDER_LINE] nvarchar(500),\n\t [TYPE_] nvarchar(500),\n\t [ORDER_BOM_USEQ] nvarchar(500),\n\t [OPERATION] nvarchar(500),\n\t [QTY] numeric(38,18),\n\t [SALES_CCN] nvarchar(500),\n\t [ISSUE_REVERSIBLE] nvarchar(500),\n\t [BIN] nvarchar(500),\n\t [LOCATION] nvarchar(500)\n\t)\nWITH\n\t(\n\tDISTRIBUTION = ROUND_ROBIN,\n\t CLUSTERED COLUMNSTORE INDEX\n\t -- HEAP\n\t)\nGO\n\n\nCREATE TABLE GDelta.REC_ISSU\n\t(\n\t [CCN] nvarchar(500),\n\t [MAS_LOC] nvarchar(500),\n\t [RECEIVER] nvarchar(500),\n\t [REC_LINE] nvarchar(500),\n\t [REC_ISSU_SEQ] nvarchar(500),\n\t [SERIAL] nvarchar(500),\n\t [ORDER_NUM] nvarchar(500),\n\t [ORDER_LINE] nvarchar(500),\n\t [TYPE_] nvarchar(500),\n\t [ORDER_BOM_USEQ] nvarchar(500),\n\t [OPERATION] nvarchar(500),\n\t [QTY] numeric(38,18),\n\t [SALES_CCN] nvarchar(500),\n\t [ISSUE_REVERSIBLE] nvarchar(500),\n\t [BIN] nvarchar(500),\n\t [LOCATION] nvarchar(500)\n\t)\nWITH\n\t(\n\tDISTRIBUTION = ROUND_ROBIN,\n\t CLUSTERED COLUMNSTORE INDEX\n\t -- HEAP\n\t)\nGO\n--Uncomment the 4 lines below to create a stored procedure for data pipeline orchestration​\n--CREATE PROC bulk_load_REC_ISSU\n--AS\n--BEGIN\nCOPY INTO GLOVIA_PROD.REC_ISSU\n(CCN 1, MAS_LOC 2, RECEIVER 3, REC_LINE 4, REC_ISSU_SEQ 5, SERIAL 6, ORDER_NUM 7, ORDER_LINE 8, TYPE_ 9, ORDER_BOM_USEQ 10, OPERATION 11, QTY 12, SALES_CCN 13, ISSUE_REVERSIBLE 14, BIN 15, LOCATION 16)\nFROM 'https://modineerlake.dfs.core.windows.net/unified-data-cluster/GLOVIA_PROD/REC_ISSU/WO-INITIAL.parquet'\nWITH\n(\n\tFILE_TYPE = 'PARQUET'\n\t,MAXERRORS = 0\n)\n--END\nGO\n\nSELECT TOP 100 * FROM GLOVIA_PROD.REC_ISSU\nGO",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "Modineer",
+						"poolName": "Modineer"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 5')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "DROP PROCEDURE [Config].[AddTableToRefresh]\nGO\n\nSET ANSI_NULLS ON\nGO\nSET QUOTED_IDENTIFIER ON\nGO\n\nCREATE PROC [Config].[AddTableToRefresh] @RowGroup [NVARCHAR](50),@DbName [NVARCHAR](50),@SchemaName [NVARCHAR](50),@TableName [NVARCHAR](50),@FileSystem [NVARCHAR](50),@TableKeysArray [NVARCHAR](500),@ConnectionType [NVARCHAR](50),@DataQuery [NVARCHAR](4000),@CurrentProcess [BIT],@TableMaxSCN [NVARCHAR](20),@RefreshInterval [NVARCHAR](15),@RefreshNumber [INT],@StagingSchema [NVARCHAR](20) AS\nBEGIN\n    -- body of the stored procedure\n    INSERT INTO Config.DataRefreshSchedule (RowGroup, DbName, SchemaName, TableName, FileSystem, TableKeysArray, ConnectionType, DataQuery, StagingSchema)\n    VALUES(@RowGroup, @DbName, @SchemaName, @TableName, @FileSystem, @TableKeysArray, @ConnectionType, @DataQuery, @StagingSchema)\n\n    DECLARE @ScheduleId INT = (SELECT TOP 1  Id \n                                FROM Config.DataRefreshSchedule \n                                WHERE RowGroup = @RowGroup\n                                AND DbName = @DbName\n                                AND SchemaName = @SchemaName\n                                AND TableName = @TableName\n                                AND FileSystem = @FileSystem)\n    INSERT INTO Config.DataRefreshScheduleDetail (ScheduleId, CurrentProcess, TableMaxSCN, RefreshInterval, RefreshNumber)\n    VALUES(@ScheduleId, @CurrentProcess, @TableMaxSCN, @RefreshInterval, @RefreshNumber)\n\n    UPDATE Config.DataRefreshScheduleDetail\n    SET LastRefreshStart = GETDATE(),\n    NextRefresh = GETDATE()\n    WHERE ScheduleId = @ScheduleId\n\nEND\nGO",
 					"metadata": {
 						"language": "sql"
 					},
@@ -5191,37 +5288,155 @@
 			"location": "eastus"
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/GetCsvFromDataLake')]",
-			"type": "Microsoft.Synapse/workspaces/datasets",
+			"name": "[concat(parameters('workspaceName'), '/Legacy Netsuite Data Copy')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
-				"linkedServiceName": {
-					"referenceName": "modineerlake",
-					"type": "LinkedServiceReference"
-				},
-				"parameters": {
-					"FileSystem": {
-						"type": "string"
+				"activities": [
+					{
+						"name": "Get Table Names",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "SqlPoolSource",
+								"sqlReaderQuery": "select schema_name(t.schema_id) as schema_name, t.name as table_name, t.create_date, t.modify_date from sys.tables t where schema_name(t.schema_id) = 'dbo' order by schema_name,table_name;",
+								"queryTimeout": "02:00:00"
+							},
+							"dataset": {
+								"referenceName": "NetsuiteData",
+								"type": "DatasetReference",
+								"parameters": {
+									"Schema": "does not",
+									"TableName": "matter"
+								}
+							},
+							"firstRowOnly": false
+						}
 					},
-					"Directory": {
-						"type": "string"
+					{
+						"name": "ForEach1",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "Get Table Names",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('Get Table Names').output.value",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "Copy Table",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [
+										{
+											"name": "Source",
+											"value": "@{item().schema_name}.@{item().table_name}"
+										},
+										{
+											"name": "Destination",
+											"value": "@{'legacy-htm'}/@{item().schema_name}/@{item().table_name}"
+										}
+									],
+									"typeProperties": {
+										"source": {
+											"type": "SqlPoolSource",
+											"queryTimeout": "02:00:00"
+										},
+										"sink": {
+											"type": "DelimitedTextSink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											},
+											"formatSettings": {
+												"type": "DelimitedTextWriteSettings",
+												"quoteAllText": true,
+												"fileExtension": ".txt"
+											}
+										},
+										"enableStaging": false,
+										"translator": {
+											"type": "TabularTranslator",
+											"typeConversion": true,
+											"typeConversionSettings": {
+												"allowDataTruncation": true,
+												"treatBooleanAsNumber": false
+											}
+										}
+									},
+									"inputs": [
+										{
+											"referenceName": "NetsuiteData",
+											"type": "DatasetReference",
+											"parameters": {
+												"Schema": {
+													"value": "@item().schema_name",
+													"type": "Expression"
+												},
+												"TableName": {
+													"value": "@item().table_name",
+													"type": "Expression"
+												}
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "SinkCSV",
+											"type": "DatasetReference",
+											"parameters": {
+												"FileSystem": "legacy-htm",
+												"Directory": {
+													"value": "@{item().schema_name}/@{item().table_name}",
+													"type": "Expression"
+												},
+												"FileName": {
+													"value": "@{item().table_name}.csv",
+													"type": "Expression"
+												}
+											}
+										}
+									]
+								}
+							]
+						}
 					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
 				},
-				"annotations": [],
-				"type": "DelimitedText",
-				"typeProperties": {
-					"location": {
-						"type": "AzureBlobFSLocation"
-					},
-					"columnDelimiter": ",",
-					"escapeChar": "\\",
-					"firstRowAsHeader": true,
-					"quoteChar": "\""
+				"folder": {
+					"name": "Temp"
 				},
-				"schema": []
+				"annotations": []
 			},
 			"dependsOn": [
-				"[concat(variables('workspaceId'), '/linkedServices/modineerlake')]"
+				"[concat(variables('workspaceId'), '/datasets/NetsuiteData')]",
+				"[concat(variables('workspaceId'), '/datasets/SinkCSV')]"
 			]
 		}
 	]
