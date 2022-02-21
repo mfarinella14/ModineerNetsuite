@@ -288,7 +288,7 @@
 		"variables": {
 			"TableName": {
 				"type": "String",
-				"defaultValue": "REC_ISSU"
+				"defaultValue": "CC_RATE"
 			},
 			"SchemaName": {
 				"type": "String",
