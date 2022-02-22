@@ -1,0 +1,20 @@
+{
+	"name": "Remove Duplicates",
+	"properties": {
+		"folder": {
+			"name": "Maintenance"
+		},
+		"content": {
+			"query": "--TODO: Make this dynamic if it works, then add this as a process to clean data after tables refresh.\n\nDELETE T\nFROM(\n    SELECT *,\n    DupRank = ROW_NUMBER() OVER(\n        PARTITION BY CONCAT(CCN,MAS_LOC,WO_NUM,WO_LINE)\n        ORDER BY (SELECT NULL)\n    )\n    FROM GLOVIA_PROD.WO\n) AS T\nWHERE DupRank > 1",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "Modineer",
+				"poolName": "Modineer"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
