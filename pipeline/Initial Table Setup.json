@@ -261,7 +261,7 @@
 													"type": "Expression"
 												},
 												"file_name": {
-													"value": "WO-INITIAL.parquet",
+													"value": "@{variables('TableName')}-Initial.parquet",
 													"type": "Expression"
 												}
 											}
@@ -288,7 +288,7 @@
 		"variables": {
 			"TableName": {
 				"type": "String",
-				"defaultValue": "CC_RATE"
+				"defaultValue": "HPL"
 			},
 			"SchemaName": {
 				"type": "String",
