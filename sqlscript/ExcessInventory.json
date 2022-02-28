@@ -1,0 +1,20 @@
+{
+	"name": "ExcessInventory",
+	"properties": {
+		"folder": {
+			"name": "Serverless"
+		},
+		"content": {
+			"query": "SELECT T1.ITEM, \nT1.REVISION,\nT1.MAS_LOC, \nT1.LOCATION, \nT1.OH_QTY, \nT2.STD_COST, \ncase  when T2.COST_METHOD like '%STD%' then T1.OH_QTY*T2.STD_COST else T1.OH_QTY*T3.AVG_COST end AS INV_VALUE, \nT3.YTD_DEP_DEM_ISS_QTY, \nT3.YTD_IND_DEM_ISS_QTY, \nT3.YTD_MFG_REC_QTY, \nT3.YTD_PI_ADJ_QTY, \nT3.YTD_PUR_RECEIPTS, \nT4.COMMODITY, \nT4.HPL, \nT2.COST_METHOD, \nT3.AVG_COST,\nCAST(GETDATE() AT TIME ZONE 'Eastern Standard Time' AS DATE) RunDate\nfrom GLOVIA_PROD.ITEM T4, \nGLOVIA_PROD.ITEM_LOC T1, \nGLOVIA_PROD.ITEM_CCN T2, \nGLOVIA_PROD.ITEM_ML T3\nwhere T4.ITEM=T1.ITEM \nand T4.REVISION=T1.REVISION \nand T4.ITEM=T2.ITEM \nand T4.REVISION=T2.REVISION \nand T3.CCN=T1.CCN \nand T3.MAS_LOC=T1.MAS_LOC \nand T3.ITEM=T1.ITEM \nand T3.REVISION=T1.REVISION \nand T4.COMMODITY<>'C'",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "master",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

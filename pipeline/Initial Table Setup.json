@@ -288,7 +288,7 @@
 		"variables": {
 			"TableName": {
 				"type": "String",
-				"defaultValue": "HPL"
+				"defaultValue": "CO_HDR"
 			},
 			"SchemaName": {
 				"type": "String",
