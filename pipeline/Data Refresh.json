@@ -501,7 +501,7 @@
 			"name": "Master Data"
 		},
 		"annotations": [],
-		"lastPublishTime": "2021-11-12T20:33:37Z"
+		"lastPublishTime": "2022-01-05T16:22:14Z"
 	},
 	"type": "Microsoft.Synapse/workspaces/pipelines"
 }

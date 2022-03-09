@@ -93,7 +93,6 @@
 															"value": "TRUNCATE TABLE @{item().SchemaName}.@{item().TableName}",
 															"type": "Expression"
 														},
-														"sqlWriterUseTableLock": true,
 														"disableMetricsCollection": false
 													},
 													"enableStaging": true,
@@ -164,6 +163,8 @@
 		"folder": {
 			"name": "Master Data"
 		},
-		"annotations": []
-	}
+		"annotations": [],
+		"lastPublishTime": "2022-01-24T14:09:12Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
 }

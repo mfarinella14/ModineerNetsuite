@@ -43,9 +43,8 @@
 				"nodeCount": 10,
 				"cores": 4,
 				"memory": 28,
-				"automaticScaleJobs": true
-			},
-			"sessionKeepAliveTimeout": 30
+				"extraHeader": null
+			}
 		},
 		"cells": [
 			{
@@ -63,6 +62,7 @@
 					"updateString=''\r\n",
 					"insertString=''"
 				],
+				"attachments": null,
 				"execution_count": 2
 			},
 			{
@@ -85,6 +85,7 @@
 					"    matchString += 'src.' + string + ' = tgt.' + string + ', '\r\n",
 					"matchedString = matchString.rstrip(', ')"
 				],
+				"attachments": null,
 				"execution_count": 10
 			},
 			{
@@ -111,6 +112,7 @@
 					"import delta\r\n",
 					""
 				],
+				"attachments": null,
 				"execution_count": 13
 			},
 			{
@@ -130,6 +132,7 @@
 				"source": [
 					"display(spark.sql(\"DESCRIBE HISTORY '\" + dfDataOrigionalPath +\"'\"))"
 				],
+				"attachments": null,
 				"execution_count": 20
 			},
 			{
@@ -157,6 +160,7 @@
 					"        .execute()\r\n",
 					")"
 				],
+				"attachments": null,
 				"execution_count": null
 			}
 		]

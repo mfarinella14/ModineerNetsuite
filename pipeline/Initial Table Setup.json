@@ -261,7 +261,7 @@
 													"type": "Expression"
 												},
 												"file_name": {
-													"value": "@{variables('TableName')}-Initial.parquet",
+													"value": "WO-INITIAL.parquet",
 													"type": "Expression"
 												}
 											}
@@ -288,7 +288,7 @@
 		"variables": {
 			"TableName": {
 				"type": "String",
-				"defaultValue": "CO_HDR"
+				"defaultValue": "REC_ISSU"
 			},
 			"SchemaName": {
 				"type": "String",
@@ -298,6 +298,8 @@
 		"folder": {
 			"name": "Temp"
 		},
-		"annotations": []
-	}
+		"annotations": [],
+		"lastPublishTime": "2022-02-09T14:27:57Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
 }

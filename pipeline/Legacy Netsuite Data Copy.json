@@ -137,6 +137,8 @@
 		"folder": {
 			"name": "Temp"
 		},
-		"annotations": []
-	}
+		"annotations": [],
+		"lastPublishTime": "2022-02-09T14:28:16Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
 }

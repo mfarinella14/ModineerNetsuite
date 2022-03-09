@@ -148,6 +148,8 @@
 		"folder": {
 			"name": "Master Data/Slave Pipelines"
 		},
-		"annotations": []
-	}
+		"annotations": [],
+		"lastPublishTime": "2022-01-21T16:17:49Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
 }

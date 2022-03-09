@@ -115,6 +115,8 @@
 		"folder": {
 			"name": "Master Data/Slave Pipelines/Plex Data Refresh"
 		},
-		"annotations": []
-	}
+		"annotations": [],
+		"lastPublishTime": "2022-01-17T20:56:32Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
 }

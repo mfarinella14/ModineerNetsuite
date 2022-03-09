@@ -108,6 +108,8 @@
 		"folder": {
 			"name": "Serverless Setup/Slave Pipeline"
 		},
-		"annotations": []
-	}
+		"annotations": [],
+		"lastPublishTime": "2021-11-18T20:24:44Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
 }

@@ -1,0 +1,28 @@
+{
+	"name": "Legacy HTM Work Order Processing",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"linkedService": {
+						"referenceName": "modineerworkspace-WorkspaceDefaultStorage",
+						"type": "LinkedServiceReference"
+					},
+					"name": "source1"
+				}
+			],
+			"sinks": [
+				{
+					"linkedService": {
+						"referenceName": "modineerworkspace-WorkspaceDefaultStorage",
+						"type": "LinkedServiceReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [],
+			"script": "source(output(\n\t\tabbrevtype as string,\n\t\tbalsegstatus as short,\n\t\tbillingstatus as boolean,\n\t\tclosedate as date,\n\t\tcommitted as boolean,\n\t\tcreatedby as short,\n\t\tcreateddate as date,\n\t\tcurrency as boolean,\n\t\tcustbodyhtallowworkorderclose as boolean,\n\t\tcustbodyhtisclosedworkorderbuildunbld as boolean,\n\t\tcustbodyhtproducionschedulewoline as integer,\n\t\tcustbodyhtproductionschedule as short,\n\t\tcustbodyhtsalesorder as integer,\n\t\tcustbodyhtsalesorderquantity as short,\n\t\tcustbodyhtworkorderttype as boolean,\n\t\tdaysopen as short,\n\t\tentity as short,\n\t\texchangerate as boolean,\n\t\tid as integer,\n\t\tincludeinforecast as boolean,\n\t\tisfinchrg as boolean,\n\t\tisreversal as boolean,\n\t\tlastmodifiedby as short,\n\t\tlastmodifieddate as date,\n\t\tnexus as boolean,\n\t\tnumber as integer,\n\t\tordpicked as boolean,\n\t\tpaymenthold as boolean,\n\t\tposting as boolean,\n\t\tpostingperiod as short,\n\t\tprintedpickingticket as boolean,\n\t\trecordtype as string,\n\t\tshipcomplete as boolean,\n\t\tstatus as string,\n\t\ttrandate as date,\n\t\ttrandisplayname as string,\n\t\ttranid as integer,\n\t\ttransactionnumber as integer,\n\t\ttype as string,\n\t\ttypebaseddocumentnumber as integer,\n\t\tuserevenuearrangement as boolean,\n\t\tvisibletocustomer as boolean,\n\t\tvoid as boolean,\n\t\tvoided as boolean\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinferDriftedColumnTypes: true,\n\tignoreNoFilesFound: false,\n\tmoveFiles: ['legacy-htm/work-order-headers','legacy-htm/2-processed-data/work-order-headers'],\n\tformat: 'json',\n\tfileSystem: 'unified-data-cluster',\n\tdocumentForm: 'documentPerLine',\n\tdateFormats: ['MM/dd/yyyy','MM-dd-yyyy','MM.dd.yyyy'],\n\ttimestampFormats: ['MM/dd/yyyy'],\n\tpreferredIntegralType: 'integer',\n\tpreferredFractionalType: 'double',\n\tbooleanFormat: ['true', 'false'],\n\twildcardPaths:['legacy-htm/work-order-headers/*']) ~> source1\nsource1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'json',\n\tfileSystem: 'unified-data-cluster',\n\tfolderPath: 'legacy-htm/1-staged-data/work-order-headers',\n\ttruncate: true,\n\tumask: 0022,\n\tpreCommands: [],\n\tpostCommands: [],\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tsaveOrder: 1) ~> sink1"
+		}
+	}
+}
