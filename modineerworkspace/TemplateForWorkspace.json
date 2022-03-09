@@ -340,283 +340,23 @@
 												"value": "GloviaProd",
 												"activities": [
 													{
-														"name": "Get SCN Number",
-														"type": "Lookup",
-														"dependsOn": [],
-														"policy": {
-															"timeout": "7.00:00:00",
-															"retry": 0,
-															"retryIntervalInSeconds": 30,
-															"secureOutput": false,
-															"secureInput": false
-														},
-														"userProperties": [],
-														"typeProperties": {
-															"source": {
-																"type": "OracleSource",
-																"oracleReaderQuery": {
-																	"value": "@concat('SELECT MAX(ORA_ROWSCN) AS \"SCNValue\" FROM ',item().SchemaName,'.',item().TableName)",
-																	"type": "Expression"
-																},
-																"partitionOption": "None",
-																"queryTimeout": "02:00:00"
-															},
-															"dataset": {
-																"referenceName": "GloviaProd",
-																"type": "DatasetReference",
-																"parameters": {
-																	"tablename": {
-																		"value": "@item().TableName",
-																		"type": "Expression"
-																	},
-																	"schemaname": {
-																		"value": "@item().SchemaName",
-																		"type": "Expression"
-																	}
-																}
-															}
-														}
-													},
-													{
-														"name": "Update SCN",
-														"type": "SqlPoolStoredProcedure",
-														"dependsOn": [
-															{
-																"activity": "Get SCN Number",
-																"dependencyConditions": [
-																	"Succeeded"
-																]
-															}
-														],
-														"policy": {
-															"timeout": "7.00:00:00",
-															"retry": 0,
-															"retryIntervalInSeconds": 30,
-															"secureOutput": false,
-															"secureInput": false
-														},
-														"userProperties": [],
-														"sqlPool": {
-															"referenceName": "Modineer",
-															"type": "SqlPoolReference"
-														},
-														"typeProperties": {
-															"storedProcedureName": "[Config].[UpdateSCN]",
-															"storedProcedureParameters": {
-																"Id": {
-																	"value": {
-																		"value": "@item().Id",
-																		"type": "Expression"
-																	},
-																	"type": "Int32"
-																},
-																"SCN": {
-																	"value": {
-																		"value": "@activity('Get SCN Number').output.firstRow.SCNValue",
-																		"type": "Expression"
-																	},
-																	"type": "Int64"
-																}
-															}
-														}
-													},
-													{
-														"name": "Glovia Raw Data Copy - ADLS2",
-														"type": "Copy",
-														"dependsOn": [
-															{
-																"activity": "Update SCN",
-																"dependencyConditions": [
-																	"Succeeded"
-																]
-															}
-														],
-														"policy": {
-															"timeout": "7.00:00:00",
-															"retry": 0,
-															"retryIntervalInSeconds": 30,
-															"secureOutput": true,
-															"secureInput": false
-														},
-														"userProperties": [
-															{
-																"name": "Source",
-																"value": "@{item().SchemaName}.@{item().TableName}"
-															},
-															{
-																"name": "Destination",
-																"value": "@{item().FileSystem}/@{concat(item().SchemaName, '/', item().TableName, '/', activity('Get EST Date').output.firstRow.Year, '/', activity('Get EST Date').output.firstRow.Month, '/', activity('Get EST Date').output.firstRow.Day)}/@{concat(item().TableName, '-', activity('Get EST Date').output.firstRow.EST)}"
-															}
-														],
-														"typeProperties": {
-															"source": {
-																"type": "OracleSource",
-																"oracleReaderQuery": {
-																	"value": "SELECT * FROM @{item().SchemaName}.@{item().TableName} VERSIONS BETWEEN TIMESTAMP TO_TIMESTAMP(REPLACE(REPLACE('@{addminutes(item().LastRefreshStart,-15)}','T',' '),'Z',''), 'YYYY-MM-DD HH24:MI:SS.FF') AND CURRENT_TIMESTAMP WHERE versions_operation IN ('D','U','I') AND versions_endtime IS NULL",
-																	"type": "Expression"
-																},
-																"partitionOption": "None",
-																"queryTimeout": "02:00:00"
-															},
-															"sink": {
-																"type": "ParquetSink",
-																"storeSettings": {
-																	"type": "AzureBlobFSWriteSettings"
-																},
-																"formatSettings": {
-																	"type": "ParquetWriteSettings"
-																}
-															},
-															"enableStaging": false
-														},
-														"inputs": [
-															{
-																"referenceName": "GloviaProd",
-																"type": "DatasetReference",
-																"parameters": {
-																	"tablename": {
-																		"value": "@item().TableName",
-																		"type": "Expression"
-																	},
-																	"schemaname": {
-																		"value": "@item().SchemaName",
-																		"type": "Expression"
-																	}
-																}
-															}
-														],
-														"outputs": [
-															{
-																"referenceName": "SinkParquet",
-																"type": "DatasetReference",
-																"parameters": {
-																	"file_system": {
-																		"value": "@item().FileSystem",
-																		"type": "Expression"
-																	},
-																	"directory": {
-																		"value": "@{item().SchemaName}/@{item().TableName}/@{activity('Get EST Date').output.firstRow.Year}/@{activity('Get EST Date').output.firstRow.Month}/@{activity('Get EST Date').output.firstRow.Day}",
-																		"type": "Expression"
-																	},
-																	"file_name": {
-																		"value": "@{item().TableName}-@{activity('Get EST Date').output.firstRow.EST}.parquet",
-																		"type": "Expression"
-																	}
-																}
-															}
-														]
-													},
-													{
-														"name": "Glovia Raw Data Copy - SQL Pool",
-														"type": "Copy",
-														"dependsOn": [
-															{
-																"activity": "Update SCN",
-																"dependencyConditions": [
-																	"Succeeded"
-																]
-															}
-														],
-														"policy": {
-															"timeout": "7.00:00:00",
-															"retry": 0,
-															"retryIntervalInSeconds": 30,
-															"secureOutput": true,
-															"secureInput": false
-														},
-														"userProperties": [
-															{
-																"name": "Source",
-																"value": "@{item().SchemaName}.@{item().TableName}"
-															},
-															{
-																"name": "Destination",
-																"value": "@{'Delta'}.@{item().TableName}"
-															}
-														],
-														"typeProperties": {
-															"source": {
-																"type": "OracleSource",
-																"oracleReaderQuery": {
-																	"value": "SELECT * FROM @{item().SchemaName}.@{item().TableName} VERSIONS BETWEEN TIMESTAMP TO_TIMESTAMP(REPLACE(REPLACE('@{addminutes(item().LastRefreshStart,-15)}','T',' '),'Z',''), 'YYYY-MM-DD HH24:MI:SS.FF') AND CURRENT_TIMESTAMP WHERE versions_operation IN ('D','U','I') AND versions_endtime IS NULL",
-																	"type": "Expression"
-																},
-																"partitionOption": "None",
-																"queryTimeout": "02:00:00"
-															},
-															"sink": {
-																"type": "SqlDWSink",
-																"preCopyScript": {
-																	"value": "TRUNCATE TABLE @{item().StagingSchema}.@{item().TableName}",
-																	"type": "Expression"
-																},
-																"tableOption": "autoCreate",
-																"disableMetricsCollection": false
-															},
-															"enableStaging": false
-														},
-														"inputs": [
-															{
-																"referenceName": "GloviaProd",
-																"type": "DatasetReference",
-																"parameters": {
-																	"tablename": {
-																		"value": "@item().TableName",
-																		"type": "Expression"
-																	},
-																	"schemaname": {
-																		"value": "@item().SchemaName",
-																		"type": "Expression"
-																	}
-																}
-															}
-														],
-														"outputs": [
-															{
-																"referenceName": "AzureSynapseDatabase",
-																"type": "DatasetReference",
-																"parameters": {
-																	"TableName": {
-																		"value": "@item().TableName",
-																		"type": "Expression"
-																	},
-																	"DbName": {
-																		"value": "@item().DbName",
-																		"type": "Expression"
-																	},
-																	"SchemaName": {
-																		"value": "@item().StagingSchema",
-																		"type": "Expression"
-																	}
-																}
-															}
-														]
-													},
-													{
-														"name": "Glovia Create Table Or Merge Data",
+														"name": "Glovia Delta Refresh",
 														"type": "ExecutePipeline",
-														"dependsOn": [
-															{
-																"activity": "Glovia Raw Data Copy - SQL Pool",
-																"dependencyConditions": [
-																	"Succeeded"
-																]
-															}
-														],
+														"dependsOn": [],
 														"userProperties": [],
 														"typeProperties": {
 															"pipeline": {
-																"referenceName": "Data Merge",
+																"referenceName": "Glovia Delta Refresh",
 																"type": "PipelineReference"
 															},
 															"waitOnCompletion": true,
 															"parameters": {
-																"item": {
+																"Item": {
 																	"value": "@item()",
 																	"type": "Expression"
 																},
-																"DateData": {
-																	"value": "@activity('Get EST Date').output.firstRow",
+																"EstDate": {
+																	"value": "@activity('Get EST Date').output",
 																	"type": "Expression"
 																}
 															}
@@ -851,10 +591,7 @@
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/datasets/Modineer')]",
 				"[concat(variables('workspaceId'), '/sqlPools/Modineer')]",
-				"[concat(variables('workspaceId'), '/datasets/GloviaProd')]",
-				"[concat(variables('workspaceId'), '/datasets/SinkParquet')]",
-				"[concat(variables('workspaceId'), '/datasets/AzureSynapseDatabase')]",
-				"[concat(variables('workspaceId'), '/pipelines/Data Merge')]",
+				"[concat(variables('workspaceId'), '/pipelines/Glovia Delta Refresh')]",
 				"[concat(variables('workspaceId'), '/pipelines/Netsuite Data Refresh')]",
 				"[concat(variables('workspaceId'), '/pipelines/Plex Data Refresh - Data Count')]"
 			]
@@ -1623,12 +1360,6 @@
 														"type": "SqlPoolStoredProcedure",
 														"dependsOn": [
 															{
-																"activity": "Dataflow1",
-																"dependencyConditions": [
-																	"Succeeded"
-																]
-															},
-															{
 																"activity": "Raw Data Copy",
 																"dependencyConditions": [
 																	"Failed"
@@ -1657,69 +1388,6 @@
 																	},
 																	"type": "Int32"
 																}
-															}
-														}
-													},
-													{
-														"name": "Dataflow1",
-														"type": "ExecuteDataFlow",
-														"dependsOn": [
-															{
-																"activity": "Raw Data Copy",
-																"dependencyConditions": [
-																	"Succeeded"
-																]
-															}
-														],
-														"policy": {
-															"timeout": "1.00:00:00",
-															"retry": 0,
-															"retryIntervalInSeconds": 30,
-															"secureOutput": false,
-															"secureInput": false
-														},
-														"userProperties": [],
-														"typeProperties": {
-															"dataflow": {
-																"referenceName": "UpdateSQLTableFromParquet",
-																"type": "DataFlowReference",
-																"parameters": {
-																	"SchemaName": {
-																		"value": "@item().SchemaName",
-																		"type": "Expression"
-																	},
-																	"TableName": {
-																		"value": "@item().TableName",
-																		"type": "Expression"
-																	},
-																	"KeyColumns": {
-																		"value": "item().TableKeysArray",
-																		"type": "Expression"
-																	}
-																},
-																"datasetParameters": {
-																	"NewData": {
-																		"FileSystem": {
-																			"value": "@item().FileSystem",
-																			"type": "Expression"
-																		},
-																		"FilePath": {
-																			"value": "@concat(item().SchemaName,'/',item().TableName,'/NotProcessed')",
-																			"type": "Expression"
-																		}
-																	},
-																	"SinkToAzureTable": {}
-																}
-															},
-															"staging": {},
-															"compute": {
-																"coreCount": 8,
-																"computeType": "General"
-															},
-															"traceLevel": "None",
-															"runConcurrently": true,
-															"cacheSinks": {
-																"firstRowOnly": true
 															}
 														}
 													}
@@ -1887,7 +1555,6 @@
 				"[concat(variables('workspaceId'), '/datasets/GloviaProd')]",
 				"[concat(variables('workspaceId'), '/sqlPools/Modineer')]",
 				"[concat(variables('workspaceId'), '/datasets/SinkParquet')]",
-				"[concat(variables('workspaceId'), '/dataflows/UpdateSQLTableFromParquet')]",
 				"[concat(variables('workspaceId'), '/pipelines/Netsuite Data Refresh')]"
 			]
 		},
@@ -2373,6 +2040,321 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/Glovia Delta Refresh')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "Get SCN Number",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "OracleSource",
+								"oracleReaderQuery": {
+									"value": "@concat('SELECT MAX(ORA_ROWSCN) AS \"SCNValue\" FROM ',pipeline().parameters.Item.SchemaName,'.',pipeline().parameters.Item.TableName)",
+									"type": "Expression"
+								},
+								"partitionOption": "None",
+								"queryTimeout": "02:00:00"
+							},
+							"dataset": {
+								"referenceName": "GloviaProd",
+								"type": "DatasetReference",
+								"parameters": {
+									"tablename": {
+										"value": "@pipeline().parameters.Item.TableName",
+										"type": "Expression"
+									},
+									"schemaname": {
+										"value": "@pipeline().parameters.Item.SchemaName",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					},
+					{
+						"name": "Update SCN",
+						"type": "SqlPoolStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "Get SCN Number",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"sqlPool": {
+							"referenceName": "Modineer",
+							"type": "SqlPoolReference"
+						},
+						"typeProperties": {
+							"storedProcedureName": "[Config].[UpdateSCN]",
+							"storedProcedureParameters": {
+								"Id": {
+									"value": {
+										"value": "@pipeline().parameters.Item.Id",
+										"type": "Expression"
+									},
+									"type": "Int32"
+								},
+								"SCN": {
+									"value": {
+										"value": "@activity('Get SCN Number').output.firstRow.SCNValue",
+										"type": "Expression"
+									},
+									"type": "Int64"
+								}
+							}
+						}
+					},
+					{
+						"name": "Glovia Raw Data Copy - ADLS2",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "Update SCN",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": true,
+							"secureInput": false
+						},
+						"userProperties": [
+							{
+								"name": "Source",
+								"value": "@{item().SchemaName}.@{item().TableName}"
+							},
+							{
+								"name": "Destination",
+								"value": "@{item().FileSystem}/@{concat(item().SchemaName, '/', item().TableName, '/', activity('Get EST Date').output.firstRow.Year, '/', activity('Get EST Date').output.firstRow.Month, '/', activity('Get EST Date').output.firstRow.Day)}/@{concat(item().TableName, '-', activity('Get EST Date').output.firstRow.EST)}"
+							}
+						],
+						"typeProperties": {
+							"source": {
+								"type": "OracleSource",
+								"oracleReaderQuery": {
+									"value": "SELECT * FROM @{pipeline().parameters.Item.SchemaName}.@{pipeline().parameters.Item.TableName} VERSIONS BETWEEN TIMESTAMP TO_TIMESTAMP(REPLACE(REPLACE('@{addminutes(pipeline().parameters.Item.LastRefreshStart,-15)}','T',' '),'Z',''), 'YYYY-MM-DD HH24:MI:SS.FF') AND CURRENT_TIMESTAMP WHERE versions_operation IN ('D','U','I') AND versions_endtime IS NULL",
+									"type": "Expression"
+								},
+								"partitionOption": "None",
+								"queryTimeout": "02:00:00"
+							},
+							"sink": {
+								"type": "ParquetSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "ParquetWriteSettings"
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "GloviaProd",
+								"type": "DatasetReference",
+								"parameters": {
+									"tablename": {
+										"value": "@pipeline().parameters.Item.TableName",
+										"type": "Expression"
+									},
+									"schemaname": {
+										"value": "@pipeline().parameters.Item.SchemaName",
+										"type": "Expression"
+									}
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "SinkParquet",
+								"type": "DatasetReference",
+								"parameters": {
+									"file_system": {
+										"value": "@pipeline().parameters.Item.FileSystem",
+										"type": "Expression"
+									},
+									"directory": {
+										"value": "@{pipeline().parameters.Item.SchemaName}/@{pipeline().parameters.Item.TableName}/@{pipeline().parameters.EstDate.firstRow.Year}/@{pipeline().parameters.EstDate.firstRow.Month}/@{pipeline().parameters.EstDate.firstRow.Day}",
+										"type": "Expression"
+									},
+									"file_name": {
+										"value": "@{pipeline().parameters.Item.TableName}-@{pipeline().parameters.EstDate.firstRow.EST}.parquet",
+										"type": "Expression"
+									}
+								}
+							}
+						]
+					},
+					{
+						"name": "Glovia Raw Data Copy - SQL Pool",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "Update SCN",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": true,
+							"secureInput": false
+						},
+						"userProperties": [
+							{
+								"name": "Source",
+								"value": "@{item().SchemaName}.@{item().TableName}"
+							},
+							{
+								"name": "Destination",
+								"value": "@{'Delta'}.@{item().TableName}"
+							}
+						],
+						"typeProperties": {
+							"source": {
+								"type": "OracleSource",
+								"oracleReaderQuery": {
+									"value": "SELECT * FROM @{pipeline().parameters.Item.SchemaName}.@{pipeline().parameters.Item.TableName} VERSIONS BETWEEN TIMESTAMP TO_TIMESTAMP(REPLACE(REPLACE('@{addminutes(pipeline().parameters.Item.LastRefreshStart,-15)}','T',' '),'Z',''), 'YYYY-MM-DD HH24:MI:SS.FF') AND CURRENT_TIMESTAMP WHERE versions_operation IN ('D','U','I') AND versions_endtime IS NULL",
+									"type": "Expression"
+								},
+								"partitionOption": "None",
+								"queryTimeout": "02:00:00"
+							},
+							"sink": {
+								"type": "SqlDWSink",
+								"preCopyScript": {
+									"value": "TRUNCATE TABLE @{pipeline().parameters.Item.StagingSchema}.@{pipeline().parameters.Item.TableName}",
+									"type": "Expression"
+								},
+								"tableOption": "autoCreate",
+								"disableMetricsCollection": false
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "GloviaProd",
+								"type": "DatasetReference",
+								"parameters": {
+									"tablename": {
+										"value": "@pipeline().parameters.Item.TableName",
+										"type": "Expression"
+									},
+									"schemaname": {
+										"value": "@pipeline().parameters.Item.SchemaName",
+										"type": "Expression"
+									}
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "AzureSynapseDatabase",
+								"type": "DatasetReference",
+								"parameters": {
+									"TableName": {
+										"value": "@pipeline().parameters.Item.TableName",
+										"type": "Expression"
+									},
+									"DbName": {
+										"value": "@pipeline().parameters.Item.DbName",
+										"type": "Expression"
+									},
+									"SchemaName": {
+										"value": "@pipeline().parameters.Item.StagingSchema",
+										"type": "Expression"
+									}
+								}
+							}
+						]
+					},
+					{
+						"name": "Glovia Create Table Or Merge Data",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "Glovia Raw Data Copy - SQL Pool",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "Data Merge",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {
+								"item": {
+									"value": "@pipeline().parameters.Item",
+									"type": "Expression"
+								},
+								"DateData": {
+									"value": "@pipeline().parameters.EstDate.firstRow",
+									"type": "Expression"
+								}
+							}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"parameters": {
+					"Item": {
+						"type": "object"
+					},
+					"EstDate": {
+						"type": "object"
+					}
+				},
+				"folder": {
+					"name": "Master Data/Slave Pipelines/Glovia Data Refresh"
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/datasets/GloviaProd')]",
+				"[concat(variables('workspaceId'), '/sqlPools/Modineer')]",
+				"[concat(variables('workspaceId'), '/datasets/SinkParquet')]",
+				"[concat(variables('workspaceId'), '/datasets/AzureSynapseDatabase')]",
+				"[concat(variables('workspaceId'), '/pipelines/Data Merge')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/Initial Table Setup')]",
 			"type": "Microsoft.Synapse/workspaces/pipelines",
 			"apiVersion": "2019-06-01-preview",
@@ -2639,7 +2621,7 @@
 															"type": "Expression"
 														},
 														"file_name": {
-															"value": "WO-INITIAL.parquet",
+															"value": "@{variables('TableName')}-Initial.parquet",
 															"type": "Expression"
 														}
 													}
@@ -2670,7 +2652,7 @@
 				"variables": {
 					"TableName": {
 						"type": "String",
-						"defaultValue": "REC_ISSU"
+						"defaultValue": "CO_HDR"
 					},
 					"SchemaName": {
 						"type": "String",
@@ -2689,6 +2671,158 @@
 				"[concat(variables('workspaceId'), '/datasets/PlexODBC')]",
 				"[concat(variables('workspaceId'), '/datasets/GloviaProd')]",
 				"[concat(variables('workspaceId'), '/linkedServices/modineerlake')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Legacy Netsuite Data Copy')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "Get Table Names",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "SqlPoolSource",
+								"sqlReaderQuery": "select schema_name(t.schema_id) as schema_name, t.name as table_name, t.create_date, t.modify_date from sys.tables t where schema_name(t.schema_id) = 'dbo' order by schema_name,table_name;",
+								"queryTimeout": "02:00:00"
+							},
+							"dataset": {
+								"referenceName": "NetsuiteData",
+								"type": "DatasetReference",
+								"parameters": {
+									"Schema": "does not",
+									"TableName": "matter"
+								}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "ForEach1",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "Get Table Names",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('Get Table Names').output.value",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "Copy Table",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [
+										{
+											"name": "Source",
+											"value": "@{item().schema_name}.@{item().table_name}"
+										},
+										{
+											"name": "Destination",
+											"value": "@{'legacy-htm'}/@{item().schema_name}/@{item().table_name}"
+										}
+									],
+									"typeProperties": {
+										"source": {
+											"type": "SqlPoolSource",
+											"queryTimeout": "02:00:00"
+										},
+										"sink": {
+											"type": "DelimitedTextSink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											},
+											"formatSettings": {
+												"type": "DelimitedTextWriteSettings",
+												"quoteAllText": true,
+												"fileExtension": ".txt"
+											}
+										},
+										"enableStaging": false,
+										"translator": {
+											"type": "TabularTranslator",
+											"typeConversion": true,
+											"typeConversionSettings": {
+												"allowDataTruncation": true,
+												"treatBooleanAsNumber": false
+											}
+										}
+									},
+									"inputs": [
+										{
+											"referenceName": "NetsuiteData",
+											"type": "DatasetReference",
+											"parameters": {
+												"Schema": {
+													"value": "@item().schema_name",
+													"type": "Expression"
+												},
+												"TableName": {
+													"value": "@item().table_name",
+													"type": "Expression"
+												}
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "SinkCSV",
+											"type": "DatasetReference",
+											"parameters": {
+												"FileSystem": "legacy-htm",
+												"Directory": {
+													"value": "@{item().schema_name}/@{item().table_name}",
+													"type": "Expression"
+												},
+												"FileName": {
+													"value": "@{item().table_name}.csv",
+													"type": "Expression"
+												}
+											}
+										}
+									]
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"folder": {
+					"name": "Temp"
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/datasets/NetsuiteData')]",
+				"[concat(variables('workspaceId'), '/datasets/SinkCSV')]"
 			]
 		},
 		{
@@ -4720,77 +4854,6 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/Legacy HTM Work Order Processing')]",
-			"type": "Microsoft.Synapse/workspaces/dataflows",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"type": "MappingDataFlow",
-				"typeProperties": {
-					"sources": [
-						{
-							"linkedService": {
-								"referenceName": "modineerworkspace-WorkspaceDefaultStorage",
-								"type": "LinkedServiceReference"
-							},
-							"name": "source1"
-						}
-					],
-					"sinks": [
-						{
-							"linkedService": {
-								"referenceName": "modineerworkspace-WorkspaceDefaultStorage",
-								"type": "LinkedServiceReference"
-							},
-							"name": "sink1"
-						}
-					],
-					"transformations": [],
-					"script": "source(output(\n\t\tabbrevtype as string,\n\t\tbalsegstatus as short,\n\t\tbillingstatus as boolean,\n\t\tclosedate as date,\n\t\tcommitted as boolean,\n\t\tcreatedby as short,\n\t\tcreateddate as date,\n\t\tcurrency as boolean,\n\t\tcustbodyhtallowworkorderclose as boolean,\n\t\tcustbodyhtisclosedworkorderbuildunbld as boolean,\n\t\tcustbodyhtproducionschedulewoline as integer,\n\t\tcustbodyhtproductionschedule as short,\n\t\tcustbodyhtsalesorder as integer,\n\t\tcustbodyhtsalesorderquantity as short,\n\t\tcustbodyhtworkorderttype as boolean,\n\t\tdaysopen as short,\n\t\tentity as short,\n\t\texchangerate as boolean,\n\t\tid as integer,\n\t\tincludeinforecast as boolean,\n\t\tisfinchrg as boolean,\n\t\tisreversal as boolean,\n\t\tlastmodifiedby as short,\n\t\tlastmodifieddate as date,\n\t\tnexus as boolean,\n\t\tnumber as integer,\n\t\tordpicked as boolean,\n\t\tpaymenthold as boolean,\n\t\tposting as boolean,\n\t\tpostingperiod as short,\n\t\tprintedpickingticket as boolean,\n\t\trecordtype as string,\n\t\tshipcomplete as boolean,\n\t\tstatus as string,\n\t\ttrandate as date,\n\t\ttrandisplayname as string,\n\t\ttranid as integer,\n\t\ttransactionnumber as integer,\n\t\ttype as string,\n\t\ttypebaseddocumentnumber as integer,\n\t\tuserevenuearrangement as boolean,\n\t\tvisibletocustomer as boolean,\n\t\tvoid as boolean,\n\t\tvoided as boolean\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinferDriftedColumnTypes: true,\n\tignoreNoFilesFound: false,\n\tmoveFiles: ['legacy-htm/work-order-headers','legacy-htm/2-processed-data/work-order-headers'],\n\tformat: 'json',\n\tfileSystem: 'unified-data-cluster',\n\tdocumentForm: 'documentPerLine',\n\tdateFormats: ['MM/dd/yyyy','MM-dd-yyyy','MM.dd.yyyy'],\n\ttimestampFormats: ['MM/dd/yyyy'],\n\tpreferredIntegralType: 'integer',\n\tpreferredFractionalType: 'double',\n\tbooleanFormat: ['true', 'false'],\n\twildcardPaths:['legacy-htm/work-order-headers/*']) ~> source1\nsource1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'json',\n\tfileSystem: 'unified-data-cluster',\n\tfolderPath: 'legacy-htm/1-staged-data/work-order-headers',\n\ttruncate: true,\n\tumask: 0022,\n\tpreCommands: [],\n\tpostCommands: [],\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tsaveOrder: 1) ~> sink1"
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('workspaceId'), '/linkedServices/modineerworkspace-WorkspaceDefaultStorage')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/UpdateSQLTableFromParquet')]",
-			"type": "Microsoft.Synapse/workspaces/dataflows",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"type": "MappingDataFlow",
-				"typeProperties": {
-					"sources": [
-						{
-							"dataset": {
-								"referenceName": "ReadParquet",
-								"type": "DatasetReference"
-							},
-							"name": "NewData"
-						}
-					],
-					"sinks": [
-						{
-							"linkedService": {
-								"referenceName": "modineerlake",
-								"type": "LinkedServiceReference"
-							},
-							"name": "SinkToAzureTable"
-						}
-					],
-					"transformations": [
-						{
-							"name": "AlterRow1"
-						}
-					],
-					"script": "parameters{\n\tSchemaName as string,\n\tTableName as string,\n\tKeyColumns as string\n}\nsource(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: true,\n\tformat: 'parquet') ~> NewData\nNewData alterRow(upsertIf(true())) ~> AlterRow1\nAlterRow1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'delta',\n\tfileSystem: 'unified-data-cluster',\n\tfolderPath: (concatWS('/',$SchemaName,$TableName,'Processed')),\n\tmergeSchema: false,\n\tautoCompact: false,\n\toptimizedWrite: false,\n\tvacuum: 0,\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:true,\n\tkeys:(split($KeyColumns, ',')),\n\tumask: 0022,\n\tpreCommands: [],\n\tpostCommands: [],\n\tdateFormat:'MM/dd/yyyy',\n\ttimestampFormat:'MM/dd/yyyy HH:mm:ss',\n\tbooleanFormat: ['1', '0'],\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tsaveOrder: 1) ~> SinkToAzureTable"
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('workspaceId'), '/datasets/ReadParquet')]",
-				"[concat(variables('workspaceId'), '/linkedServices/modineerlake')]"
-			]
-		},
-		{
 			"name": "[concat(parameters('workspaceName'), '/WorkspaceSystemIdentity')]",
 			"type": "Microsoft.Synapse/workspaces/credentials",
 			"apiVersion": "2019-06-01-preview",
@@ -4809,13 +4872,13 @@
 					"name": "General"
 				},
 				"content": {
-					"query": "EXEC Config.AddTableToRefresh \n'GloviaProd',--RowGroup\n'Modineer', --DBName\n'GLOVIA_PROD', --SchemaName\n'REC_ISSU', --TableName\n'unified-data-cluster', --FileSystem\n'CCN,MAS_LOC,RECEIVER,REC_LINE,REC_ISSU_SEQ', --TableKeysArray\nNULL, --ConnectionType\nNULL, --DataQuery\n0, --CurrentProcess\nNULL, --TableMaxSCN\n'MINUTE', --RefreshInterval\n15, --RefreshNumber\n'GDelta' --StagingSchema",
+					"query": "EXEC Config.AddTableToRefresh \n'GloviaProd',--RowGroup\n'Modineer', --DBName\n'GLOVIA_PROD', --SchemaName\n'CO_ITEM', --TableName\n'unified-data-cluster', --FileSystem\n'CCN,PUR_CCN,MAS_LOC,ITEM,REVISION,CO_HDR_ORD_STATUS,CO_NUM,CO_LINE', --TableKeysArray\nNULL, --ConnectionType\nNULL, --DataQuery\n0, --CurrentProcess\nNULL, --TableMaxSCN\n'MINUTE', --RefreshInterval\n15, --RefreshNumber\n'GDelta' --StagingSchema",
 					"metadata": {
 						"language": "sql"
 					},
 					"currentConnection": {
-						"databaseName": "master",
-						"poolName": "Built-in"
+						"databaseName": "Modineer",
+						"poolName": "Modineer"
 					},
 					"resultLimit": 5000
 				},
@@ -4871,6 +4934,29 @@
 			"dependsOn": []
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/ExcessInventory')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "Serverless"
+				},
+				"content": {
+					"query": "SELECT T1.ITEM, \nT1.REVISION,\nT1.MAS_LOC, \nT1.LOCATION, \nT1.OH_QTY, \nT2.STD_COST, \ncase  when T2.COST_METHOD like '%STD%' then T1.OH_QTY*T2.STD_COST else T1.OH_QTY*T3.AVG_COST end AS INV_VALUE, \nT3.YTD_DEP_DEM_ISS_QTY, \nT3.YTD_IND_DEM_ISS_QTY, \nT3.YTD_MFG_REC_QTY, \nT3.YTD_PI_ADJ_QTY, \nT3.YTD_PUR_RECEIPTS, \nT4.COMMODITY, \nT4.HPL, \nT2.COST_METHOD, \nT3.AVG_COST,\nCAST(GETDATE() AT TIME ZONE 'Eastern Standard Time' AS DATE) RunDate\nfrom GLOVIA_PROD.ITEM T4, \nGLOVIA_PROD.ITEM_LOC T1, \nGLOVIA_PROD.ITEM_CCN T2, \nGLOVIA_PROD.ITEM_ML T3\nwhere T4.ITEM=T1.ITEM \nand T4.REVISION=T1.REVISION \nand T4.ITEM=T2.ITEM \nand T4.REVISION=T2.REVISION \nand T3.CCN=T1.CCN \nand T3.MAS_LOC=T1.MAS_LOC \nand T3.ITEM=T1.ITEM \nand T3.REVISION=T1.REVISION \nand T4.COMMODITY<>'C'",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "master",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/List Stored Procedures')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
@@ -4894,92 +4980,15 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/SQL script 1')]",
+			"name": "[concat(parameters('workspaceName'), '/Remove Duplicates')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
-				"content": {
-					"query": "WITH cte\nAS (SELECT *, ROW_NUMBER()\nOVER (\npartition BY CONCAT(CCN,MAS_LOC,WO_NUM,WO_LINE)\nORDER BY (SELECT NULL) ) AS row_num\nFROM GLOVIA_PROD.WO)\nDELETE FROM cte\nWHERE row_num > 1",
-					"metadata": {
-						"language": "sql"
-					},
-					"currentConnection": {
-						"databaseName": "Modineer",
-						"poolName": "Modineer"
-					},
-					"resultLimit": 5000
+				"folder": {
+					"name": "Maintenance"
 				},
-				"type": "SqlQuery"
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/SQL script 2')]",
-			"type": "Microsoft.Synapse/workspaces/sqlscripts",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
 				"content": {
-					"query": "IF NOT EXISTS (SELECT * FROM sys.objects O JOIN sys.schemas S ON O.schema_id = S.schema_id WHERE O.NAME = 'PO' AND O.TYPE = 'U' AND S.NAME = 'GLOVIA_PROD')\nCREATE TABLE GLOVIA_PROD.PO\n\t(\n\t [PUR_CCN] nvarchar(500),\n\t [PO_NUM] nvarchar(500),\n\t [PO_LINE] nvarchar(500),\n\t [MAS_LOC] nvarchar(500),\n\t [ITEM] nvarchar(500),\n\t [REVISION] nvarchar(500),\n\t [VEN_ITEM] nvarchar(500),\n\t [VEN_REVISION] nvarchar(500),\n\t [STK] nvarchar(500),\n\t [QTY_ORD] numeric(38,18),\n\t [QTY_REC] numeric(38,18),\n\t [REQD_DATE] datetime2(7),\n\t [UM] nvarchar(500),\n\t [UNIT_PRICE] numeric(38,18),\n\t [WO_NUM] nvarchar(500),\n\t [WO_LINE] nvarchar(500),\n\t [OPERATION] nvarchar(500),\n\t [SO] nvarchar(500),\n\t [QA_STAT] numeric(38,18),\n\t [TAXABLE] nvarchar(500),\n\t [CERT_REQD] nvarchar(500),\n\t [CARRIER] nvarchar(500),\n\t [GL_ACCT] nvarchar(500),\n\t [AGC] nvarchar(500),\n\t [REQUESTOR] nvarchar(500),\n\t [PR_NUM] nvarchar(500),\n\t [PR_LINE] nvarchar(500),\n\t [MRP_NETTABLE] nvarchar(500),\n\t [COMP_DATE] datetime2(7),\n\t [CLOSED_DATE] datetime2(7),\n\t [SHIP_TO_NAME] nvarchar(500),\n\t [SHIP_TO_NAME2] nvarchar(500),\n\t [SHIP_TO_ADDR1] nvarchar(500),\n\t [SHIP_TO_ADDR2] nvarchar(500),\n\t [SHIP_TO_ADDR3] nvarchar(500),\n\t [SHIP_TO_ADDR4] nvarchar(500),\n\t [SHIP_TO_ADDR5] nvarchar(500),\n\t [SHIP_TO_ADDR6] nvarchar(500),\n\t [SHIP_TO_CITY] nvarchar(500),\n\t [SHIP_TO_STATE] nvarchar(500),\n\t [SHIP_TO_POST_CD] nvarchar(500),\n\t [SHIP_TO_COUNTRY] nvarchar(500),\n\t [SHIP_TO_ADDRESS_OVERRIDE] nvarchar(500),\n\t [SALES_CCN] nvarchar(500),\n\t [SO_LINE] nvarchar(500),\n\t [EXPED] nvarchar(500),\n\t [UNIT_PRICE_ADV_STAT] nvarchar(500),\n\t [BO_LINE] nvarchar(500),\n\t [LAST_DEL] numeric(38,18),\n\t [UM_SCALAR] nvarchar(500),\n\t [REC_TOLER] nvarchar(500),\n\t [DEL_COUNT] numeric(38,18),\n\t [LINE_CMNT_CTR] numeric(38,18),\n\t [ORIGIN_CNTRY] nvarchar(500),\n\t [DISPATCH_CNTRY] nvarchar(500),\n\t [BOOK_RATE] numeric(38,18),\n\t [BOOK_RATE_DIV] nvarchar(500),\n\t [FROZEN_DATE] datetime2(7),\n\t [VCH_TOLER] nvarchar(500),\n\t [NSD_ITEM_DESC] nvarchar(500),\n\t [PRICE_CHANGE_DATE] datetime2(7),\n\t [REV] numeric(38,18),\n\t [REC_AMT] numeric(38,18),\n\t [REC_HOME_AMT] numeric(38,18),\n\t [VOUCH_QTY] numeric(38,18),\n\t [BO_NUM] nvarchar(500),\n\t [CCN] nvarchar(500),\n\t [VQ] nvarchar(500),\n\t [VQ_LINE] nvarchar(500),\n\t [OUTSIDE_PROCESSING] nvarchar(500),\n\t [RP_SCHED] nvarchar(500),\n\t [RP_OPERATION] nvarchar(500),\n\t [SEIBAN] nvarchar(500),\n\t [DEMAND_SOURCE] nvarchar(500),\n\t [PRP] nvarchar(500),\n\t [TAR_COST1] numeric(38,18),\n\t [TAR_COST2] numeric(38,18),\n\t [TAR_COST3] numeric(38,18),\n\t [TAR_COST4] numeric(38,18),\n\t [TAR_COST5] numeric(38,18),\n\t [TAR_COST6] numeric(38,18),\n\t [TAR_COST7] numeric(38,18),\n\t [TAR_COST8] numeric(38,18),\n\t [TAR_COST9] numeric(38,18),\n\t [TAR_COST10] numeric(38,18),\n\t [TAR_COST11] numeric(38,18),\n\t [TAR_COST12] numeric(38,18),\n\t [TAR_COST13] numeric(38,18),\n\t [TAR_COST14] numeric(38,18),\n\t [TAR_COST15] numeric(38,18),\n\t [TAR_COST16] numeric(38,18),\n\t [TAR_COST17] numeric(38,18),\n\t [TAR_COST18] numeric(38,18),\n\t [TAR_COST19] numeric(38,18),\n\t [TAR_COST20] numeric(38,18),\n\t [TAR_COST21] numeric(38,18),\n\t [TAR_COST22] numeric(38,18),\n\t [TAR_COST23] numeric(38,18),\n\t [TAR_COST24] numeric(38,18),\n\t [TAR_LAST_UPDATE_DATE] datetime2(7),\n\t [TAR_HIS_ODOM] numeric(38,18),\n\t [NSD_VAT] nvarchar(500),\n\t [EDI_REVISION] nvarchar(500),\n\t [STATUS] nvarchar(500),\n\t [SO_LINE_EXISTS] nvarchar(500),\n\t [INV_FLAG] nvarchar(500),\n\t [INV_QTY] numeric(38,18),\n\t [LAST_RTV] numeric(38,18),\n\t [FPO_NUM] nvarchar(500),\n\t [FPO_LINE] nvarchar(500),\n\t [USER_ALPHA1] nvarchar(500),\n\t [USER_ALPHA2] nvarchar(500),\n\t [USER_ALPHA3] nvarchar(500),\n\t [USER_NUM1] numeric(38,18),\n\t [USER_NUM2] numeric(38,18),\n\t [USER_NUM3] numeric(38,18),\n\t [USER_DATE] datetime2(7),\n\t [USER_TIME] nvarchar(500),\n\t [DEPT] nvarchar(500),\n\t [MAT_SUPPLY] nvarchar(500),\n\t [PRICE_SOURCE] nvarchar(500),\n\t [PRICE_TYPE] nvarchar(500),\n\t [PRODUCTION_BUCKET] nvarchar(500),\n\t [WC] nvarchar(500),\n\t [ZERO_PRICE_REASON] nvarchar(500),\n\t [CANC_DATE] datetime2(7),\n\t [CANC_QTY] numeric(38,18),\n\t [CANC_RSN] nvarchar(500),\n\t [ORIG_UNIT_PRICE] numeric(38,18),\n\t [CMNT_WEB_VIEW] nvarchar(500),\n\t [COMP_SUB_METHOD] nvarchar(500),\n\t [COMP_TIME] nvarchar(500),\n\t [CONSIGN_BIN] nvarchar(500),\n\t [CONSIGN_LOCATION] nvarchar(500),\n\t [CONSIGN_QTY] numeric(38,18),\n\t [ORIG_ITEM] nvarchar(500),\n\t [ORIG_LINE] nvarchar(500),\n\t [ORIG_REVISION] nvarchar(500),\n\t [REQD_TIME] nvarchar(500),\n\t [STD_TEXT_WEB_VIEW] nvarchar(500)\n\t)\nWITH\n\t(\n\tDISTRIBUTION = ROUND_ROBIN,\n\t CLUSTERED COLUMNSTORE INDEX\n\t -- HEAP\n\t)\nGO\n\nCREATE TABLE GDelta.PO\n\t(\n\t [PUR_CCN] nvarchar(500),\n\t [PO_NUM] nvarchar(500),\n\t [PO_LINE] nvarchar(500),\n\t [MAS_LOC] nvarchar(500),\n\t [ITEM] nvarchar(500),\n\t [REVISION] nvarchar(500),\n\t [VEN_ITEM] nvarchar(500),\n\t [VEN_REVISION] nvarchar(500),\n\t [STK] nvarchar(500),\n\t [QTY_ORD] numeric(38,18),\n\t [QTY_REC] numeric(38,18),\n\t [REQD_DATE] datetime2(7),\n\t [UM] nvarchar(500),\n\t [UNIT_PRICE] numeric(38,18),\n\t [WO_NUM] nvarchar(500),\n\t [WO_LINE] nvarchar(500),\n\t [OPERATION] nvarchar(500),\n\t [SO] nvarchar(500),\n\t [QA_STAT] numeric(38,18),\n\t [TAXABLE] nvarchar(500),\n\t [CERT_REQD] nvarchar(500),\n\t [CARRIER] nvarchar(500),\n\t [GL_ACCT] nvarchar(500),\n\t [AGC] nvarchar(500),\n\t [REQUESTOR] nvarchar(500),\n\t [PR_NUM] nvarchar(500),\n\t [PR_LINE] nvarchar(500),\n\t [MRP_NETTABLE] nvarchar(500),\n\t [COMP_DATE] datetime2(7),\n\t [CLOSED_DATE] datetime2(7),\n\t [SHIP_TO_NAME] nvarchar(500),\n\t [SHIP_TO_NAME2] nvarchar(500),\n\t [SHIP_TO_ADDR1] nvarchar(500),\n\t [SHIP_TO_ADDR2] nvarchar(500),\n\t [SHIP_TO_ADDR3] nvarchar(500),\n\t [SHIP_TO_ADDR4] nvarchar(500),\n\t [SHIP_TO_ADDR5] nvarchar(500),\n\t [SHIP_TO_ADDR6] nvarchar(500),\n\t [SHIP_TO_CITY] nvarchar(500),\n\t [SHIP_TO_STATE] nvarchar(500),\n\t [SHIP_TO_POST_CD] nvarchar(500),\n\t [SHIP_TO_COUNTRY] nvarchar(500),\n\t [SHIP_TO_ADDRESS_OVERRIDE] nvarchar(500),\n\t [SALES_CCN] nvarchar(500),\n\t [SO_LINE] nvarchar(500),\n\t [EXPED] nvarchar(500),\n\t [UNIT_PRICE_ADV_STAT] nvarchar(500),\n\t [BO_LINE] nvarchar(500),\n\t [LAST_DEL] numeric(38,18),\n\t [UM_SCALAR] nvarchar(500),\n\t [REC_TOLER] nvarchar(500),\n\t [DEL_COUNT] numeric(38,18),\n\t [LINE_CMNT_CTR] numeric(38,18),\n\t [ORIGIN_CNTRY] nvarchar(500),\n\t [DISPATCH_CNTRY] nvarchar(500),\n\t [BOOK_RATE] numeric(38,18),\n\t [BOOK_RATE_DIV] nvarchar(500),\n\t [FROZEN_DATE] datetime2(7),\n\t [VCH_TOLER] nvarchar(500),\n\t [NSD_ITEM_DESC] nvarchar(500),\n\t [PRICE_CHANGE_DATE] datetime2(7),\n\t [REV] numeric(38,18),\n\t [REC_AMT] numeric(38,18),\n\t [REC_HOME_AMT] numeric(38,18),\n\t [VOUCH_QTY] numeric(38,18),\n\t [BO_NUM] nvarchar(500),\n\t [CCN] nvarchar(500),\n\t [VQ] nvarchar(500),\n\t [VQ_LINE] nvarchar(500),\n\t [OUTSIDE_PROCESSING] nvarchar(500),\n\t [RP_SCHED] nvarchar(500),\n\t [RP_OPERATION] nvarchar(500),\n\t [SEIBAN] nvarchar(500),\n\t [DEMAND_SOURCE] nvarchar(500),\n\t [PRP] nvarchar(500),\n\t [TAR_COST1] numeric(38,18),\n\t [TAR_COST2] numeric(38,18),\n\t [TAR_COST3] numeric(38,18),\n\t [TAR_COST4] numeric(38,18),\n\t [TAR_COST5] numeric(38,18),\n\t [TAR_COST6] numeric(38,18),\n\t [TAR_COST7] numeric(38,18),\n\t [TAR_COST8] numeric(38,18),\n\t [TAR_COST9] numeric(38,18),\n\t [TAR_COST10] numeric(38,18),\n\t [TAR_COST11] numeric(38,18),\n\t [TAR_COST12] numeric(38,18),\n\t [TAR_COST13] numeric(38,18),\n\t [TAR_COST14] numeric(38,18),\n\t [TAR_COST15] numeric(38,18),\n\t [TAR_COST16] numeric(38,18),\n\t [TAR_COST17] numeric(38,18),\n\t [TAR_COST18] numeric(38,18),\n\t [TAR_COST19] numeric(38,18),\n\t [TAR_COST20] numeric(38,18),\n\t [TAR_COST21] numeric(38,18),\n\t [TAR_COST22] numeric(38,18),\n\t [TAR_COST23] numeric(38,18),\n\t [TAR_COST24] numeric(38,18),\n\t [TAR_LAST_UPDATE_DATE] datetime2(7),\n\t [TAR_HIS_ODOM] numeric(38,18),\n\t [NSD_VAT] nvarchar(500),\n\t [EDI_REVISION] nvarchar(500),\n\t [STATUS] nvarchar(500),\n\t [SO_LINE_EXISTS] nvarchar(500),\n\t [INV_FLAG] nvarchar(500),\n\t [INV_QTY] numeric(38,18),\n\t [LAST_RTV] numeric(38,18),\n\t [FPO_NUM] nvarchar(500),\n\t [FPO_LINE] nvarchar(500),\n\t [USER_ALPHA1] nvarchar(500),\n\t [USER_ALPHA2] nvarchar(500),\n\t [USER_ALPHA3] nvarchar(500),\n\t [USER_NUM1] numeric(38,18),\n\t [USER_NUM2] numeric(38,18),\n\t [USER_NUM3] numeric(38,18),\n\t [USER_DATE] datetime2(7),\n\t [USER_TIME] nvarchar(500),\n\t [DEPT] nvarchar(500),\n\t [MAT_SUPPLY] nvarchar(500),\n\t [PRICE_SOURCE] nvarchar(500),\n\t [PRICE_TYPE] nvarchar(500),\n\t [PRODUCTION_BUCKET] nvarchar(500),\n\t [WC] nvarchar(500),\n\t [ZERO_PRICE_REASON] nvarchar(500),\n\t [CANC_DATE] datetime2(7),\n\t [CANC_QTY] numeric(38,18),\n\t [CANC_RSN] nvarchar(500),\n\t [ORIG_UNIT_PRICE] numeric(38,18),\n\t [CMNT_WEB_VIEW] nvarchar(500),\n\t [COMP_SUB_METHOD] nvarchar(500),\n\t [COMP_TIME] nvarchar(500),\n\t [CONSIGN_BIN] nvarchar(500),\n\t [CONSIGN_LOCATION] nvarchar(500),\n\t [CONSIGN_QTY] numeric(38,18),\n\t [ORIG_ITEM] nvarchar(500),\n\t [ORIG_LINE] nvarchar(500),\n\t [ORIG_REVISION] nvarchar(500),\n\t [REQD_TIME] nvarchar(500),\n\t [STD_TEXT_WEB_VIEW] nvarchar(500)\n\t)\nWITH\n\t(\n\tDISTRIBUTION = ROUND_ROBIN,\n\t CLUSTERED COLUMNSTORE INDEX\n\t -- HEAP\n\t)\nGO\n\n--Uncomment the 4 lines below to create a stored procedure for data pipeline orchestration​\n--CREATE PROC bulk_load_PO\n--AS\n--BEGIN\nCOPY INTO GLOVIA_PROD.PO\n(PUR_CCN 1, PO_NUM 2, PO_LINE 3, MAS_LOC 4, ITEM 5, REVISION 6, VEN_ITEM 7, VEN_REVISION 8, STK 9, QTY_ORD 10, QTY_REC 11, REQD_DATE 12, UM 13, UNIT_PRICE 14, WO_NUM 15, WO_LINE 16, OPERATION 17, SO 18, QA_STAT 19, TAXABLE 20, CERT_REQD 21, CARRIER 22, GL_ACCT 23, AGC 24, REQUESTOR 25, PR_NUM 26, PR_LINE 27, MRP_NETTABLE 28, COMP_DATE 29, CLOSED_DATE 30, SHIP_TO_NAME 31, SHIP_TO_NAME2 32, SHIP_TO_ADDR1 33, SHIP_TO_ADDR2 34, SHIP_TO_ADDR3 35, SHIP_TO_ADDR4 36, SHIP_TO_ADDR5 37, SHIP_TO_ADDR6 38, SHIP_TO_CITY 39, SHIP_TO_STATE 40, SHIP_TO_POST_CD 41, SHIP_TO_COUNTRY 42, SHIP_TO_ADDRESS_OVERRIDE 43, SALES_CCN 44, SO_LINE 45, EXPED 46, UNIT_PRICE_ADV_STAT 47, BO_LINE 48, LAST_DEL 49, UM_SCALAR 50, REC_TOLER 51, DEL_COUNT 52, LINE_CMNT_CTR 53, ORIGIN_CNTRY 54, DISPATCH_CNTRY 55, BOOK_RATE 56, BOOK_RATE_DIV 57, FROZEN_DATE 58, VCH_TOLER 59, NSD_ITEM_DESC 60, PRICE_CHANGE_DATE 61, REV 62, REC_AMT 63, REC_HOME_AMT 64, VOUCH_QTY 65, BO_NUM 66, CCN 67, VQ 68, VQ_LINE 69, OUTSIDE_PROCESSING 70, RP_SCHED 71, RP_OPERATION 72, SEIBAN 73, DEMAND_SOURCE 74, PRP 75, TAR_COST1 76, TAR_COST2 77, TAR_COST3 78, TAR_COST4 79, TAR_COST5 80, TAR_COST6 81, TAR_COST7 82, TAR_COST8 83, TAR_COST9 84, TAR_COST10 85, TAR_COST11 86, TAR_COST12 87, TAR_COST13 88, TAR_COST14 89, TAR_COST15 90, TAR_COST16 91, TAR_COST17 92, TAR_COST18 93, TAR_COST19 94, TAR_COST20 95, TAR_COST21 96, TAR_COST22 97, TAR_COST23 98, TAR_COST24 99, TAR_LAST_UPDATE_DATE 100, TAR_HIS_ODOM 101, NSD_VAT 102, EDI_REVISION 103, STATUS 104, SO_LINE_EXISTS 105, INV_FLAG 106, INV_QTY 107, LAST_RTV 108, FPO_NUM 109, FPO_LINE 110, USER_ALPHA1 111, USER_ALPHA2 112, USER_ALPHA3 113, USER_NUM1 114, USER_NUM2 115, USER_NUM3 116, USER_DATE 117, USER_TIME 118, DEPT 119, MAT_SUPPLY 120, PRICE_SOURCE 121, PRICE_TYPE 122, PRODUCTION_BUCKET 123, WC 124, ZERO_PRICE_REASON 125, CANC_DATE 126, CANC_QTY 127, CANC_RSN 128, ORIG_UNIT_PRICE 129, CMNT_WEB_VIEW 130, COMP_SUB_METHOD 131, COMP_TIME 132, CONSIGN_BIN 133, CONSIGN_LOCATION 134, CONSIGN_QTY 135, ORIG_ITEM 136, ORIG_LINE 137, ORIG_REVISION 138, REQD_TIME 139, STD_TEXT_WEB_VIEW 140)\nFROM 'https://modineerlake.dfs.core.windows.net/unified-data-cluster/GLOVIA_PROD/PO/WO-INITIAL.parquet'\nWITH\n(\n\tFILE_TYPE = 'PARQUET'\n\t,MAXERRORS = 0\n)\n--END\nGO\n\nSELECT TOP 100 * FROM GLOVIA_PROD.PO\nGO",
-					"metadata": {
-						"language": "sql"
-					},
-					"currentConnection": {
-						"databaseName": "Modineer",
-						"poolName": "Modineer"
-					},
-					"resultLimit": 5000
-				},
-				"type": "SqlQuery"
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/SQL script 3')]",
-			"type": "Microsoft.Synapse/workspaces/sqlscripts",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"content": {
-					"query": "SET ANSI_NULLS ON\nGO\nSET QUOTED_IDENTIFIER ON\nGO\n\nALTER PROC [Config].[AddTableToRefresh] @RowGroup [NVARCHAR](50),@DbName [NVARCHAR](50),@SchemaName [NVARCHAR](50),@TableName [NVARCHAR](50),@FileSystem [NVARCHAR](50),@TableKeysArray [NVARCHAR](500),@ConnectionType [NVARCHAR](50),@DataQuery [NVARCHAR](4000),@CurrentProcess [BIT],@TableMaxSCN [NVARCHAR](20),@RefreshInterval [NVARCHAR](15),@RefreshNumber [INT],@StagingSchema [NVARCHAR](20) AS\nBEGIN\n    -- body of the stored procedure\n    INSERT INTO Config.DataRefreshSchedule (RowGroup, DbName, SchemaName, TableName, FileSystem, TableKeysArray, ConnectionType, DataQuery, StagingSchema)\n    VALUES(@RowGroup, @DbName, @SchemaName, @TableName, @FileSystem, @TableKeysArray, @ConnectionType, @DataQuery, @StagingSchema)\n\n    DECLARE @ScheduleId INT = (SELECT TOP 1  Id \n                                FROM Config.DataRefreshSchedule \n                                WHERE RowGroup = @RowGroup\n                                AND DbName = @DbName\n                                AND SchemaName = @SchemaName\n                                AND TableName = @TableName\n                                AND FileSystem = @FileSystem)\n    INSERT INTO Config.DataRefreshScheduleDetail (ScheduleId, CurrentProcess, TableMaxSCN, RefreshInterval, RefreshNumber)\n    VALUES(@ScheduleId, @CurrentProcess, @TableMaxSCN, @RefreshInterval, @RefreshNumber)\n\n    UPDATE Config.DataRefreshScheduleDetail\n    SET LastRefreshStart = GETDATE(),\n    NextRefresh = GETDATE()\n    WHERE ScheduleId = @ScheduleId\n\nEND\nGO",
-					"metadata": {
-						"language": "sql"
-					},
-					"currentConnection": {
-						"databaseName": "Modineer",
-						"poolName": "Modineer"
-					},
-					"resultLimit": 5000
-				},
-				"type": "SqlQuery"
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/SQL script 4')]",
-			"type": "Microsoft.Synapse/workspaces/sqlscripts",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"content": {
-					"query": "IF NOT EXISTS (SELECT * FROM sys.objects O JOIN sys.schemas S ON O.schema_id = S.schema_id WHERE O.NAME = 'REC_ISSU' AND O.TYPE = 'U' AND S.NAME = 'GLOVIA_PROD')\nCREATE TABLE GLOVIA_PROD.REC_ISSU\n\t(\n\t [CCN] nvarchar(500),\n\t [MAS_LOC] nvarchar(500),\n\t [RECEIVER] nvarchar(500),\n\t [REC_LINE] nvarchar(500),\n\t [REC_ISSU_SEQ] nvarchar(500),\n\t [SERIAL] nvarchar(500),\n\t [ORDER_NUM] nvarchar(500),\n\t [ORDER_LINE] nvarchar(500),\n\t [TYPE_] nvarchar(500),\n\t [ORDER_BOM_USEQ] nvarchar(500),\n\t [OPERATION] nvarchar(500),\n\t [QTY] numeric(38,18),\n\t [SALES_CCN] nvarchar(500),\n\t [ISSUE_REVERSIBLE] nvarchar(500),\n\t [BIN] nvarchar(500),\n\t [LOCATION] nvarchar(500)\n\t)\nWITH\n\t(\n\tDISTRIBUTION = ROUND_ROBIN,\n\t CLUSTERED COLUMNSTORE INDEX\n\t -- HEAP\n\t)\nGO\n\n\nCREATE TABLE GDelta.REC_ISSU\n\t(\n\t [CCN] nvarchar(500),\n\t [MAS_LOC] nvarchar(500),\n\t [RECEIVER] nvarchar(500),\n\t [REC_LINE] nvarchar(500),\n\t [REC_ISSU_SEQ] nvarchar(500),\n\t [SERIAL] nvarchar(500),\n\t [ORDER_NUM] nvarchar(500),\n\t [ORDER_LINE] nvarchar(500),\n\t [TYPE_] nvarchar(500),\n\t [ORDER_BOM_USEQ] nvarchar(500),\n\t [OPERATION] nvarchar(500),\n\t [QTY] numeric(38,18),\n\t [SALES_CCN] nvarchar(500),\n\t [ISSUE_REVERSIBLE] nvarchar(500),\n\t [BIN] nvarchar(500),\n\t [LOCATION] nvarchar(500)\n\t)\nWITH\n\t(\n\tDISTRIBUTION = ROUND_ROBIN,\n\t CLUSTERED COLUMNSTORE INDEX\n\t -- HEAP\n\t)\nGO\n--Uncomment the 4 lines below to create a stored procedure for data pipeline orchestration​\n--CREATE PROC bulk_load_REC_ISSU\n--AS\n--BEGIN\nCOPY INTO GLOVIA_PROD.REC_ISSU\n(CCN 1, MAS_LOC 2, RECEIVER 3, REC_LINE 4, REC_ISSU_SEQ 5, SERIAL 6, ORDER_NUM 7, ORDER_LINE 8, TYPE_ 9, ORDER_BOM_USEQ 10, OPERATION 11, QTY 12, SALES_CCN 13, ISSUE_REVERSIBLE 14, BIN 15, LOCATION 16)\nFROM 'https://modineerlake.dfs.core.windows.net/unified-data-cluster/GLOVIA_PROD/REC_ISSU/WO-INITIAL.parquet'\nWITH\n(\n\tFILE_TYPE = 'PARQUET'\n\t,MAXERRORS = 0\n)\n--END\nGO\n\nSELECT TOP 100 * FROM GLOVIA_PROD.REC_ISSU\nGO",
-					"metadata": {
-						"language": "sql"
-					},
-					"currentConnection": {
-						"databaseName": "Modineer",
-						"poolName": "Modineer"
-					},
-					"resultLimit": 5000
-				},
-				"type": "SqlQuery"
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/SQL script 5')]",
-			"type": "Microsoft.Synapse/workspaces/sqlscripts",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"content": {
-					"query": "DROP PROCEDURE [Config].[AddTableToRefresh]\nGO\n\nSET ANSI_NULLS ON\nGO\nSET QUOTED_IDENTIFIER ON\nGO\n\nCREATE PROC [Config].[AddTableToRefresh] @RowGroup [NVARCHAR](50),@DbName [NVARCHAR](50),@SchemaName [NVARCHAR](50),@TableName [NVARCHAR](50),@FileSystem [NVARCHAR](50),@TableKeysArray [NVARCHAR](500),@ConnectionType [NVARCHAR](50),@DataQuery [NVARCHAR](4000),@CurrentProcess [BIT],@TableMaxSCN [NVARCHAR](20),@RefreshInterval [NVARCHAR](15),@RefreshNumber [INT],@StagingSchema [NVARCHAR](20) AS\nBEGIN\n    -- body of the stored procedure\n    INSERT INTO Config.DataRefreshSchedule (RowGroup, DbName, SchemaName, TableName, FileSystem, TableKeysArray, ConnectionType, DataQuery, StagingSchema)\n    VALUES(@RowGroup, @DbName, @SchemaName, @TableName, @FileSystem, @TableKeysArray, @ConnectionType, @DataQuery, @StagingSchema)\n\n    DECLARE @ScheduleId INT = (SELECT TOP 1  Id \n                                FROM Config.DataRefreshSchedule \n                                WHERE RowGroup = @RowGroup\n                                AND DbName = @DbName\n                                AND SchemaName = @SchemaName\n                                AND TableName = @TableName\n                                AND FileSystem = @FileSystem)\n    INSERT INTO Config.DataRefreshScheduleDetail (ScheduleId, CurrentProcess, TableMaxSCN, RefreshInterval, RefreshNumber)\n    VALUES(@ScheduleId, @CurrentProcess, @TableMaxSCN, @RefreshInterval, @RefreshNumber)\n\n    UPDATE Config.DataRefreshScheduleDetail\n    SET LastRefreshStart = GETDATE(),\n    NextRefresh = GETDATE()\n    WHERE ScheduleId = @ScheduleId\n\nEND\nGO",
+					"query": "--TODO: Make this dynamic if it works, then add this as a process to clean data after tables refresh.\n\nDELETE T\nFROM(\n    SELECT *,\n    DupRank = ROW_NUMBER() OVER(\n        PARTITION BY CONCAT(CCN,MAS_LOC,WO_NUM,WO_LINE)\n        ORDER BY (SELECT NULL)\n    )\n    FROM GLOVIA_PROD.WO\n) AS T\nWHERE DupRank > 1",
 					"metadata": {
 						"language": "sql"
 					},
@@ -5040,7 +5049,8 @@
 						"nodeCount": 10,
 						"cores": 4,
 						"memory": 28
-					}
+					},
+					"sessionKeepAliveTimeout": 30
 				},
 				"cells": [
 					{
@@ -5210,7 +5220,8 @@
 						"nodeCount": 10,
 						"cores": 4,
 						"memory": 28
-					}
+					},
+					"sessionKeepAliveTimeout": 30
 				},
 				"cells": [
 					{
@@ -5286,158 +5297,6 @@
 			},
 			"dependsOn": [],
 			"location": "eastus"
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/Legacy Netsuite Data Copy')]",
-			"type": "Microsoft.Synapse/workspaces/pipelines",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"activities": [
-					{
-						"name": "Get Table Names",
-						"type": "Lookup",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "SqlPoolSource",
-								"sqlReaderQuery": "select schema_name(t.schema_id) as schema_name, t.name as table_name, t.create_date, t.modify_date from sys.tables t where schema_name(t.schema_id) = 'dbo' order by schema_name,table_name;",
-								"queryTimeout": "02:00:00"
-							},
-							"dataset": {
-								"referenceName": "NetsuiteData",
-								"type": "DatasetReference",
-								"parameters": {
-									"Schema": "does not",
-									"TableName": "matter"
-								}
-							},
-							"firstRowOnly": false
-						}
-					},
-					{
-						"name": "ForEach1",
-						"type": "ForEach",
-						"dependsOn": [
-							{
-								"activity": "Get Table Names",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"userProperties": [],
-						"typeProperties": {
-							"items": {
-								"value": "@activity('Get Table Names').output.value",
-								"type": "Expression"
-							},
-							"activities": [
-								{
-									"name": "Copy Table",
-									"type": "Copy",
-									"dependsOn": [],
-									"policy": {
-										"timeout": "7.00:00:00",
-										"retry": 0,
-										"retryIntervalInSeconds": 30,
-										"secureOutput": false,
-										"secureInput": false
-									},
-									"userProperties": [
-										{
-											"name": "Source",
-											"value": "@{item().schema_name}.@{item().table_name}"
-										},
-										{
-											"name": "Destination",
-											"value": "@{'legacy-htm'}/@{item().schema_name}/@{item().table_name}"
-										}
-									],
-									"typeProperties": {
-										"source": {
-											"type": "SqlPoolSource",
-											"queryTimeout": "02:00:00"
-										},
-										"sink": {
-											"type": "DelimitedTextSink",
-											"storeSettings": {
-												"type": "AzureBlobFSWriteSettings"
-											},
-											"formatSettings": {
-												"type": "DelimitedTextWriteSettings",
-												"quoteAllText": true,
-												"fileExtension": ".txt"
-											}
-										},
-										"enableStaging": false,
-										"translator": {
-											"type": "TabularTranslator",
-											"typeConversion": true,
-											"typeConversionSettings": {
-												"allowDataTruncation": true,
-												"treatBooleanAsNumber": false
-											}
-										}
-									},
-									"inputs": [
-										{
-											"referenceName": "NetsuiteData",
-											"type": "DatasetReference",
-											"parameters": {
-												"Schema": {
-													"value": "@item().schema_name",
-													"type": "Expression"
-												},
-												"TableName": {
-													"value": "@item().table_name",
-													"type": "Expression"
-												}
-											}
-										}
-									],
-									"outputs": [
-										{
-											"referenceName": "SinkCSV",
-											"type": "DatasetReference",
-											"parameters": {
-												"FileSystem": "legacy-htm",
-												"Directory": {
-													"value": "@{item().schema_name}/@{item().table_name}",
-													"type": "Expression"
-												},
-												"FileName": {
-													"value": "@{item().table_name}.csv",
-													"type": "Expression"
-												}
-											}
-										}
-									]
-								}
-							]
-						}
-					}
-				],
-				"policy": {
-					"elapsedTimeMetric": {},
-					"cancelAfter": {}
-				},
-				"folder": {
-					"name": "Temp"
-				},
-				"annotations": []
-			},
-			"dependsOn": [
-				"[concat(variables('workspaceId'), '/datasets/NetsuiteData')]",
-				"[concat(variables('workspaceId'), '/datasets/SinkCSV')]"
-			]
 		}
 	]
 }
