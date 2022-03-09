@@ -104,11 +104,11 @@
 				"userProperties": [
 					{
 						"name": "Source",
-						"value": "@{item().SchemaName}.@{item().TableName}"
+						"value": "@{pipeline().parameters.Item.SchemaName}.@{pipeline().parameters.Item.TableName}"
 					},
 					{
 						"name": "Destination",
-						"value": "@{item().FileSystem}/@{concat(item().SchemaName, '/', item().TableName, '/', activity('Get EST Date').output.firstRow.Year, '/', activity('Get EST Date').output.firstRow.Month, '/', activity('Get EST Date').output.firstRow.Day)}/@{concat(item().TableName, '-', activity('Get EST Date').output.firstRow.EST)}"
+						"value": "@{pipeline().parameters.Item.FileSystem}/@{concat(pipeline().parameters.Item.SchemaName, '/', pipeline().parameters.Item.TableName, '/', pipeline().parameters.EstDate.firstRow.Year, '/', pipeline().parameters.EstDate.firstRow.Month, '/', pipeline().parameters.EstDate.firstRow.Day)}/@{concat(pipeline().parameters.Item.TableName, '-', pipeline().parameters.EstDate.firstRow.EST, '.parquet')}"
 					}
 				],
 				"typeProperties": {
@@ -190,11 +190,11 @@
 				"userProperties": [
 					{
 						"name": "Source",
-						"value": "@{item().SchemaName}.@{item().TableName}"
+						"value": "@{pipeline().parameters.Item.SchemaName}.@{pipeline().parameters.Item.TableName}"
 					},
 					{
 						"name": "Destination",
-						"value": "@{'Delta'}.@{item().TableName}"
+						"value": "@{pipeline().parameters.Item.StagingSchema}.@{pipeline().parameters.Item.TableName}"
 					}
 				],
 				"typeProperties": {
