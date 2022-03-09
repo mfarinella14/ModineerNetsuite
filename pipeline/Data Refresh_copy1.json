@@ -239,12 +239,6 @@
 												"type": "SqlPoolStoredProcedure",
 												"dependsOn": [
 													{
-														"activity": "Dataflow1",
-														"dependencyConditions": [
-															"Succeeded"
-														]
-													},
-													{
 														"activity": "Raw Data Copy",
 														"dependencyConditions": [
 															"Failed"
@@ -273,67 +267,6 @@
 															},
 															"type": "Int32"
 														}
-													}
-												}
-											},
-											{
-												"name": "Dataflow1",
-												"type": "ExecuteDataFlow",
-												"dependsOn": [
-													{
-														"activity": "Raw Data Copy",
-														"dependencyConditions": [
-															"Succeeded"
-														]
-													}
-												],
-												"policy": {
-													"timeout": "1.00:00:00",
-													"retry": 0,
-													"retryIntervalInSeconds": 30,
-													"secureOutput": false,
-													"secureInput": false
-												},
-												"userProperties": [],
-												"typeProperties": {
-													"dataflow": {
-														"referenceName": "UpdateSQLTableFromParquet",
-														"type": "DataFlowReference",
-														"parameters": {
-															"SchemaName": {
-																"value": "@item().SchemaName",
-																"type": "Expression"
-															},
-															"TableName": {
-																"value": "@item().TableName",
-																"type": "Expression"
-															},
-															"KeyColumns": {
-																"value": "item().TableKeysArray",
-																"type": "Expression"
-															}
-														},
-														"datasetParameters": {
-															"NewData": {
-																"FileSystem": {
-																	"value": "@item().FileSystem",
-																	"type": "Expression"
-																},
-																"FilePath": {
-																	"value": "@concat(item().SchemaName,'/',item().TableName,'/NotProcessed')",
-																	"type": "Expression"
-																}
-															}
-														}
-													},
-													"compute": {
-														"coreCount": 8,
-														"computeType": "General"
-													},
-													"traceLevel": "None",
-													"runConcurrently": true,
-													"cacheSinks": {
-														"firstRowOnly": true
 													}
 												}
 											}
