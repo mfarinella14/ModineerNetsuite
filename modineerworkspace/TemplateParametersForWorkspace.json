@@ -38,6 +38,9 @@
 		"modineerworkspace-WorkspaceDefaultSqlServer_connectionString": {
 			"value": ""
 		},
+		"Infor_connectionString": {
+			"value": ""
+		},
 		"GlobalShopData_properties_typeProperties_userName": {
 			"value": "Administrator"
 		},
