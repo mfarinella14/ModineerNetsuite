@@ -1,0 +1,7 @@
+{
+	"name": "Infor-Pulverman",
+	"properties": {
+		"type": "SelfHosted",
+		"description": "Data access to Pulverman Infor Visual ERP"
+	}
+}
