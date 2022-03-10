@@ -1,0 +1,12 @@
+{
+	"name": "Infor_Visual",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "Infor",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "SqlServerTable",
+		"schema": []
+	}
+}
