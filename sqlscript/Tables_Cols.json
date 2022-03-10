@@ -1,0 +1,21 @@
+{
+	"name": "Tables_Cols",
+	"properties": {
+		"description": "Shows all of the columns in each table for Infor.",
+		"folder": {
+			"name": "Infor Development"
+		},
+		"content": {
+			"query": "SELECT tabl.name AS table_name,\ncols.name AS column_name\nFROM\n    OPENROWSET(\n        BULK 'https://modineerlake.dfs.core.windows.net/unified-data-cluster/Infor/TestData/TableList.csv',\n        FORMAT = 'CSV',\n        PARSER_VERSION = '2.0'\n    ) AS [Tabl]\nINNER JOIN (\nSELECT *\nFROM\n    OPENROWSET(\n        BULK 'https://modineerlake.dfs.core.windows.net/unified-data-cluster/Infor/TestData/ColumnList.csv',\n        FORMAT = 'CSV',\n        PARSER_VERSION = '2.0'\n    ) AS [Columns]\n) Cols\nON [Tabl].object_id = Cols.object_id",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "master",
+				"poolName": "Built-in"
+			},
+			"resultLimit": -1
+		},
+		"type": "SqlQuery"
+	}
+}
