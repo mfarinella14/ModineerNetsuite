@@ -1,0 +1,17 @@
+{
+	"name": "Infor",
+	"type": "Microsoft.Synapse/workspaces/linkedservices",
+	"properties": {
+		"description": "Infor Visual at Pulverman",
+		"annotations": [],
+		"type": "SqlServer",
+		"typeProperties": {
+			"connectionString": "integrated security=False;data source=PULVS02;initial catalog=PUL;user id=ve_views",
+			"encryptedCredential": "eyJDcmVkZW50aWFsSWQiOiI1OGNkZjM0NS1iNzI1LTQ1ZmYtOGE4ZS04M2U5Yzc0ZmRlZGYiLCJWZXJzaW9uIjoiMi4wIiwiQ2xhc3NUeXBlIjoiTWljcm9zb2Z0LkRhdGFQcm94eS5Db3JlLkludGVyU2VydmljZURhdGFDb250cmFjdC5DcmVkZW50aWFsU1UwNkNZMTQifQ=="
+		},
+		"connectVia": {
+			"referenceName": "Infor-Pulverman",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}
