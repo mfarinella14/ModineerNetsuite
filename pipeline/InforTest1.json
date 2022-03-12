@@ -17,19 +17,20 @@
 				"typeProperties": {
 					"source": {
 						"type": "SqlServerSource",
-						"sqlReaderQuery": "SELECT * FROM sys.Columns",
+						"sqlReaderQuery": {
+							"value": "SELECT * FROM dbo.@{variables('TableName')}",
+							"type": "Expression"
+						},
 						"queryTimeout": "02:00:00",
 						"partitionOption": "None"
 					},
 					"sink": {
-						"type": "DelimitedTextSink",
+						"type": "ParquetSink",
 						"storeSettings": {
 							"type": "AzureBlobFSWriteSettings"
 						},
 						"formatSettings": {
-							"type": "DelimitedTextWriteSettings",
-							"quoteAllText": true,
-							"fileExtension": ".txt"
+							"type": "ParquetWriteSettings"
 						}
 					},
 					"enableStaging": false,
@@ -50,17 +51,26 @@
 				],
 				"outputs": [
 					{
-						"referenceName": "SinkCSV",
+						"referenceName": "SinkParquet",
 						"type": "DatasetReference",
 						"parameters": {
-							"FileSystem": "unified-data-cluster",
-							"Directory": "Infor/TestData",
-							"FileName": "ColumnList.csv"
+							"file_system": "unified-data-cluster",
+							"directory": "Infor/TestData",
+							"file_name": {
+								"value": "@{variables('TableName')}.parquet",
+								"type": "Expression"
+							}
 						}
 					}
 				]
 			}
 		],
+		"variables": {
+			"TableName": {
+				"type": "String",
+				"defaultValue": "RECEIVABLE_LINE"
+			}
+		},
 		"folder": {
 			"name": "Pulverman Testing"
 		},
