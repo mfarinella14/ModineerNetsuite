@@ -107,7 +107,7 @@
 						}
 					},
 					"sink": {
-						"type": "SqlPoolSink",
+						"type": "SqlDWSink",
 						"writeBehavior": "Upsert",
 						"upsertSettings": {
 							"keys": {
@@ -119,7 +119,8 @@
 								"type": "Expression"
 							}
 						},
-						"sqlWriterUseTableLock": false
+						"sqlWriterUseTableLock": false,
+						"disableMetricsCollection": false
 					},
 					"enableStaging": false,
 					"translator": {
@@ -150,8 +151,22 @@
 				],
 				"outputs": [
 					{
-						"referenceName": "Modineer",
-						"type": "DatasetReference"
+						"referenceName": "AzureSynapseDatabase",
+						"type": "DatasetReference",
+						"parameters": {
+							"TableName": {
+								"value": "@pipeline().parameters.Item.TableName",
+								"type": "Expression"
+							},
+							"DbName": {
+								"value": "@pipeline().parameters.Item.DbName",
+								"type": "Expression"
+							},
+							"SchemaName": {
+								"value": "@pipeline().parameters.Item.SchemaName",
+								"type": "Expression"
+							}
+						}
 					}
 				]
 			}
