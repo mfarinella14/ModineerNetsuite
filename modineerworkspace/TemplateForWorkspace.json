@@ -444,7 +444,7 @@
 																	"type": "Expression"
 																},
 																"EstDate": {
-																	"value": "@activity('Get EST Date').output",
+																	"value": "@activity('Get EST Date').output.FirstRow",
 																	"type": "Expression"
 																}
 															}
@@ -2595,14 +2595,7 @@
 					{
 						"name": "Copy data1",
 						"type": "Copy",
-						"dependsOn": [
-							{
-								"activity": "Lookup1",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
+						"dependsOn": [],
 						"policy": {
 							"timeout": "7.00:00:00",
 							"retry": 0,
@@ -2662,37 +2655,6 @@
 								}
 							}
 						]
-					},
-					{
-						"name": "Lookup1",
-						"type": "Lookup",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "SqlServerSource",
-								"sqlReaderQuery": "SELECT     \n    object_name(STAT.object_id) AS ObjectName, \n    USER_SEEKS,\n    USER_SCANS,\n    USER_LOOKUPS,\n    USER_UPDATES,\n    LAST_USER_SEEK,\n    LAST_USER_SCAN,\n    LAST_USER_LOOKUP,\n    LAST_USER_UPDATE\nFROM     SYS.DM_DB_INDEX_USAGE_STATS STAT JOIN\n        SYS.TABLES TAB ON (TAB.OBJECT_ID = STAT.OBJECT_ID)\nWHERE      DATABASE_ID = DB_ID()",
-								"queryTimeout": "02:00:00",
-								"partitionOption": "None"
-							},
-							"dataset": {
-								"referenceName": "Infor_Visual",
-								"type": "DatasetReference",
-								"parameters": {
-									"table_name": {
-										"value": "@variables('TableName')",
-										"type": "Expression"
-									}
-								}
-							}
-						}
 					}
 				],
 				"policy": {
@@ -2990,6 +2952,78 @@
 											]
 										}
 									]
+								},
+								{
+									"value": "Infor",
+									"activities": [
+										{
+											"name": "Copy data1",
+											"type": "Copy",
+											"dependsOn": [],
+											"policy": {
+												"timeout": "7.00:00:00",
+												"retry": 0,
+												"retryIntervalInSeconds": 30,
+												"secureOutput": false,
+												"secureInput": false
+											},
+											"userProperties": [],
+											"typeProperties": {
+												"source": {
+													"type": "SqlServerSource",
+													"queryTimeout": "02:00:00",
+													"partitionOption": "None"
+												},
+												"sink": {
+													"type": "ParquetSink",
+													"storeSettings": {
+														"type": "AzureBlobFSWriteSettings"
+													},
+													"formatSettings": {
+														"type": "ParquetWriteSettings"
+													}
+												},
+												"enableStaging": false,
+												"translator": {
+													"type": "TabularTranslator",
+													"typeConversion": true,
+													"typeConversionSettings": {
+														"allowDataTruncation": true,
+														"treatBooleanAsNumber": false
+													}
+												}
+											},
+											"inputs": [
+												{
+													"referenceName": "Infor_Visual",
+													"type": "DatasetReference",
+													"parameters": {
+														"table_name": {
+															"value": "@variables('TableName')",
+															"type": "Expression"
+														}
+													}
+												}
+											],
+											"outputs": [
+												{
+													"referenceName": "SinkParquet",
+													"type": "DatasetReference",
+													"parameters": {
+														"file_system": "unified-data-cluster",
+														"directory": {
+															"value": "@{variables('SchemaName')}/@{variables('TableName')}",
+															"type": "Expression"
+														},
+														"file_name": {
+															"value": "@{variables('TableName')}-Initial.parquet",
+															"type": "Expression"
+														}
+													}
+												}
+											]
+										}
+									]
 								}
 							],
 							"defaultActivities": [
@@ -3013,11 +3047,11 @@
 				"variables": {
 					"TableName": {
 						"type": "String",
-						"defaultValue": "CO_HDR"
+						"defaultValue": "PART"
 					},
 					"SchemaName": {
 						"type": "String",
-						"defaultValue": "GLOVIA_PROD"
+						"defaultValue": "Infor"
 					}
 				},
 				"folder": {
@@ -3031,6 +3065,7 @@
 				"[concat(variables('workspaceId'), '/datasets/SinkParquet')]",
 				"[concat(variables('workspaceId'), '/datasets/PlexODBC')]",
 				"[concat(variables('workspaceId'), '/datasets/GloviaProd')]",
+				"[concat(variables('workspaceId'), '/datasets/Infor_Visual')]",
 				"[concat(variables('workspaceId'), '/linkedServices/modineerlake')]"
 			]
 		},
@@ -5469,6 +5504,26 @@
 					"currentConnection": {
 						"databaseName": "Modineer",
 						"poolName": "Modineer"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 1')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "-- This is auto-generated code\nSELECT\n    TOP 100 *\nFROM\n    OPENROWSET(\n        BULK 'https://modineerlake.dfs.core.windows.net/unified-data-cluster/Infor/PART/PART-Initial.parquet',\n        FORMAT = 'PARQUET'\n    ) AS [result]\n    ORDER BY [result].ROWID DESC\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "master",
+						"poolName": "Built-in"
 					},
 					"resultLimit": 5000
 				},
