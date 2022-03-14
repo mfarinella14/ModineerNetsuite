@@ -2533,10 +2533,13 @@
 										"type": "Expression"
 									},
 									"FilePath": {
-										"value": "@{pipeline().parameters.Item.SchemaName}/@{pipeline().parameters.Item.TableName}/@{pipeline().parameters.EstDate.firstRow.Year}/@{pipeline().parameters.EstDate.firstRow.Month}/@{pipeline().parameters.EstDate.firstRow.Day}",
+										"value": "@{pipeline().parameters.Item.SchemaName}/@{pipeline().parameters.Item.TableName}/@{pipeline().parameters.EstDate.Year}/@{pipeline().parameters.EstDate.Month}/@{pipeline().parameters.EstDate.Day}",
 										"type": "Expression"
 									},
-									"FileName": "@{pipeline().parameters.Item.TableName}-@{pipeline().parameters.EstDate.Year}-@{pipeline().parameters.EstDate.Month}-@{pipeline().parameters.EstDate.Day}T@{pipeline().parameters.EstDate.Hour}:@{pipeline().parameters.EstDate.Minute}:@{pipeline().parameters.EstDate.Second}.parquet"
+									"FileName": {
+										"value": "@{pipeline().parameters.Item.TableName}-@{pipeline().parameters.EstDate.Year}-@{pipeline().parameters.EstDate.Month}-@{pipeline().parameters.EstDate.Day}T@{pipeline().parameters.EstDate.Hour}:@{pipeline().parameters.EstDate.Minute}:@{pipeline().parameters.EstDate.Second}.parquet",
+										"type": "Expression"
+									}
 								}
 							}
 						],
