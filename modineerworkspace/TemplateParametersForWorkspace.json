@@ -17,6 +17,9 @@
 		"HTM_NetSuite_password": {
 			"value": ""
 		},
+		"Infor_connectionString": {
+			"value": ""
+		},
 		"Legacy HTM Netsuite Refresh Token_password": {
 			"value": ""
 		},
@@ -36,9 +39,6 @@
 			"value": ""
 		},
 		"modineerworkspace-WorkspaceDefaultSqlServer_connectionString": {
-			"value": ""
-		},
-		"Infor_connectionString": {
 			"value": ""
 		},
 		"GlobalShopData_properties_typeProperties_userName": {

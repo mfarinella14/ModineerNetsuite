@@ -23,6 +23,10 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'password' of 'HTM_NetSuite'"
 		},
+		"Infor_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'Infor'"
+		},
 		"Legacy HTM Netsuite Refresh Token_password": {
 			"type": "secureString",
 			"metadata": "Secure string for 'password' of 'Legacy HTM Netsuite Refresh Token'"
@@ -50,10 +54,6 @@
 		"modineerworkspace-WorkspaceDefaultSqlServer_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'modineerworkspace-WorkspaceDefaultSqlServer'"
-		},
-		"Infor_connectionString": {
-			"type": "secureString",
-			"metadata": "Secure string for 'connectionString' of 'Infor'"
 		},
 		"GlobalShopData_properties_typeProperties_userName": {
 			"type": "string",
@@ -423,6 +423,34 @@
 														}
 													}
 												]
+											},
+											{
+												"value": "Infor",
+												"activities": [
+													{
+														"name": "Infor Data Refresh",
+														"type": "ExecutePipeline",
+														"dependsOn": [],
+														"userProperties": [],
+														"typeProperties": {
+															"pipeline": {
+																"referenceName": "Infor Data Refresh",
+																"type": "PipelineReference"
+															},
+															"waitOnCompletion": true,
+															"parameters": {
+																"Item": {
+																	"value": "@item()",
+																	"type": "Expression"
+																},
+																"EstDate": {
+																	"value": "@activity('Get EST Date').output",
+																	"type": "Expression"
+																}
+															}
+														}
+													}
+												]
 											}
 										],
 										"defaultActivities": [
@@ -597,7 +625,8 @@
 				"[concat(variables('workspaceId'), '/sqlPools/Modineer')]",
 				"[concat(variables('workspaceId'), '/pipelines/Glovia Delta Refresh')]",
 				"[concat(variables('workspaceId'), '/pipelines/Netsuite Data Refresh')]",
-				"[concat(variables('workspaceId'), '/pipelines/Plex Data Refresh - Data Count')]"
+				"[concat(variables('workspaceId'), '/pipelines/Plex Data Refresh - Data Count')]",
+				"[concat(variables('workspaceId'), '/pipelines/Infor Data Refresh')]"
 			]
 		},
 		{
@@ -2359,6 +2388,334 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/Infor Data Refresh')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "Get Data From Infor",
+						"description": "Gets the top 2500 rows from Infor and saves it as a .parquet file.",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "SqlServerSource",
+								"sqlReaderQuery": {
+									"value": "SELECT TOP 5000 * FROM @{pipeline().parameters.Item.TableName} ORDER BY ROWID DESC",
+									"type": "Expression"
+								},
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"sink": {
+								"type": "ParquetSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "ParquetWriteSettings"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "Infor_Visual",
+								"type": "DatasetReference",
+								"parameters": {
+									"table_name": {
+										"value": "@pipeline().parameters.Item.TableName",
+										"type": "Expression"
+									}
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "SinkParquet",
+								"type": "DatasetReference",
+								"parameters": {
+									"file_system": {
+										"value": "@pipeline().parameters.Item.FileSystem",
+										"type": "Expression"
+									},
+									"directory": {
+										"value": "@{pipeline().parameters.Item.SchemaName}/@{pipeline().parameters.Item.TableName}/@{pipeline().parameters.EstDate.firstRow.Year}/@{pipeline().parameters.EstDate.firstRow.Month}/@{pipeline().parameters.EstDate.firstRow.Day}",
+										"type": "Expression"
+									},
+									"file_name": {
+										"value": "@{pipeline().parameters.Item.TableName}-@{pipeline().parameters.EstDate.Year}-@{pipeline().parameters.EstDate.Month}-@{pipeline().parameters.EstDate.Day}T@{pipeline().parameters.EstDate.Hour}:@{pipeline().parameters.EstDate.Minute}:@{pipeline().parameters.EstDate.Second}.parquet",
+										"type": "Expression"
+									}
+								}
+							}
+						]
+					},
+					{
+						"name": "Merge Data to Infor Table",
+						"description": "Takes the data from the file and merges it with the sql table",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "Get Data From Infor",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "ParquetSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								}
+							},
+							"sink": {
+								"type": "SqlDWSink",
+								"writeBehavior": "Upsert",
+								"upsertSettings": {
+									"keys": {
+										"value": "@array('ROWID')",
+										"type": "Expression"
+									},
+									"interimSchemaName": {
+										"value": "@pipeline().parameters.Item.SchemaName",
+										"type": "Expression"
+									}
+								},
+								"sqlWriterUseTableLock": false,
+								"disableMetricsCollection": false
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "ReadParquet",
+								"type": "DatasetReference",
+								"parameters": {
+									"FileSystem": {
+										"value": "@pipeline().parameters.Item.FileSystem",
+										"type": "Expression"
+									},
+									"FilePath": {
+										"value": "@{pipeline().parameters.Item.SchemaName}/@{pipeline().parameters.Item.TableName}/@{pipeline().parameters.EstDate.firstRow.Year}/@{pipeline().parameters.EstDate.firstRow.Month}/@{pipeline().parameters.EstDate.firstRow.Day}",
+										"type": "Expression"
+									},
+									"FileName": "@{pipeline().parameters.Item.TableName}-@{pipeline().parameters.EstDate.Year}-@{pipeline().parameters.EstDate.Month}-@{pipeline().parameters.EstDate.Day}T@{pipeline().parameters.EstDate.Hour}:@{pipeline().parameters.EstDate.Minute}:@{pipeline().parameters.EstDate.Second}.parquet"
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "AzureSynapseDatabase",
+								"type": "DatasetReference",
+								"parameters": {
+									"TableName": {
+										"value": "@pipeline().parameters.Item.TableName",
+										"type": "Expression"
+									},
+									"DbName": {
+										"value": "@pipeline().parameters.Item.DbName",
+										"type": "Expression"
+									},
+									"SchemaName": {
+										"value": "@pipeline().parameters.Item.SchemaName",
+										"type": "Expression"
+									}
+								}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"parameters": {
+					"Item": {
+						"type": "object"
+					},
+					"EstDate": {
+						"type": "object"
+					}
+				},
+				"folder": {
+					"name": "Master Data/Slave Pipelines/Infor Pipelines"
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/datasets/Infor_Visual')]",
+				"[concat(variables('workspaceId'), '/datasets/SinkParquet')]",
+				"[concat(variables('workspaceId'), '/datasets/ReadParquet')]",
+				"[concat(variables('workspaceId'), '/datasets/AzureSynapseDatabase')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/InforTest1')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "Copy data1",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "Lookup1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "SqlServerSource",
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"sink": {
+								"type": "ParquetSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "ParquetWriteSettings"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "Infor_Visual",
+								"type": "DatasetReference",
+								"parameters": {
+									"table_name": {
+										"value": "@variables('TableName')",
+										"type": "Expression"
+									}
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "SinkParquet",
+								"type": "DatasetReference",
+								"parameters": {
+									"file_system": "unified-data-cluster",
+									"directory": "Infor/TestData",
+									"file_name": {
+										"value": "@{variables('TableName')}.parquet",
+										"type": "Expression"
+									}
+								}
+							}
+						]
+					},
+					{
+						"name": "Lookup1",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "SqlServerSource",
+								"sqlReaderQuery": "SELECT     \n    object_name(STAT.object_id) AS ObjectName, \n    USER_SEEKS,\n    USER_SCANS,\n    USER_LOOKUPS,\n    USER_UPDATES,\n    LAST_USER_SEEK,\n    LAST_USER_SCAN,\n    LAST_USER_LOOKUP,\n    LAST_USER_UPDATE\nFROM     SYS.DM_DB_INDEX_USAGE_STATS STAT JOIN\n        SYS.TABLES TAB ON (TAB.OBJECT_ID = STAT.OBJECT_ID)\nWHERE      DATABASE_ID = DB_ID()",
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "Infor_Visual",
+								"type": "DatasetReference",
+								"parameters": {
+									"table_name": {
+										"value": "@variables('TableName')",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"variables": {
+					"TableName": {
+						"type": "String",
+						"defaultValue": "RECEIVABLE_LINE"
+					}
+				},
+				"folder": {
+					"name": "Pulverman Testing"
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/datasets/Infor_Visual')]",
+				"[concat(variables('workspaceId'), '/datasets/SinkParquet')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/Initial Table Setup')]",
 			"type": "Microsoft.Synapse/workspaces/pipelines",
 			"apiVersion": "2019-06-01-preview",
@@ -3849,6 +4206,35 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/Infor_Visual')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "Infor",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"table_name": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "SqlServerTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": {
+						"value": "@dataset().table_name",
+						"type": "Expression"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/Infor')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/Modineer')]",
 			"type": "Microsoft.Synapse/workspaces/datasets",
 			"apiVersion": "2019-06-01-preview",
@@ -4011,6 +4397,9 @@
 					},
 					"FilePath": {
 						"type": "string"
+					},
+					"FileName": {
+						"type": "string"
 					}
 				},
 				"annotations": [],
@@ -4018,6 +4407,10 @@
 				"typeProperties": {
 					"location": {
 						"type": "AzureBlobFSLocation",
+						"fileName": {
+							"value": "@dataset().FileName",
+							"type": "Expression"
+						},
 						"folderPath": {
 							"value": "@dataset().FilePath",
 							"type": "Expression"
@@ -4563,6 +4956,26 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/Infor')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"description": "Infor Visual at Pulverman",
+				"annotations": [],
+				"type": "SqlServer",
+				"typeProperties": {
+					"connectionString": "[parameters('Infor_connectionString')]"
+				},
+				"connectVia": {
+					"referenceName": "Infor-Pulverman",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/Infor-Pulverman')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/Legacy HTM Netsuite Refresh Token')]",
 			"type": "Microsoft.Synapse/workspaces/linkedServices",
 			"apiVersion": "2019-06-01-preview",
@@ -4858,6 +5271,17 @@
 			"dependsOn": []
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/Infor-Pulverman')]",
+			"type": "Microsoft.Synapse/workspaces/integrationRuntimes",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "SelfHosted",
+				"description": "Data access to Pulverman Infor Visual ERP",
+				"typeProperties": {}
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/WorkspaceSystemIdentity')]",
 			"type": "Microsoft.Synapse/workspaces/credentials",
 			"apiVersion": "2019-06-01-preview",
@@ -4961,6 +5385,29 @@
 			"dependsOn": []
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/InforArAging')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "Infor Development"
+				},
+				"content": {
+					"query": "-- This is auto-generated code\nSELECT 'Pulverman' AS \"Location\",\nRECEIVABLE.CUSTOMER_ID, \nCUSTOMER.NAME, \nRECEIVABLE.INVOICE_ID, \nRECEIVABLE.TYPE, \nFORMAT(CAST(RECEIVABLE.INVOICE_DATE AS DATE),'MM/dd/yyyy') INVOICE_DATE, \nRECEIVABLE.TOTAL_AMOUNT, \nRECEIVABLE.PAID_AMOUNT,\nRECEIVABLE.TOTAL_AMOUNT - RECEIVABLE.PAID_AMOUNT AS BALANCE, \nRECEIVABLE.TERMS_NET_TYPE, \nRECEIVABLE.TERMS_NET_DAYS, \nRECEIVABLE.TERMS_NET_DATE, \nRECEIVABLE.TERMS_DESCRIPTION,\nRECEIVABLE.STATUS, \nRECEIVABLE.ZERO_DATE,\nFORMAT(CAST(DATEADD(DAY,RECEIVABLE.TERMS_NET_DAYS,RECEIVABLE.INVOICE_DATE) AS DATE),'MM/dd/yyyy') AS DueDate,\nIIF(DATEDIFF(DAY,CONVERT(DATETIME, CAST(DATEADD(DAY,RECEIVABLE.TERMS_NET_DAYS,RECEIVABLE.INVOICE_DATE) AS DATE)),CONVERT(DATETIME, GETUTCDATE() AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time')) IS NOT NULL,DATEDIFF(DAY,CONVERT(DATETIME, CAST(DATEADD(DAY,RECEIVABLE.TERMS_NET_DAYS,RECEIVABLE.INVOICE_DATE) AS DATE)),CONVERT(DATETIME, GETUTCDATE() AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time')),0) AS \"Age\"\nFROM\n    OPENROWSET(\n        BULK 'https://modineerlake.dfs.core.windows.net/unified-data-cluster/Infor/TestData/RECEIVABLE.parquet',\n        FORMAT = 'PARQUET'\n    ) AS [RECEIVABLE]\n    INNER JOIN (\n        SELECT *\nFROM\n    OPENROWSET(\n        BULK 'https://modineerlake.dfs.core.windows.net/unified-data-cluster/Infor/TestData/CUSTOMER.parquet',\n        FORMAT = 'PARQUET'\n    ) AS [CUSTOMER]\n) AS [CUSTOMER]\nON [RECEIVABLE].CUSTOMER_ID = [CUSTOMER].ID\nWHERE [RECEIVABLE].ZERO_DATE IS NULL\nAND (RECEIVABLE.TOTAL_AMOUNT - RECEIVABLE.PAID_AMOUNT) <> 0\nAND [RECEIVABLE].STATUS <> 'X'\n--AND [RECEIVABLE].TYPE LIKE 'U'\nORDER BY [RECEIVABLE].INVOICE_DATE\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "master",
+						"poolName": "Built-in"
+					},
+					"resultLimit": -1
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/List Stored Procedures')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
@@ -4975,6 +5422,29 @@
 					},
 					"currentConnection": {
 						"databaseName": "Glovia",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Partition Testing')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "Infor Development"
+				},
+				"content": {
+					"query": "SELECT TOP 1000 *\nFROM\n    OPENROWSET(\n        BULK 'https://modineerlake.dfs.core.windows.net/unified-data-cluster/Infor/TestData/RECEIVABLE.parquet',\n        FORMAT = 'PARQUET'\n    ) AS [CR]",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "master",
 						"poolName": "Built-in"
 					},
 					"resultLimit": 5000
@@ -5001,6 +5471,30 @@
 						"poolName": "Modineer"
 					},
 					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Tables_Cols')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"description": "Shows all of the columns in each table for Infor.",
+				"folder": {
+					"name": "Infor Development"
+				},
+				"content": {
+					"query": "SELECT tabl.name AS table_name,\ncols.name AS column_name\nFROM\n    OPENROWSET(\n        BULK 'https://modineerlake.dfs.core.windows.net/unified-data-cluster/Infor/TestData/TableList.csv',\n        FORMAT = 'CSV',\n        PARSER_VERSION = '2.0'\n    ) AS [Tabl]\nINNER JOIN (\nSELECT *\nFROM\n    OPENROWSET(\n        BULK 'https://modineerlake.dfs.core.windows.net/unified-data-cluster/Infor/TestData/ColumnList.csv',\n        FORMAT = 'CSV',\n        PARSER_VERSION = '2.0'\n    ) AS [Columns]\n) Cols\nON [Tabl].object_id = Cols.object_id",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "master",
+						"poolName": "Built-in"
+					},
+					"resultLimit": -1
 				},
 				"type": "SqlQuery"
 			},
@@ -5279,6 +5773,31 @@
 			"dependsOn": []
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/ModSparkPool')]",
+			"type": "Microsoft.Synapse/workspaces/bigDataPools",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"autoPause": {
+					"enabled": true,
+					"delayInMinutes": 15
+				},
+				"autoScale": {
+					"enabled": true,
+					"maxNodeCount": 50,
+					"minNodeCount": 3
+				},
+				"nodeCount": 10,
+				"nodeSize": "Small",
+				"nodeSizeFamily": "MemoryOptimized",
+				"sparkVersion": "3.1",
+				"isComputeIsolationEnabled": false,
+				"sessionLevelPackagesEnabled": false,
+				"annotations": []
+			},
+			"dependsOn": [],
+			"location": "eastus"
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/Modineer')]",
 			"type": "Microsoft.Synapse/workspaces/sqlPools",
 			"apiVersion": "2019-06-01-preview",
@@ -5301,159 +5820,6 @@
 			},
 			"dependsOn": [],
 			"location": "eastus"
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/Infor-Pulverman')]",
-			"type": "Microsoft.Synapse/workspaces/integrationRuntimes",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"type": "SelfHosted",
-				"description": "Data access to Pulverman Infor Visual ERP",
-				"typeProperties": {}
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/InforTest1')]",
-			"type": "Microsoft.Synapse/workspaces/pipelines",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"activities": [
-					{
-						"name": "Copy data1",
-						"type": "Copy",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "SqlServerSource",
-								"sqlReaderQuery": "SELECT * FROM sys.Columns",
-								"queryTimeout": "02:00:00",
-								"partitionOption": "None"
-							},
-							"sink": {
-								"type": "DelimitedTextSink",
-								"storeSettings": {
-									"type": "AzureBlobFSWriteSettings"
-								},
-								"formatSettings": {
-									"type": "DelimitedTextWriteSettings",
-									"quoteAllText": true,
-									"fileExtension": ".txt"
-								}
-							},
-							"enableStaging": false,
-							"translator": {
-								"type": "TabularTranslator",
-								"typeConversion": true,
-								"typeConversionSettings": {
-									"allowDataTruncation": true,
-									"treatBooleanAsNumber": false
-								}
-							}
-						},
-						"inputs": [
-							{
-								"referenceName": "Infor_Visual",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
-						],
-						"outputs": [
-							{
-								"referenceName": "SinkCSV",
-								"type": "DatasetReference",
-								"parameters": {
-									"FileSystem": "unified-data-cluster",
-									"Directory": "Infor/TestData",
-									"FileName": "ColumnList.csv"
-								}
-							}
-						]
-					}
-				],
-				"policy": {
-					"elapsedTimeMetric": {},
-					"cancelAfter": {}
-				},
-				"folder": {
-					"name": "Pulverman Testing"
-				},
-				"annotations": []
-			},
-			"dependsOn": [
-				"[concat(variables('workspaceId'), '/datasets/Infor_Visual')]",
-				"[concat(variables('workspaceId'), '/datasets/SinkCSV')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/Infor')]",
-			"type": "Microsoft.Synapse/workspaces/linkedServices",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"description": "Infor Visual at Pulverman",
-				"annotations": [],
-				"type": "SqlServer",
-				"typeProperties": {
-					"connectionString": "[parameters('Infor_connectionString')]"
-				},
-				"connectVia": {
-					"referenceName": "Infor-Pulverman",
-					"type": "IntegrationRuntimeReference"
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('workspaceId'), '/integrationRuntimes/Infor-Pulverman')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/Infor_Visual')]",
-			"type": "Microsoft.Synapse/workspaces/datasets",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "Infor",
-					"type": "LinkedServiceReference"
-				},
-				"annotations": [],
-				"type": "SqlServerTable",
-				"schema": [],
-				"typeProperties": {}
-			},
-			"dependsOn": [
-				"[concat(variables('workspaceId'), '/linkedServices/Infor')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/Tables_Cols')]",
-			"type": "Microsoft.Synapse/workspaces/sqlscripts",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"description": "Shows all of the columns in each table for Infor.",
-				"folder": {
-					"name": "Infor Development"
-				},
-				"content": {
-					"query": "SELECT tabl.name AS table_name,\ncols.name AS column_name\nFROM\n    OPENROWSET(\n        BULK 'https://modineerlake.dfs.core.windows.net/unified-data-cluster/Infor/TestData/TableList.csv',\n        FORMAT = 'CSV',\n        PARSER_VERSION = '2.0'\n    ) AS [Tabl]\nINNER JOIN (\nSELECT *\nFROM\n    OPENROWSET(\n        BULK 'https://modineerlake.dfs.core.windows.net/unified-data-cluster/Infor/TestData/ColumnList.csv',\n        FORMAT = 'CSV',\n        PARSER_VERSION = '2.0'\n    ) AS [Columns]\n) Cols\nON [Tabl].object_id = Cols.object_id",
-					"metadata": {
-						"language": "sql"
-					},
-					"currentConnection": {
-						"databaseName": "master",
-						"poolName": "Built-in"
-					},
-					"resultLimit": -1
-				},
-				"type": "SqlQuery"
-			},
-			"dependsOn": []
 		}
 	]
 }
