@@ -360,7 +360,7 @@
 		"variables": {
 			"TableName": {
 				"type": "String",
-				"defaultValue": "PART"
+				"defaultValue": "PART_LOCATION"
 			},
 			"SchemaName": {
 				"type": "String",
