@@ -360,11 +360,11 @@
 		"variables": {
 			"TableName": {
 				"type": "String",
-				"defaultValue": "CO_HDR"
+				"defaultValue": "PART"
 			},
 			"SchemaName": {
 				"type": "String",
-				"defaultValue": "GLOVIA_PROD"
+				"defaultValue": "Infor"
 			}
 		},
 		"folder": {

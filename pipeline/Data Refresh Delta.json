@@ -176,7 +176,7 @@
 															"type": "Expression"
 														},
 														"EstDate": {
-															"value": "@activity('Get EST Date').output",
+															"value": "@activity('Get EST Date').output.FirstRow",
 															"type": "Expression"
 														}
 													}
