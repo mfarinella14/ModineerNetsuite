@@ -155,6 +155,34 @@
 												}
 											}
 										]
+									},
+									{
+										"value": "Infor",
+										"activities": [
+											{
+												"name": "Infor Data Refresh",
+												"type": "ExecutePipeline",
+												"dependsOn": [],
+												"userProperties": [],
+												"typeProperties": {
+													"pipeline": {
+														"referenceName": "Infor Data Refresh",
+														"type": "PipelineReference"
+													},
+													"waitOnCompletion": true,
+													"parameters": {
+														"Item": {
+															"value": "@item()",
+															"type": "Expression"
+														},
+														"EstDate": {
+															"value": "@activity('Get EST Date').output",
+															"type": "Expression"
+														}
+													}
+												}
+											}
+										]
 									}
 								],
 								"defaultActivities": [

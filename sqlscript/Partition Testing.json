@@ -1,0 +1,20 @@
+{
+	"name": "Partition Testing",
+	"properties": {
+		"folder": {
+			"name": "Infor Development"
+		},
+		"content": {
+			"query": "SELECT TOP 1000 *\nFROM\n    OPENROWSET(\n        BULK 'https://modineerlake.dfs.core.windows.net/unified-data-cluster/Infor/TestData/RECEIVABLE.parquet',\n        FORMAT = 'PARQUET'\n    ) AS [CR]",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "master",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

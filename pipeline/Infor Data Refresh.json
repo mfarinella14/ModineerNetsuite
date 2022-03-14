@@ -1,0 +1,172 @@
+{
+	"name": "Infor Data Refresh",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get Data From Infor",
+				"description": "Gets the top 2500 rows from Infor and saves it as a .parquet file.",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlServerSource",
+						"sqlReaderQuery": {
+							"value": "SELECT TOP 5000 * FROM @{pipeline().parameters.Item.TableName} ORDER BY ROWID DESC",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"sink": {
+						"type": "ParquetSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						},
+						"formatSettings": {
+							"type": "ParquetWriteSettings"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "Infor_Visual",
+						"type": "DatasetReference",
+						"parameters": {
+							"table_name": {
+								"value": "@pipeline().parameters.Item.TableName",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "SinkParquet",
+						"type": "DatasetReference",
+						"parameters": {
+							"file_system": {
+								"value": "@pipeline().parameters.Item.FileSystem",
+								"type": "Expression"
+							},
+							"directory": {
+								"value": "@{pipeline().parameters.Item.SchemaName}/@{pipeline().parameters.Item.TableName}/@{pipeline().parameters.EstDate.firstRow.Year}/@{pipeline().parameters.EstDate.firstRow.Month}/@{pipeline().parameters.EstDate.firstRow.Day}",
+								"type": "Expression"
+							},
+							"file_name": {
+								"value": "@{pipeline().parameters.Item.TableName}-@{pipeline().parameters.EstDate.Year}-@{pipeline().parameters.EstDate.Month}-@{pipeline().parameters.EstDate.Day}T@{pipeline().parameters.EstDate.Hour}:@{pipeline().parameters.EstDate.Minute}:@{pipeline().parameters.EstDate.Second}.parquet",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "Merge Data to Infor Table",
+				"description": "Takes the data from the file and merges it with the sql table",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "Get Data From Infor",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "ParquetSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						}
+					},
+					"sink": {
+						"type": "SqlPoolSink",
+						"writeBehavior": "Upsert",
+						"upsertSettings": {
+							"keys": {
+								"value": "@array('ROWID')",
+								"type": "Expression"
+							},
+							"interimSchemaName": {
+								"value": "@pipeline().parameters.Item.SchemaName",
+								"type": "Expression"
+							}
+						},
+						"sqlWriterUseTableLock": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "ReadParquet",
+						"type": "DatasetReference",
+						"parameters": {
+							"FileSystem": {
+								"value": "@pipeline().parameters.Item.FileSystem",
+								"type": "Expression"
+							},
+							"FilePath": {
+								"value": "@{pipeline().parameters.Item.SchemaName}/@{pipeline().parameters.Item.TableName}/@{pipeline().parameters.EstDate.firstRow.Year}/@{pipeline().parameters.EstDate.firstRow.Month}/@{pipeline().parameters.EstDate.firstRow.Day}",
+								"type": "Expression"
+							},
+							"FileName": "@{pipeline().parameters.Item.TableName}-@{pipeline().parameters.EstDate.Year}-@{pipeline().parameters.EstDate.Month}-@{pipeline().parameters.EstDate.Day}T@{pipeline().parameters.EstDate.Hour}:@{pipeline().parameters.EstDate.Minute}:@{pipeline().parameters.EstDate.Second}.parquet"
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "Modineer",
+						"type": "DatasetReference"
+					}
+				]
+			}
+		],
+		"parameters": {
+			"Item": {
+				"type": "object"
+			},
+			"EstDate": {
+				"type": "object"
+			}
+		},
+		"folder": {
+			"name": "Master Data/Slave Pipelines/Infor Pipelines"
+		},
+		"annotations": []
+	}
+}
