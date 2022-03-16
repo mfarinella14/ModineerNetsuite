@@ -5,7 +5,7 @@
 			"name": "General"
 		},
 		"content": {
-			"query": "EXEC Config.AddTableToRefresh \n'GloviaProd',--RowGroup\n'Modineer', --DBName\n'GLOVIA_PROD', --SchemaName\n'CO_ITEM', --TableName\n'unified-data-cluster', --FileSystem\n'CCN,PUR_CCN,MAS_LOC,ITEM,REVISION,CO_HDR_ORD_STATUS,CO_NUM,CO_LINE', --TableKeysArray\nNULL, --ConnectionType\nNULL, --DataQuery\n0, --CurrentProcess\nNULL, --TableMaxSCN\n'MINUTE', --RefreshInterval\n15, --RefreshNumber\n'GDelta' --StagingSchema",
+			"query": "EXEC Config.AddTableToRefresh \n\n--GLOVIA TABLE\n-- 'GloviaProd',--RowGroup\n-- 'Modineer', --DBName\n-- 'GLOVIA_PROD', --SchemaName\n-- 'CUS_BUY', --TableName\n-- 'unified-data-cluster', --FileSystem\n-- 'CCN,CUSTOMER,CUS_BUY_LOC', --TableKeysArray\n-- NULL, --ConnectionType\n-- NULL, --DataQuery\n-- 0, --CurrentProcess\n-- NULL, --TableMaxSCN\n-- 'HOUR', --RefreshInterval\n-- 2, --RefreshNumber\n-- 'GDelta' --StagingSchema\n\n--INFOR TABLE\n'Infor',--RowGroup\n'Modineer', --DBName\n'Infor', --SchemaName\n'TERMS', --TableName\n'unified-data-cluster', --FileSystem\nNULL, --TableKeysArray\nNULL, --ConnectionType\nNULL, --DataQuery\n0, --CurrentProcess\nNULL, --TableMaxSCN\n'WEEK', --RefreshInterval\n1, --RefreshNumber\n'IDelta' --StagingSchema",
 			"metadata": {
 				"language": "sql"
 			},
