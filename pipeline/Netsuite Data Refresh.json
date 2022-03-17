@@ -235,7 +235,7 @@
 													"type": "Expression"
 												},
 												"file_name": {
-													"value": "@{pipeline().parameters.item.TableName}[n].parquet",
+													"value": "@{pipeline().parameters.Item.TableName}-@{pipeline().parameters.EstDate.Year}-@{pipeline().parameters.EstDate.Month}-@{pipeline().parameters.EstDate.Day}T@{pipeline().parameters.EstDate.Hour}:@{pipeline().parameters.EstDate.Minute}:@{pipeline().parameters.EstDate.Second}.parquet",
 													"type": "Expression"
 												}
 											}
@@ -243,9 +243,17 @@
 									]
 								},
 								{
-									"name": "Modineer Netsuite Raw Data Copy - SQL Pool",
+									"name": "Merge Data to Infor Table",
+									"description": "Takes the data from the file and merges it with the sql table",
 									"type": "Copy",
-									"dependsOn": [],
+									"dependsOn": [
+										{
+											"activity": "Modineer Netsuite Raw Data Copy - Data Lake",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
 									"policy": {
 										"timeout": "7.00:00:00",
 										"retry": 0,
@@ -253,36 +261,60 @@
 										"secureOutput": false,
 										"secureInput": false
 									},
-									"userProperties": [
-										{
-											"name": "Destination",
-											"value": "@{'Delta'}.@{pipeline().parameters.item.TableName}"
-										}
-									],
+									"userProperties": [],
 									"typeProperties": {
 										"source": {
-											"type": "OdbcSource",
-											"query": {
-												"value": "SELECT * FROM @{pipeline().parameters.item.TableName} WHERE @{pipeline().parameters.item.DataQuery} >= TO_TIMESTAMP(REPLACE(REPLACE('@{addminutes(pipeline().parameters.item.LastRefreshStart,-15)}','T',' '),'Z',''), 'YYYY-MM-DD HH24:MI:SS.FF')",
-												"type": "Expression"
-											},
-											"queryTimeout": "02:00:00"
+											"type": "ParquetSource",
+											"storeSettings": {
+												"type": "AzureBlobFSReadSettings",
+												"recursive": true,
+												"enablePartitionDiscovery": false
+											}
 										},
 										"sink": {
 											"type": "SqlDWSink",
-											"preCopyScript": {
-												"value": "TRUNCATE TABLE [@{pipeline().parameters.item.StagingSchema}].[@{pipeline().parameters.item.TableName}]",
-												"type": "Expression"
+											"writeBehavior": "Upsert",
+											"upsertSettings": {
+												"keys": {
+													"value": "@split(pipeline().parameters.item.TableKeysArray,',')",
+													"type": "Expression"
+												},
+												"interimSchemaName": {
+													"value": "@pipeline().parameters.Item.SchemaName",
+													"type": "Expression"
+												}
 											},
-											"tableOption": "autoCreate",
+											"sqlWriterUseTableLock": false,
 											"disableMetricsCollection": false
 										},
-										"enableStaging": false
+										"enableStaging": false,
+										"translator": {
+											"type": "TabularTranslator",
+											"typeConversion": true,
+											"typeConversionSettings": {
+												"allowDataTruncation": true,
+												"treatBooleanAsNumber": false
+											}
+										}
 									},
 									"inputs": [
 										{
-											"referenceName": "NetsuiteODBCSource",
-											"type": "DatasetReference"
+											"referenceName": "ReadParquet",
+											"type": "DatasetReference",
+											"parameters": {
+												"FileSystem": {
+													"value": "@pipeline().parameters.Item.FileSystem",
+													"type": "Expression"
+												},
+												"FilePath": {
+													"value": "@{pipeline().parameters.Item.SchemaName}/@{pipeline().parameters.Item.TableName}/@{pipeline().parameters.EstDate.Year}/@{pipeline().parameters.EstDate.Month}/@{pipeline().parameters.EstDate.Day}",
+													"type": "Expression"
+												},
+												"FileName": {
+													"value": "@{pipeline().parameters.Item.TableName}-@{pipeline().parameters.EstDate.Year}-@{pipeline().parameters.EstDate.Month}-@{pipeline().parameters.EstDate.Day}T@{pipeline().parameters.EstDate.Hour}:@{pipeline().parameters.EstDate.Minute}:@{pipeline().parameters.EstDate.Second}.parquet",
+													"type": "Expression"
+												}
+											}
 										}
 									],
 									"outputs": [
@@ -291,50 +323,20 @@
 											"type": "DatasetReference",
 											"parameters": {
 												"TableName": {
-													"value": "@pipeline().parameters.item.TableName",
+													"value": "@pipeline().parameters.Item.TableName",
 													"type": "Expression"
 												},
 												"DbName": {
-													"value": "@pipeline().parameters.item.DbName",
+													"value": "@pipeline().parameters.Item.DbName",
 													"type": "Expression"
 												},
 												"SchemaName": {
-													"value": "@pipeline().parameters.item.StagingSchema",
+													"value": "@pipeline().parameters.Item.SchemaName",
 													"type": "Expression"
 												}
 											}
 										}
 									]
-								},
-								{
-									"name": "Data Merge",
-									"type": "ExecutePipeline",
-									"dependsOn": [
-										{
-											"activity": "Modineer Netsuite Raw Data Copy - SQL Pool",
-											"dependencyConditions": [
-												"Succeeded"
-											]
-										}
-									],
-									"userProperties": [],
-									"typeProperties": {
-										"pipeline": {
-											"referenceName": "Data Merge",
-											"type": "PipelineReference"
-										},
-										"waitOnCompletion": true,
-										"parameters": {
-											"item": {
-												"value": "@pipeline().parameters.item",
-												"type": "Expression"
-											},
-											"DateData": {
-												"value": "@pipeline().parameters.EstDate",
-												"type": "Expression"
-											}
-										}
-									}
 								}
 							]
 						}

@@ -360,11 +360,11 @@
 		"variables": {
 			"TableName": {
 				"type": "String",
-				"defaultValue": "PART_LOCATION"
+				"defaultValue": "Accounting_v_AP_Invoice_e"
 			},
 			"SchemaName": {
 				"type": "String",
-				"defaultValue": "Infor"
+				"defaultValue": "Plex"
 			}
 		},
 		"folder": {
