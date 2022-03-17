@@ -276,7 +276,7 @@
 											"writeBehavior": "Upsert",
 											"upsertSettings": {
 												"keys": {
-													"value": "@split(pipeline().parameters.item.TableKeysArray,',')",
+													"value": "@split(replace(pipeline().parameters.item.TableKeysArray,'\"',''),',')",
 													"type": "Expression"
 												},
 												"interimSchemaName": {
