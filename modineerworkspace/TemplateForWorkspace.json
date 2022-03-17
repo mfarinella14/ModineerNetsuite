@@ -3050,11 +3050,11 @@
 				"variables": {
 					"TableName": {
 						"type": "String",
-						"defaultValue": "PART_LOCATION"
+						"defaultValue": "Accounting_v_AP_Invoice_e"
 					},
 					"SchemaName": {
 						"type": "String",
-						"defaultValue": "Infor"
+						"defaultValue": "Plex"
 					}
 				},
 				"folder": {
@@ -3466,7 +3466,7 @@
 															"type": "Expression"
 														},
 														"file_name": {
-															"value": "@{pipeline().parameters.item.TableName}[n].parquet",
+															"value": "@{pipeline().parameters.Item.TableName}-@{pipeline().parameters.EstDate.Year}-@{pipeline().parameters.EstDate.Month}-@{pipeline().parameters.EstDate.Day}T@{pipeline().parameters.EstDate.Hour}:@{pipeline().parameters.EstDate.Minute}:@{pipeline().parameters.EstDate.Second}.parquet",
 															"type": "Expression"
 														}
 													}
@@ -3474,9 +3474,17 @@
 											]
 										},
 										{
-											"name": "Modineer Netsuite Raw Data Copy - SQL Pool",
+											"name": "Merge Data to Infor Table",
+											"description": "Takes the data from the file and merges it with the sql table",
 											"type": "Copy",
-											"dependsOn": [],
+											"dependsOn": [
+												{
+													"activity": "Modineer Netsuite Raw Data Copy - Data Lake",
+													"dependencyConditions": [
+														"Succeeded"
+													]
+												}
+											],
 											"policy": {
 												"timeout": "7.00:00:00",
 												"retry": 0,
@@ -3484,37 +3492,60 @@
 												"secureOutput": false,
 												"secureInput": false
 											},
-											"userProperties": [
-												{
-													"name": "Destination",
-													"value": "@{'Delta'}.@{pipeline().parameters.item.TableName}"
-												}
-											],
+											"userProperties": [],
 											"typeProperties": {
 												"source": {
-													"type": "OdbcSource",
-													"query": {
-														"value": "SELECT * FROM @{pipeline().parameters.item.TableName} WHERE @{pipeline().parameters.item.DataQuery} >= TO_TIMESTAMP(REPLACE(REPLACE('@{addminutes(pipeline().parameters.item.LastRefreshStart,-15)}','T',' '),'Z',''), 'YYYY-MM-DD HH24:MI:SS.FF')",
-														"type": "Expression"
-													},
-													"queryTimeout": "02:00:00"
+													"type": "ParquetSource",
+													"storeSettings": {
+														"type": "AzureBlobFSReadSettings",
+														"recursive": true,
+														"enablePartitionDiscovery": false
+													}
 												},
 												"sink": {
 													"type": "SqlDWSink",
-													"preCopyScript": {
-														"value": "TRUNCATE TABLE [@{pipeline().parameters.item.StagingSchema}].[@{pipeline().parameters.item.TableName}]",
-														"type": "Expression"
+													"writeBehavior": "Upsert",
+													"upsertSettings": {
+														"keys": {
+															"value": "@split(pipeline().parameters.item.TableKeysArray,',')",
+															"type": "Expression"
+														},
+														"interimSchemaName": {
+															"value": "@pipeline().parameters.Item.SchemaName",
+															"type": "Expression"
+														}
 													},
-													"tableOption": "autoCreate",
+													"sqlWriterUseTableLock": false,
 													"disableMetricsCollection": false
 												},
-												"enableStaging": false
+												"enableStaging": false,
+												"translator": {
+													"type": "TabularTranslator",
+													"typeConversion": true,
+													"typeConversionSettings": {
+														"allowDataTruncation": true,
+														"treatBooleanAsNumber": false
+													}
+												}
 											},
 											"inputs": [
 												{
-													"referenceName": "NetsuiteODBCSource",
+													"referenceName": "ReadParquet",
 													"type": "DatasetReference",
-													"parameters": {}
+													"parameters": {
+														"FileSystem": {
+															"value": "@pipeline().parameters.Item.FileSystem",
+															"type": "Expression"
+														},
+														"FilePath": {
+															"value": "@{pipeline().parameters.Item.SchemaName}/@{pipeline().parameters.Item.TableName}/@{pipeline().parameters.EstDate.Year}/@{pipeline().parameters.EstDate.Month}/@{pipeline().parameters.EstDate.Day}",
+															"type": "Expression"
+														},
+														"FileName": {
+															"value": "@{pipeline().parameters.Item.TableName}-@{pipeline().parameters.EstDate.Year}-@{pipeline().parameters.EstDate.Month}-@{pipeline().parameters.EstDate.Day}T@{pipeline().parameters.EstDate.Hour}:@{pipeline().parameters.EstDate.Minute}:@{pipeline().parameters.EstDate.Second}.parquet",
+															"type": "Expression"
+														}
+													}
 												}
 											],
 											"outputs": [
@@ -3523,50 +3554,20 @@
 													"type": "DatasetReference",
 													"parameters": {
 														"TableName": {
-															"value": "@pipeline().parameters.item.TableName",
+															"value": "@pipeline().parameters.Item.TableName",
 															"type": "Expression"
 														},
 														"DbName": {
-															"value": "@pipeline().parameters.item.DbName",
+															"value": "@pipeline().parameters.Item.DbName",
 															"type": "Expression"
 														},
 														"SchemaName": {
-															"value": "@pipeline().parameters.item.StagingSchema",
+															"value": "@pipeline().parameters.Item.SchemaName",
 															"type": "Expression"
 														}
 													}
 												}
 											]
-										},
-										{
-											"name": "Data Merge",
-											"type": "ExecutePipeline",
-											"dependsOn": [
-												{
-													"activity": "Modineer Netsuite Raw Data Copy - SQL Pool",
-													"dependencyConditions": [
-														"Succeeded"
-													]
-												}
-											],
-											"userProperties": [],
-											"typeProperties": {
-												"pipeline": {
-													"referenceName": "Data Merge",
-													"type": "PipelineReference"
-												},
-												"waitOnCompletion": true,
-												"parameters": {
-													"item": {
-														"value": "@pipeline().parameters.item",
-														"type": "Expression"
-													},
-													"DateData": {
-														"value": "@pipeline().parameters.EstDate",
-														"type": "Expression"
-													}
-												}
-											}
 										}
 									]
 								}
@@ -3608,7 +3609,7 @@
 				"[concat(variables('workspaceId'), '/datasets/AzureSynapseDatabase')]",
 				"[concat(variables('workspaceId'), '/datasets/NetsuiteFileCabinet')]",
 				"[concat(variables('workspaceId'), '/datasets/SinkParquet')]",
-				"[concat(variables('workspaceId'), '/pipelines/Data Merge')]",
+				"[concat(variables('workspaceId'), '/datasets/ReadParquet')]",
 				"[concat(variables('workspaceId'), '/linkedServices/modineerlake')]"
 			]
 		},
@@ -5338,7 +5339,7 @@
 					"name": "General"
 				},
 				"content": {
-					"query": "EXEC Config.AddTableToRefresh \n'GloviaProd',--RowGroup\n'Modineer', --DBName\n'GLOVIA_PROD', --SchemaName\n'CO_ITEM', --TableName\n'unified-data-cluster', --FileSystem\n'CCN,PUR_CCN,MAS_LOC,ITEM,REVISION,CO_HDR_ORD_STATUS,CO_NUM,CO_LINE', --TableKeysArray\nNULL, --ConnectionType\nNULL, --DataQuery\n0, --CurrentProcess\nNULL, --TableMaxSCN\n'MINUTE', --RefreshInterval\n15, --RefreshNumber\n'GDelta' --StagingSchema",
+					"query": "EXEC Config.AddTableToRefresh \n\n--GLOVIA TABLE\n-- 'GloviaProd',--RowGroup\n-- 'Modineer', --DBName\n-- 'GLOVIA_PROD', --SchemaName\n-- 'CUS_BUY', --TableName\n-- 'unified-data-cluster', --FileSystem\n-- 'CCN,CUSTOMER,CUS_BUY_LOC', --TableKeysArray\n-- NULL, --ConnectionType\n-- NULL, --DataQuery\n-- 0, --CurrentProcess\n-- NULL, --TableMaxSCN\n-- 'HOUR', --RefreshInterval\n-- 2, --RefreshNumber\n-- 'GDelta' --StagingSchema\n\n-- --INFOR TABLE\n-- 'Infor',--RowGroup\n-- 'Modineer', --DBName\n-- 'Infor', --SchemaName\n-- 'PAYABLE', --TableName\n-- 'unified-data-cluster', --FileSystem\n-- NULL, --TableKeysArray\n-- NULL, --ConnectionType\n-- NULL, --DataQuery\n-- 0, --CurrentProcess\n-- NULL, --TableMaxSCN\n-- 'MINUTE', --RefreshInterval\n-- 15, --RefreshNumber\n-- 'IDelta' --StagingSchema\n\n-- --Netsuite Table\n-- 'Netsuite',--RowGroup\n-- 'Modineer', --DBName\n-- 'ModNS', --SchemaName\n-- 'Vendor', --TableName\n-- 'unified-data-cluster', --FileSystem\n-- 'id,entityid', --TableKeysArray\n-- 'ODBC2', --ConnectionType\n-- 'lastmodifieddate', --DataQuery\n-- 0, --CurrentProcess\n-- NULL, --TableMaxSCN\n-- 'DAY', --RefreshInterval\n-- 1, --RefreshNumber\n-- 'NDelta' --StagingSchema\n\n--Plex Table\n'Plex',--RowGroup\n'Modineer', --DBName\n'Plex', --SchemaName\n'Accounting_v_AP_Invoice_e', --TableName\n'unified-data-cluster', --FileSystem\n'', --TableKeysArray\n'ODBC', --ConnectionType\n'Updated_Date', --DataQuery\n0, --CurrentProcess\nNULL, --TableMaxSCN\n'MINUTE', --RefreshInterval\n15, --RefreshNumber\n'PDelta' --StagingSchema",
 					"metadata": {
 						"language": "sql"
 					},
