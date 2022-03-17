@@ -243,7 +243,7 @@
 									]
 								},
 								{
-									"name": "Merge Data to Infor Table",
+									"name": "Merge Data to Netsuite Table",
 									"description": "Takes the data from the file and merges it with the sql table",
 									"type": "Copy",
 									"dependsOn": [
@@ -261,7 +261,16 @@
 										"secureOutput": false,
 										"secureInput": false
 									},
-									"userProperties": [],
+									"userProperties": [
+										{
+											"name": "Source",
+											"value": "@{pipeline().parameters.Item.FileSystem}/@{concat(pipeline().parameters.Item.SchemaName, '/', pipeline().parameters.Item.TableName, '/', pipeline().parameters.EstDate.Year, '/', pipeline().parameters.EstDate.Month, '/', pipeline().parameters.EstDate.Day)}/@{concat(pipeline().parameters.Item.TableName, '-', pipeline().parameters.EstDate.Year, '-', pipeline().parameters.EstDate.Month, '-', pipeline().parameters.EstDate.Day, 'T', pipeline().parameters.EstDate.Hour, ':', pipeline().parameters.EstDate.Minute, ':', pipeline().parameters.EstDate.Second, '.parquet')}"
+										},
+										{
+											"name": "Destination",
+											"value": "@{pipeline().parameters.Item.SchemaName}.@{pipeline().parameters.Item.TableName}"
+										}
+									],
 									"typeProperties": {
 										"source": {
 											"type": "ParquetSource",
